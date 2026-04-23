@@ -8,7 +8,7 @@ from pathlib import Path
 import requests
 
 KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
-AMAZON_TAG = os.getenv("AMAZON_TAG", "simplewoodsho-20")
+AMAZON_TAG = os.getenv("AMAZON_TAG") or "simplewoodsho-20"
 DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))  # 1 = Amazon US
 MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "5"))
 ASIN_FILE = Path("asins.csv")
@@ -35,6 +35,22 @@ def keepa_to_dollars(value):
         return None
 
     return round(value / 100, 2)
+
+
+def get_product_image(product):
+    """Build an Amazon image URL from Keepa's imagesCSV field when available."""
+    images_csv = product.get("imagesCSV") or ""
+    if not images_csv:
+        return None
+
+    first_image = images_csv.split(",")[0].strip()
+    if not first_image:
+        return None
+
+    if first_image.startswith("http"):
+        return first_image
+
+    return f"https://images-na.ssl-images-amazon.com/images/I/{first_image}"
 
 
 def read_asins():
@@ -66,7 +82,8 @@ def fetch_keepa_products(asins):
             "domain": DOMAIN_ID,
             "asin": ",".join(batch),
             "stats": 7,
-            "history": 0,
+            # history=1 returns fuller product data and usually includes imagesCSV.
+            "history": 1,
         }
         response = requests.get(url, params=params, timeout=45)
         response.raise_for_status()
@@ -101,12 +118,7 @@ def build_deal(product):
     if drop_percent < MIN_DROP_PERCENT:
         return None
 
-    images_csv = product.get("imagesCSV") or ""
-    image = None
-    if images_csv:
-        first_image = images_csv.split(",")[0]
-        image = f"https://images-na.ssl-images-amazon.com/images/I/{first_image}"
-
+    image = get_product_image(product)
     amazon_url = f"https://www.amazon.com/dp/{asin}?tag={AMAZON_TAG}"
 
     return {
@@ -132,6 +144,7 @@ def main():
 
     deals = []
     skipped = 0
+    missing_images = 0
     for product in products:
         try:
             deal = build_deal(product)
@@ -140,6 +153,9 @@ def main():
             print(f"Skipped {product.get('asin', 'unknown ASIN')}: {exc}")
             continue
         if deal:
+            if not deal.get("image"):
+                missing_images += 1
+                print(f"No image found for {deal.get('asin')}")
             deals.append(deal)
 
     deals.sort(key=lambda item: item["drop_percent"], reverse=True)
@@ -152,6 +168,7 @@ def main():
                 "comparison_window": "7-day average",
                 "deal_count": len(deals),
                 "skipped_count": skipped,
+                "missing_image_count": missing_images,
                 "deals": deals,
             },
             f,
@@ -161,6 +178,8 @@ def main():
     print(f"Saved {len(deals)} 7-day price drops to {OUTPUT_FILE}")
     if skipped:
         print(f"Skipped {skipped} products because their Keepa data format was incomplete or unexpected")
+    if missing_images:
+        print(f"{missing_images} deals did not include an image from Keepa")
 
 
 if __name__ == "__main__":
