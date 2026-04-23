@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Keepa Price Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">Personal Amazon Price Tracker</p>
+      <h1>Keepa Price Dashboard</h1>
+      <p class="subtitle">Scans your ASIN list and shows products with price drops.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="toolbar">
+      <div>
+        <strong id="dealCount">Loading deals...</strong>
+        <p id="updatedAt">Checking data file...</p>
+      </div>
+      <input id="searchInput" type="search" placeholder="Search title or ASIN..." />
+    </section>
+
+    <section id="cards" class="card-grid"></section>
+
+    <section id="emptyState" class="empty" hidden>
+      <h2>No price drops found</h2>
+      <p>Add more ASINs to <code>asins.csv</code> or lower the minimum drop percent in the workflow settings.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
