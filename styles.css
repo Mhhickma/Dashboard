@@ -80,8 +80,8 @@ input[type="search"] {
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
 }
 
 .card {
@@ -95,18 +95,48 @@ input[type="search"] {
 }
 
 .image-wrap {
+  position: relative;
   background: #f0f3f9;
-  height: 220px;
+  height: 250px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 18px;
+  text-decoration: none;
+  color: var(--muted);
 }
 
 .image-wrap img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  position: relative;
+  z-index: 2;
+}
+
+.image-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.image-wrap:not(.image-missing) img + .image-placeholder {
+  display: none;
+}
+
+.image-placeholder span {
+  font-weight: 700;
+}
+
+.image-placeholder small {
+  font-size: 0.8rem;
 }
 
 .card-body {
