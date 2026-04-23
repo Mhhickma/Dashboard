@@ -10,7 +10,7 @@ import requests
 KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
 AMAZON_TAG = os.getenv("AMAZON_TAG", "simplewoodsho-20")
 DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))  # 1 = Amazon US
-MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "10"))
+MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "5"))
 ASIN_FILE = Path("asins.csv")
 OUTPUT_FILE = Path("data/deals.json")
 
@@ -51,7 +51,7 @@ def fetch_keepa_products(asins):
             "key": KEEPA_API_KEY,
             "domain": DOMAIN_ID,
             "asin": ",".join(batch),
-            "stats": 90,
+            "stats": 7,
             "history": 0,
         }
         response = requests.get(url, params=params, timeout=45)
@@ -69,29 +69,29 @@ def build_deal(product):
     stats = product.get("stats") or {}
 
     current_raw = None
-    avg_90_raw = None
-    min_90_raw = None
+    avg_7_raw = None
+    min_7_raw = None
 
     current = stats.get("current") or []
-    avg90 = stats.get("avg90") or []
-    min90 = stats.get("min90") or []
+    avg7 = stats.get("avg") or []
+    min7 = stats.get("min") or []
 
     # Keepa price type index 0 is Amazon price.
     if len(current) > 0:
         current_raw = current[0]
-    if len(avg90) > 0:
-        avg_90_raw = avg90[0]
-    if len(min90) > 0:
-        min_90_raw = min90[0]
+    if len(avg7) > 0:
+        avg_7_raw = avg7[0]
+    if len(min7) > 0:
+        min_7_raw = min7[0]
 
     current_price = keepa_to_dollars(current_raw)
-    avg_90_price = keepa_to_dollars(avg_90_raw)
-    min_90_price = keepa_to_dollars(min_90_raw)
+    avg_7_price = keepa_to_dollars(avg_7_raw)
+    min_7_price = keepa_to_dollars(min_7_raw)
 
-    if not current_price or not avg_90_price or current_price >= avg_90_price:
+    if not current_price or not avg_7_price or current_price >= avg_7_price:
         return None
 
-    drop_percent = round(((avg_90_price - current_price) / avg_90_price) * 100, 1)
+    drop_percent = round(((avg_7_price - current_price) / avg_7_price) * 100, 1)
     if drop_percent < MIN_DROP_PERCENT:
         return None
 
@@ -107,8 +107,8 @@ def build_deal(product):
         "asin": asin,
         "title": title,
         "current_price": current_price,
-        "avg_90_price": avg_90_price,
-        "min_90_price": min_90_price,
+        "avg_7_price": avg_7_price,
+        "min_7_price": min_7_price,
         "drop_percent": drop_percent,
         "image": image,
         "amazon_url": amazon_url,
@@ -117,7 +117,7 @@ def build_deal(product):
 
 
 def main():
-    print("Starting Keepa price scan...")
+    print("Starting Keepa 7-day price scan...")
     asins = read_asins()
     print(f"Loaded {len(asins)} ASINs")
 
@@ -137,6 +137,7 @@ def main():
         json.dump(
             {
                 "updated_at": datetime.now(timezone.utc).isoformat(),
+                "comparison_window": "7-day average",
                 "deal_count": len(deals),
                 "deals": deals,
             },
@@ -144,7 +145,7 @@ def main():
             indent=2,
         )
 
-    print(f"Saved {len(deals)} deals to {OUTPUT_FILE}")
+    print(f"Saved {len(deals)} 7-day price drops to {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":
