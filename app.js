@@ -32,7 +32,7 @@ function renderDeals(deals) {
         ${deal.image ? `<img src="${deal.image}" alt="${deal.title}" loading="lazy">` : `<strong>No Image</strong>`}
       </div>
       <div class="card-body">
-        <span class="badge">${deal.drop_percent}% below 90-day average</span>
+        <span class="badge">${deal.drop_percent}% below 7-day average</span>
         <h2>${deal.title}</h2>
         <div class="asin">ASIN: ${deal.asin}</div>
         <div class="price-row">
@@ -41,13 +41,13 @@ function renderDeals(deals) {
             <strong>${money(deal.current_price)}</strong>
           </div>
           <div class="price-box">
-            <span>90-Day Avg.</span>
-            <strong>${money(deal.avg_90_price)}</strong>
+            <span>7-Day Avg.</span>
+            <strong>${money(deal.avg_7_price)}</strong>
           </div>
         </div>
         <div class="price-box">
-          <span>90-Day Low</span>
-          <strong>${money(deal.min_90_price)}</strong>
+          <span>7-Day Low</span>
+          <strong>${money(deal.min_7_price)}</strong>
         </div>
         <a class="button" href="${deal.amazon_url}" target="_blank" rel="noopener noreferrer">Open on Amazon</a>
       </div>
@@ -81,7 +81,7 @@ async function loadDeals() {
 
     const data = await response.json();
     allDeals = data.deals || [];
-    dealCountEl.textContent = `${allDeals.length} price drop${allDeals.length === 1 ? "" : "s"} found`;
+    dealCountEl.textContent = `${allDeals.length} 7-day price drop${allDeals.length === 1 ? "" : "s"} found`;
     updatedAtEl.textContent = `Last updated: ${formatDate(data.updated_at)}`;
     renderDeals(allDeals);
   } catch (error) {
