@@ -1,0 +1,39 @@
+name: Update Keepa Deals
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-deals:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Keepa scanner
+        env:
+          KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+          AMAZON_TAG: ${{ secrets.AMAZON_TAG }}
+          MIN_DROP_PERCENT: "10"
+          KEEPA_DOMAIN_ID: "1"
+        run: python fetch_keepa.py
+
+      - name: Commit updated deals
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update Keepa deal data"
+          file_pattern: data/deals.json
