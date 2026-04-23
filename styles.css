@@ -8,6 +8,8 @@
   --accent: #1f6feb;
   --accent-dark: #174ea6;
   --good: #137333;
+  --danger: #b42318;
+  --warning: #92400e;
 }
 
 * {
@@ -148,6 +150,20 @@ input[type="search"] {
   flex: 1;
 }
 
+.card-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
 .card h2 {
   font-size: 1rem;
   line-height: 1.35;
@@ -195,6 +211,58 @@ input[type="search"] {
   font-size: 0.9rem;
 }
 
+button {
+  font-family: inherit;
+}
+
+.hide-card,
+.remove-card,
+.reset-hidden,
+.copy-remove,
+.clear-remove {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: white;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.hide-card:hover,
+.reset-hidden:hover,
+.copy-remove:hover,
+.clear-remove:hover {
+  background: #f7f9fc;
+  color: var(--text);
+}
+
+.remove-card {
+  border-color: #fecaca;
+  color: var(--danger);
+}
+
+.remove-card:hover {
+  background: #fef2f2;
+}
+
+.copy-remove {
+  border-color: #fed7aa;
+  color: var(--warning);
+}
+
+.clear-remove {
+  color: var(--danger);
+}
+
+.count-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-left: 8px;
+}
+
 .button {
   display: block;
   text-align: center;
@@ -235,5 +303,14 @@ input[type="search"] {
 
   .image-wrap img {
     max-height: 150px;
+  }
+
+  .card-top-row {
+    flex-direction: column;
+  }
+
+  .card-actions {
+    flex-direction: row;
+    align-items: center;
   }
 }
