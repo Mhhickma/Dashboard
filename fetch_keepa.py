@@ -16,9 +16,24 @@ OUTPUT_FILE = Path("data/deals.json")
 
 
 def keepa_to_dollars(value):
-    """Keepa stores Amazon prices as cents. -1 or 0 usually means unavailable."""
-    if value in (None, -1, 0):
+    """Convert Keepa cents to dollars.
+
+    Keepa sometimes returns a single integer price, and sometimes returns
+    a small list such as [timestamp, price]. This keeps the script from
+    crashing when Keepa returns the list format.
+    """
+    if value is None:
         return None
+
+    if isinstance(value, list):
+        numeric_values = [item for item in value if isinstance(item, (int, float))]
+        if not numeric_values:
+            return None
+        value = numeric_values[-1]
+
+    if not isinstance(value, (int, float)) or value <= 0:
+        return None
+
     return round(value / 100, 2)
 
 
@@ -43,7 +58,6 @@ def fetch_keepa_products(asins):
     url = "https://api.keepa.com/product"
     all_products = []
 
-    # Keep batches small to avoid request/API issues.
     batch_size = 20
     for i in range(0, len(asins), batch_size):
         batch = asins[i : i + batch_size]
@@ -68,21 +82,13 @@ def build_deal(product):
     title = product.get("title") or asin
     stats = product.get("stats") or {}
 
-    current_raw = None
-    avg_7_raw = None
-    min_7_raw = None
-
     current = stats.get("current") or []
     avg7 = stats.get("avg") or []
     min7 = stats.get("min") or []
 
-    # Keepa price type index 0 is Amazon price.
-    if len(current) > 0:
-        current_raw = current[0]
-    if len(avg7) > 0:
-        avg_7_raw = avg7[0]
-    if len(min7) > 0:
-        min_7_raw = min7[0]
+    current_raw = current[0] if len(current) > 0 else None
+    avg_7_raw = avg7[0] if len(avg7) > 0 else None
+    min_7_raw = min7[0] if len(min7) > 0 else None
 
     current_price = keepa_to_dollars(current_raw)
     avg_7_price = keepa_to_dollars(avg_7_raw)
@@ -125,8 +131,14 @@ def main():
     print(f"Fetched {len(products)} products from Keepa")
 
     deals = []
+    skipped = 0
     for product in products:
-        deal = build_deal(product)
+        try:
+            deal = build_deal(product)
+        except Exception as exc:
+            skipped += 1
+            print(f"Skipped {product.get('asin', 'unknown ASIN')}: {exc}")
+            continue
         if deal:
             deals.append(deal)
 
@@ -139,6 +151,7 @@ def main():
                 "updated_at": datetime.now(timezone.utc).isoformat(),
                 "comparison_window": "7-day average",
                 "deal_count": len(deals),
+                "skipped_count": skipped,
                 "deals": deals,
             },
             f,
@@ -146,6 +159,8 @@ def main():
         )
 
     print(f"Saved {len(deals)} 7-day price drops to {OUTPUT_FILE}")
+    if skipped:
+        print(f"Skipped {skipped} products because their Keepa data format was incomplete or unexpected")
 
 
 if __name__ == "__main__":
