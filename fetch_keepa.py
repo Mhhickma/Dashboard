@@ -12,8 +12,9 @@ KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
 AMAZON_TAG = os.getenv("AMAZON_TAG") or "simplewoodsho-20"
 DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))  # 1 = Amazon US
 MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "5"))
-BATCH_SIZE = int(os.getenv("KEEPA_BATCH_SIZE", "5"))
-REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "70"))
+BATCH_SIZE = int(os.getenv("KEEPA_BATCH_SIZE", "50"))
+REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "2"))
+RATE_LIMIT_WAIT_SECONDS = int(os.getenv("KEEPA_RATE_LIMIT_WAIT_SECONDS", "70"))
 MAX_RETRIES = int(os.getenv("KEEPA_MAX_RETRIES", "5"))
 SCAN_LIMIT = int(os.getenv("SCAN_LIMIT", "0"))
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
@@ -85,7 +86,6 @@ def asins_from_csv_text(csv_text, source_name):
     asin_header = normalized_headers.get("asin")
 
     if not asin_header:
-        # Fallback: use first column if there is no asin header.
         asin_header = reader.fieldnames[0]
         print(f"No 'asin' column found in {source_name}; using first column: {asin_header}")
 
@@ -138,7 +138,7 @@ def fetch_keepa_batch(url, params, batch_number):
         response = requests.get(url, params=params, timeout=60)
 
         if response.status_code == 429:
-            wait_seconds = REQUEST_DELAY_SECONDS * attempt
+            wait_seconds = RATE_LIMIT_WAIT_SECONDS * attempt
             print(
                 f"Keepa rate limit on batch {batch_number}. "
                 f"Waiting {wait_seconds} seconds before retry {attempt}/{MAX_RETRIES}..."
@@ -238,10 +238,10 @@ def main():
     asins = read_asins()
     print(f"Loaded {len(asins)} ASINs for this run")
     print(f"Batch size: {BATCH_SIZE}")
-    print(f"Delay between batches: {REQUEST_DELAY_SECONDS} seconds")
+    print(f"Normal delay between batches: {REQUEST_DELAY_SECONDS} seconds")
+    print(f"Rate-limit retry wait: {RATE_LIMIT_WAIT_SECONDS} seconds")
     print(f"Scan limit: {SCAN_LIMIT if SCAN_LIMIT > 0 else 'off'}")
     print(f"ASIN source: {'Google Sheet CSV' if ASIN_CSV_URL else 'local asins.csv'}")
-    print("Keepa plan note: 5 tokens/minute means about 5 ASINs per 60 seconds.")
 
     products = fetch_keepa_products(asins)
     print(f"Fetched {len(products)} products from Keepa")
@@ -278,6 +278,7 @@ def main():
                     "min_drop_percent": MIN_DROP_PERCENT,
                     "batch_size": BATCH_SIZE,
                     "request_delay_seconds": REQUEST_DELAY_SECONDS,
+                    "rate_limit_wait_seconds": RATE_LIMIT_WAIT_SECONDS,
                     "scan_limit": SCAN_LIMIT,
                 },
                 "deals": deals,
