@@ -20,6 +20,7 @@ SCAN_LIMIT = int(os.getenv("SCAN_LIMIT", "0"))
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
 OUTPUT_FILE = Path("data/deals.json")
+STATE_FILE = Path("data/scan_state.json")
 
 
 def keepa_to_dollars(value):
@@ -112,7 +113,7 @@ def read_asins_from_local_file():
         return asins_from_csv_text(f.read(), "asins.csv")
 
 
-def read_asins():
+def read_all_asins():
     try:
         if ASIN_CSV_URL:
             asins = read_asins_from_google_sheet()
@@ -126,11 +127,71 @@ def read_asins():
         else:
             raise
 
-    if SCAN_LIMIT > 0:
-        print(f"SCAN_LIMIT is on: scanning only first {SCAN_LIMIT} ASINs for testing")
-        return asins[:SCAN_LIMIT]
-
     return asins
+
+
+def load_scan_state():
+    if not STATE_FILE.exists():
+        return {"next_start_index": 0}
+
+    try:
+        with STATE_FILE.open("r", encoding="utf-8") as f:
+            state = json.load(f)
+        if not isinstance(state.get("next_start_index"), int):
+            state["next_start_index"] = 0
+        return state
+    except Exception as exc:
+        print(f"Could not read scan state; starting from top. Error: {exc}")
+        return {"next_start_index": 0}
+
+
+def save_scan_state(state):
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with STATE_FILE.open("w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2)
+
+
+def select_asins_for_run(all_asins):
+    total = len(all_asins)
+    if total == 0:
+        return [], {"next_start_index": 0}, 0, 0
+
+    limit = SCAN_LIMIT if SCAN_LIMIT > 0 else total
+    limit = min(limit, total)
+
+    state = load_scan_state()
+    start_index = state.get("next_start_index", 0)
+    if start_index >= total or start_index < 0:
+        start_index = 0
+
+    end_index = start_index + limit
+    wrapped = end_index > total
+
+    if wrapped:
+        selected = all_asins[start_index:] + all_asins[: end_index % total]
+        next_start_index = end_index % total
+    else:
+        selected = all_asins[start_index:end_index]
+        next_start_index = 0 if end_index >= total else end_index
+
+    new_state = {
+        "next_start_index": next_start_index,
+        "last_start_index": start_index,
+        "last_end_index": next_start_index if wrapped else end_index,
+        "last_scan_limit": limit,
+        "last_total_asins": total,
+        "last_wrapped": wrapped,
+        "last_scan_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    print(
+        f"Rotating scan: total ASINs={total}, start row={start_index + 2}, "
+        f"count={len(selected)}, next start row={next_start_index + 2}"
+    )
+    if wrapped:
+        print("Rotating scan wrapped back to the top of the sheet.")
+
+    return selected, new_state, start_index, next_start_index
 
 
 def fetch_keepa_batch(url, params, batch_number):
@@ -234,8 +295,11 @@ def build_deal(product):
 
 
 def main():
-    print("Starting Keepa price scan with 30-day average...")
-    asins = read_asins()
+    print("Starting Keepa price scan with rotating 225-ASIN window...")
+    all_asins = read_all_asins()
+    asins, new_state, start_index, next_start_index = select_asins_for_run(all_asins)
+
+    print(f"Loaded {len(all_asins)} total ASINs from source")
     print(f"Loaded {len(asins)} ASINs for this run")
     print(f"Batch size: {BATCH_SIZE}")
     print(f"Normal delay between batches: {REQUEST_DELAY_SECONDS} seconds")
@@ -274,6 +338,14 @@ def main():
                 "deal_count": len(deals),
                 "skipped_count": skipped,
                 "missing_image_count": missing_images,
+                "scan_window": {
+                    "total_asins": len(all_asins),
+                    "start_index": start_index,
+                    "start_sheet_row": start_index + 2,
+                    "next_start_index": next_start_index,
+                    "next_start_sheet_row": next_start_index + 2,
+                    "scan_count": len(asins),
+                },
                 "settings": {
                     "min_drop_percent": MIN_DROP_PERCENT,
                     "batch_size": BATCH_SIZE,
@@ -287,7 +359,10 @@ def main():
             indent=2,
         )
 
+    save_scan_state(new_state)
+
     print(f"Saved {len(deals)} price drops to {OUTPUT_FILE}")
+    print(f"Saved next scan start index {new_state['next_start_index']} to {STATE_FILE}")
     if skipped:
         print(f"Skipped {skipped} products because their Keepa data format was incomplete or unexpected")
     if missing_images:
