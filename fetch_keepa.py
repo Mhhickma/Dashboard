@@ -1,4 +1,5 @@
 import csv
+import io
 import json
 import os
 import time
@@ -15,6 +16,7 @@ BATCH_SIZE = int(os.getenv("KEEPA_BATCH_SIZE", "5"))
 REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "70"))
 MAX_RETRIES = int(os.getenv("KEEPA_MAX_RETRIES", "5"))
 SCAN_LIMIT = int(os.getenv("SCAN_LIMIT", "0"))
+ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
 OUTPUT_FILE = Path("data/deals.json")
 
@@ -72,17 +74,57 @@ def get_product_image(product, asin):
     return amazon_image_fallback(asin)
 
 
-def read_asins():
+def asins_from_csv_text(csv_text, source_name):
+    asins = []
+    reader = csv.DictReader(io.StringIO(csv_text))
+
+    if not reader.fieldnames:
+        raise ValueError(f"No header row found in {source_name}")
+
+    normalized_headers = {header.strip().lower(): header for header in reader.fieldnames if header}
+    asin_header = normalized_headers.get("asin")
+
+    if not asin_header:
+        # Fallback: use first column if there is no asin header.
+        asin_header = reader.fieldnames[0]
+        print(f"No 'asin' column found in {source_name}; using first column: {asin_header}")
+
+    for row in reader:
+        asin = (row.get(asin_header) or "").strip().upper()
+        if asin and asin not in asins:
+            asins.append(asin)
+
+    return asins
+
+
+def read_asins_from_google_sheet():
+    print(f"Reading ASINs from Google Sheet CSV: {ASIN_CSV_URL}")
+    response = requests.get(ASIN_CSV_URL, timeout=45)
+    response.raise_for_status()
+    return asins_from_csv_text(response.text, "Google Sheet CSV")
+
+
+def read_asins_from_local_file():
     if not ASIN_FILE.exists():
         raise FileNotFoundError("Missing asins.csv")
 
-    asins = []
     with ASIN_FILE.open(newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            asin = (row.get("asin") or "").strip().upper()
-            if asin and asin not in asins:
-                asins.append(asin)
+        return asins_from_csv_text(f.read(), "asins.csv")
+
+
+def read_asins():
+    try:
+        if ASIN_CSV_URL:
+            asins = read_asins_from_google_sheet()
+        else:
+            asins = read_asins_from_local_file()
+    except Exception as exc:
+        if ASIN_CSV_URL:
+            print(f"Could not read Google Sheet CSV: {exc}")
+            print("Falling back to local asins.csv")
+            asins = read_asins_from_local_file()
+        else:
+            raise
 
     if SCAN_LIMIT > 0:
         print(f"SCAN_LIMIT is on: scanning only first {SCAN_LIMIT} ASINs for testing")
@@ -198,6 +240,7 @@ def main():
     print(f"Batch size: {BATCH_SIZE}")
     print(f"Delay between batches: {REQUEST_DELAY_SECONDS} seconds")
     print(f"Scan limit: {SCAN_LIMIT if SCAN_LIMIT > 0 else 'off'}")
+    print(f"ASIN source: {'Google Sheet CSV' if ASIN_CSV_URL else 'local asins.csv'}")
     print("Keepa plan note: 5 tokens/minute means about 5 ASINs per 60 seconds.")
 
     products = fetch_keepa_products(asins)
@@ -226,6 +269,7 @@ def main():
         json.dump(
             {
                 "updated_at": datetime.now(timezone.utc).isoformat(),
+                "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
                 "comparison_window": "7-day/30-day averages",
                 "deal_count": len(deals),
                 "skipped_count": skipped,
