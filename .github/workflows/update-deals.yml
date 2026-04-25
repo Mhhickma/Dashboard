@@ -33,6 +33,9 @@ jobs:
           AMAZON_TAG: ${{ secrets.AMAZON_TAG }}
           MIN_DROP_PERCENT: "5"
           KEEPA_DOMAIN_ID: "1"
+          SCAN_LIMIT: "10"
+          KEEPA_BATCH_SIZE: "5"
+          KEEPA_REQUEST_DELAY_SECONDS: "70"
         run: python fetch_keepa.py
 
       - name: Commit updated deals
