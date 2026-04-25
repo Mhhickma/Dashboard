@@ -2,14 +2,15 @@ name: Update Keepa Deals
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 * * * *"
 
 permissions:
   contents: write
+
+concurrency:
+  group: keepa-price-dashboard-scan
+  cancel-in-progress: false
 
 jobs:
   update-deals:
@@ -33,7 +34,7 @@ jobs:
           AMAZON_TAG: ${{ secrets.AMAZON_TAG }}
           MIN_DROP_PERCENT: "5"
           KEEPA_DOMAIN_ID: "1"
-          SCAN_LIMIT: "10"
+          SCAN_LIMIT: "225"
           KEEPA_BATCH_SIZE: "5"
           KEEPA_REQUEST_DELAY_SECONDS: "70"
           ASIN_CSV_URL: "https://docs.google.com/spreadsheets/d/1_cYo7h2MqZpMb_By1ml6SQKSOwNFfhyQsE1T69UgA84/export?format=csv&gid=1348353739"
