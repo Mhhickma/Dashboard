@@ -14,6 +14,7 @@ MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "5"))
 BATCH_SIZE = int(os.getenv("KEEPA_BATCH_SIZE", "5"))
 REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "70"))
 MAX_RETRIES = int(os.getenv("KEEPA_MAX_RETRIES", "5"))
+SCAN_LIMIT = int(os.getenv("SCAN_LIMIT", "0"))
 ASIN_FILE = Path("asins.csv")
 OUTPUT_FILE = Path("data/deals.json")
 
@@ -82,6 +83,11 @@ def read_asins():
             asin = (row.get("asin") or "").strip().upper()
             if asin and asin not in asins:
                 asins.append(asin)
+
+    if SCAN_LIMIT > 0:
+        print(f"SCAN_LIMIT is on: scanning only first {SCAN_LIMIT} ASINs for testing")
+        return asins[:SCAN_LIMIT]
+
     return asins
 
 
@@ -123,8 +129,6 @@ def fetch_keepa_products(asins):
             "key": KEEPA_API_KEY,
             "domain": DOMAIN_ID,
             "asin": ",".join(batch),
-            # 30 keeps the interval stats broad enough for a 30-day average.
-            # If Keepa also returns avg7, the script uses that for the deal check.
             "stats": 30,
             "history": 1,
         }
@@ -152,14 +156,8 @@ def build_deal(product):
     stats = product.get("stats") or {}
 
     current_price = price_from_stats_array(stats, "current")
-
-    # Keepa commonly returns avg as the requested stats interval average.
-    # With stats=30, avg is treated as the 30-day average.
     avg_30_price = price_from_stats_array(stats, "avg") or price_from_stats_array(stats, "avg30")
     min_30_price = price_from_stats_array(stats, "min") or price_from_stats_array(stats, "min30")
-
-    # Use avg7 if Keepa provides it; otherwise keep the dashboard from crashing
-    # by falling back to the 30-day average for the drop check.
     avg_7_price = price_from_stats_array(stats, "avg7") or avg_30_price
     min_7_price = price_from_stats_array(stats, "min7") or min_30_price
 
@@ -196,9 +194,10 @@ def build_deal(product):
 def main():
     print("Starting Keepa price scan with 30-day average...")
     asins = read_asins()
-    print(f"Loaded {len(asins)} ASINs")
+    print(f"Loaded {len(asins)} ASINs for this run")
     print(f"Batch size: {BATCH_SIZE}")
     print(f"Delay between batches: {REQUEST_DELAY_SECONDS} seconds")
+    print(f"Scan limit: {SCAN_LIMIT if SCAN_LIMIT > 0 else 'off'}")
     print("Keepa plan note: 5 tokens/minute means about 5 ASINs per 60 seconds.")
 
     products = fetch_keepa_products(asins)
@@ -235,6 +234,7 @@ def main():
                     "min_drop_percent": MIN_DROP_PERCENT,
                     "batch_size": BATCH_SIZE,
                     "request_delay_seconds": REQUEST_DELAY_SECONDS,
+                    "scan_limit": SCAN_LIMIT,
                 },
                 "deals": deals,
             },
