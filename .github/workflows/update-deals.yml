@@ -3,7 +3,7 @@ name: Update Keepa Deals
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23 * * * *"
+    - cron: "23,53 * * * *"
 
 permissions:
   contents: write
@@ -29,14 +29,14 @@ jobs:
         run: pip install requests
 
       - name: Run Keepa scanner
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
           AMAZON_TAG: ${{ secrets.AMAZON_TAG }}
           MIN_DROP_PERCENT: "5"
           KEEPA_DOMAIN_ID: "1"
-          SCAN_LIMIT: "225"
-          KEEPA_BATCH_SIZE: "50"
+          SCAN_LIMIT: "100"
+          KEEPA_BATCH_SIZE: "25"
           KEEPA_REQUEST_DELAY_SECONDS: "2"
           KEEPA_RATE_LIMIT_WAIT_SECONDS: "70"
           ASIN_CSV_URL: ${{ secrets.ASIN_CSV_URL }}
