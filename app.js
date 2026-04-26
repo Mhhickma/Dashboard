@@ -6,8 +6,34 @@ const searchInput = document.getElementById("searchInput");
 
 const HIDDEN_DEALS_KEY = "keepa-dashboard-hidden-asins";
 const REMOVE_QUEUE_KEY = "keepa-dashboard-remove-queue-asins";
+const HIDE_FOR_HOURS = 24;
 
 let allDeals = [];
+
+function readHiddenMap() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HIDDEN_DEALS_KEY) || "{}");
+
+    if (Array.isArray(raw)) {
+      // Upgrade the old hidden-ASIN list format to 24-hour hidden timestamps.
+      const upgraded = {};
+      const hideUntil = Date.now() + HIDE_FOR_HOURS * 60 * 60 * 1000;
+      raw.forEach((asin) => {
+        upgraded[asin] = hideUntil;
+      });
+      localStorage.setItem(HIDDEN_DEALS_KEY, JSON.stringify(upgraded));
+      return upgraded;
+    }
+
+    if (raw && typeof raw === "object") return raw;
+  } catch {}
+
+  return {};
+}
+
+function writeHiddenMap(values) {
+  localStorage.setItem(HIDDEN_DEALS_KEY, JSON.stringify(values));
+}
 
 function readSet(key) {
   try {
@@ -21,8 +47,26 @@ function writeSet(key, values) {
   localStorage.setItem(key, JSON.stringify([...values]));
 }
 
+function activeHiddenMap() {
+  const hidden = readHiddenMap();
+  const now = Date.now();
+  const active = {};
+
+  Object.entries(hidden).forEach(([asin, hideUntil]) => {
+    if (Number(hideUntil) > now) {
+      active[asin] = Number(hideUntil);
+    }
+  });
+
+  if (Object.keys(active).length !== Object.keys(hidden).length) {
+    writeHiddenMap(active);
+  }
+
+  return active;
+}
+
 function hiddenAsins() {
-  return readSet(HIDDEN_DEALS_KEY);
+  return new Set(Object.keys(activeHiddenMap()));
 }
 
 function removeQueueAsins() {
@@ -30,9 +74,9 @@ function removeQueueAsins() {
 }
 
 function hideDeal(asin) {
-  const hidden = hiddenAsins();
-  hidden.add(asin);
-  writeSet(HIDDEN_DEALS_KEY, hidden);
+  const hidden = activeHiddenMap();
+  hidden[asin] = Date.now() + HIDE_FOR_HOURS * 60 * 60 * 1000;
+  writeHiddenMap(hidden);
   applySearch();
 }
 
@@ -41,11 +85,7 @@ function queueRemoveDeal(asin) {
   removeQueue.add(asin);
   writeSet(REMOVE_QUEUE_KEY, removeQueue);
 
-  const hidden = hiddenAsins();
-  hidden.add(asin);
-  writeSet(HIDDEN_DEALS_KEY, hidden);
-
-  applySearch();
+  hideDeal(asin);
 }
 
 function resetHiddenDeals() {
@@ -67,7 +107,7 @@ async function copyRemoveQueue() {
     await navigator.clipboard.writeText(text);
     alert(`Copied ${removeQueue.length} ASIN${removeQueue.length === 1 ? "" : "s"} to remove.`);
   } catch {
-    prompt("Copy these ASINs and remove them from asins.csv:", text);
+    prompt("Copy these ASINs and remove them from the Google Sheet:", text);
   }
 }
 
@@ -202,7 +242,7 @@ function renderDeals(deals) {
         <div class="card-top-row">
           <span class="badge">${deal.drop_percent}% below 7-day average</span>
           <div class="card-actions">
-            <button class="hide-card" type="button" onclick="hideDeal('${deal.asin}')">Hide</button>
+            <button class="hide-card" type="button" onclick="hideDeal('${deal.asin}')">Hide 24h</button>
             <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}')">Remove ASIN</button>
           </div>
         </div>
