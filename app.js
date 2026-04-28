@@ -3,6 +3,7 @@ const emptyStateEl = document.getElementById("emptyState");
 const dealCountEl = document.getElementById("dealCount");
 const updatedAtEl = document.getElementById("updatedAt");
 const searchInput = document.getElementById("searchInput");
+const sortSelect = document.getElementById("sortSelect");
 
 const HIDDEN_DEALS_KEY = "keepa-dashboard-hidden-asins";
 const REMOVE_QUEUE_KEY = "keepa-dashboard-remove-queue-asins";
@@ -140,11 +141,52 @@ function formatShortDate(value) {
   });
 }
 
+function numericValue(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function dateValue(value) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : 0;
+}
+
 function hoursUntil(value) {
   if (!value) return null;
   const diffMs = new Date(value).getTime() - Date.now();
   if (!Number.isFinite(diffMs)) return null;
   return Math.max(0, diffMs / (1000 * 60 * 60));
+}
+
+function sortDeals(deals) {
+  const sortMode = sortSelect ? sortSelect.value : "newest";
+  const sorted = [...deals];
+
+  sorted.sort((a, b) => {
+    if (sortMode === "highest-drop") {
+      return (numericValue(b.drop_percent) || 0) - (numericValue(a.drop_percent) || 0);
+    }
+
+    if (sortMode === "highest-30-drop") {
+      return (numericValue(b.drop_30_percent) || 0) - (numericValue(a.drop_30_percent) || 0);
+    }
+
+    if (sortMode === "lowest-price") {
+      const aPrice = numericValue(a.current_price);
+      const bPrice = numericValue(b.current_price);
+      if (aPrice === null && bPrice === null) return 0;
+      if (aPrice === null) return 1;
+      if (bPrice === null) return -1;
+      return aPrice - bPrice;
+    }
+
+    const aPosted = a.posted_at || a.first_seen_at || a.checked_at;
+    const bPosted = b.posted_at || b.first_seen_at || b.checked_at;
+    return dateValue(bPosted) - dateValue(aPosted);
+  });
+
+  return sorted;
 }
 
 function imageCandidatesForDeal(deal) {
@@ -286,7 +328,7 @@ function renderDeals(deals) {
 
 function applySearch() {
   const term = searchInput.value.trim().toLowerCase();
-  const baseDeals = visibleDeals();
+  const baseDeals = sortDeals(visibleDeals());
 
   if (!term) {
     renderDeals(baseDeals);
@@ -320,4 +362,5 @@ async function loadDeals() {
 }
 
 searchInput.addEventListener("input", applySearch);
+if (sortSelect) sortSelect.addEventListener("change", applySearch);
 loadDeals();
