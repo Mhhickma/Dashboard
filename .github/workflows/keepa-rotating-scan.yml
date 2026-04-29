@@ -1,10 +1,8 @@
 name: Keepa Rotating Price Scan
 
 on:
-  schedule:
-    # Runs every 15 minutes all day and night.
-    # GitHub cron uses UTC time.
-    - cron: "*/15 * * * *"
+  # cron-job.org should trigger this workflow every 15 minutes.
+  # GitHub's built-in schedule is intentionally disabled to avoid duplicate runs.
   workflow_dispatch:
 
 permissions:
