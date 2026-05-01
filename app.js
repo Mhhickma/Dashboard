@@ -91,10 +91,10 @@ async function queueRemoveDeal(asin) {
   }
 
   try {
-    await fetch(REMOVE_ASIN_WEB_APP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({ asin: asin })
+    const url = `${REMOVE_ASIN_WEB_APP_URL}?asin=${encodeURIComponent(asin)}&t=${Date.now()}`;
+    await fetch(url, {
+      method: "GET",
+      mode: "no-cors"
     });
 
     hideDeal(asin);
