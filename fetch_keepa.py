@@ -12,6 +12,7 @@ KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
 AMAZON_TAG = os.getenv("AMAZON_TAG") or "simplewoodsho-20"
 DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))  # 1 = Amazon US
 MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "5"))
+
 # Keep these fixed so old cron/workflow environment overrides cannot accidentally scan too much.
 BATCH_SIZE = 50
 REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "2"))
@@ -19,6 +20,7 @@ RATE_LIMIT_WAIT_SECONDS = int(os.getenv("KEEPA_RATE_LIMIT_WAIT_SECONDS", "70"))
 MAX_RETRIES = int(os.getenv("KEEPA_MAX_RETRIES", "5"))
 SCAN_LIMIT = 50
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
+
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
 OUTPUT_FILE = Path("data/deals.json")
@@ -89,23 +91,58 @@ def get_product_image(product, asin):
 
 
 def asins_from_csv_text(csv_text, source_name):
+    """
+    Reads ASINs from Column A first, then Column B.
+    Skips blanks, headers, invalid ASINs, and duplicates.
+    Keeps the first copy found.
+    """
+
     asins = []
-    reader = csv.DictReader(io.StringIO(csv_text))
+    seen = set()
 
-    if not reader.fieldnames:
-        raise ValueError(f"No header row found in {source_name}")
+    reader = csv.reader(io.StringIO(csv_text))
+    rows = list(reader)
 
-    normalized_headers = {header.strip().lower(): header for header in reader.fieldnames if header}
-    asin_header = normalized_headers.get("asin")
+    if not rows:
+        raise ValueError(f"No rows found in {source_name}")
 
-    if not asin_header:
-        asin_header = reader.fieldnames[0]
-        print(f"No 'asin' column found in {source_name}; using first column: {asin_header}")
+    # Skip header row.
+    data_rows = rows[1:]
 
-    for row in reader:
-        asin = (row.get(asin_header) or "").strip().upper()
-        if asin and asin not in asins:
-            asins.append(asin)
+    def add_asin(value):
+        asin = str(value or "").strip().upper()
+
+        # Skip blanks and header text.
+        if not asin:
+            return
+        if asin in ("ASIN", "ASINS"):
+            return
+
+        # Amazon ASINs are normally 10 characters.
+        # This helps avoid accidentally scanning bad sheet values.
+        if len(asin) != 10:
+            print(f"Skipping invalid ASIN value: {asin}")
+            return
+
+        # Skip duplicates.
+        if asin in seen:
+            return
+
+        seen.add(asin)
+        asins.append(asin)
+
+    # Column A first.
+    for row in data_rows:
+        if len(row) > 0:
+            add_asin(row[0])
+
+    # Column B second.
+    for row in data_rows:
+        if len(row) > 1:
+            add_asin(row[1])
+
+    print(f"Loaded {len(asins)} unique ASINs from {source_name}")
+    print("ASIN scan order: Column A first, then Column B")
 
     return asins
 
@@ -200,7 +237,9 @@ def purge_expired_deals(memory):
     expired_count = 0
 
     for asin, deal in memory.items():
-        posted_at = parse_iso_datetime(deal.get("posted_at") or deal.get("first_seen_at") or deal.get("checked_at"))
+        posted_at = parse_iso_datetime(
+            deal.get("posted_at") or deal.get("first_seen_at") or deal.get("checked_at")
+        )
         if posted_at and posted_at > cutoff:
             kept[asin] = deal
         else:
@@ -396,6 +435,7 @@ def build_deal(product):
 
 def main():
     print("Starting Keepa price scan with rotating ASIN window and 24-hour deal memory...")
+
     all_asins = read_all_asins()
     asins, new_state, start_index, next_start_index = select_asins_for_run(all_asins)
 
@@ -418,6 +458,7 @@ def main():
     scan_deals = []
     skipped = 0
     missing_images = 0
+
     for product in products:
         try:
             deal = build_deal(product)
@@ -425,6 +466,7 @@ def main():
             skipped += 1
             print(f"Skipped {product.get('asin', 'unknown ASIN')}: {exc}")
             continue
+
         if deal:
             if not deal.get("image"):
                 missing_images += 1
@@ -434,7 +476,10 @@ def main():
     memory, added_count, updated_count = merge_deals_with_memory(memory, scan_deals)
 
     all_deals = list(memory.values())
-    all_deals.sort(key=lambda item: item.get("posted_at") or item.get("checked_at") or "", reverse=True)
+    all_deals.sort(
+        key=lambda item: item.get("posted_at") or item.get("checked_at") or "",
+        reverse=True,
+    )
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT_FILE.open("w", encoding="utf-8") as f:
@@ -482,6 +527,7 @@ def main():
     print(f"Saved {len(all_deals)} active 24-hour deals to {OUTPUT_FILE}")
     print(f"Saved deal memory to {MEMORY_FILE}")
     print(f"Saved next scan start index {new_state['next_start_index']} to {STATE_FILE}")
+
     if skipped:
         print(f"Skipped {skipped} products because their Keepa data format was incomplete or unexpected")
     if missing_images:
