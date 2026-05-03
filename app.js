@@ -91,14 +91,14 @@ async function queueRemoveDeal(asin) {
   }
 
   try {
-    const url = `${REMOVE_ASIN_WEB_APP_URL}?asin=${encodeURIComponent(asin)}&t=${Date.now()}`;
-    await fetch(url, {
-      method: "GET",
-      mode: "no-cors"
+    await fetch(REMOVE_ASIN_WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({ asin: asin })
     });
 
     hideDeal(asin);
-    alert(`Remove request sent for ${asin}.`);
+    alert(`Remove request sent for ${asin}. Check the ASIN_List sheet and Remove ASIN Log.`);
   } catch (error) {
     alert("Could not connect to the spreadsheet removal script.");
     console.error(error);
