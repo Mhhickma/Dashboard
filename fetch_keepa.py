@@ -13,12 +13,13 @@ AMAZON_TAG = os.getenv("AMAZON_TAG") or "simplewoodsho-20"
 DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))  # 1 = Amazon US
 MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "5"))
 
-# Keep these fixed so old cron/workflow environment overrides cannot accidentally scan too much.
-BATCH_SIZE = 50
+# These can be controlled from GitHub Actions env.
+# Defaults are set here if GitHub does not provide them.
+BATCH_SIZE = int(os.getenv("KEEPA_BATCH_SIZE", "50"))
 REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "2"))
 RATE_LIMIT_WAIT_SECONDS = int(os.getenv("KEEPA_RATE_LIMIT_WAIT_SECONDS", "70"))
 MAX_RETRIES = int(os.getenv("KEEPA_MAX_RETRIES", "5"))
-SCAN_LIMIT = 50
+SCAN_LIMIT = int(os.getenv("SCAN_LIMIT", "100"))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
@@ -119,7 +120,6 @@ def asins_from_csv_text(csv_text, source_name):
             return
 
         # Amazon ASINs are normally 10 characters.
-        # This helps avoid accidentally scanning bad sheet values.
         if len(asin) != 10:
             print(f"Skipping invalid ASIN value: {asin}")
             return
