@@ -1,4 +1,7 @@
 const cardsEl = document.getElementById("cards");
+const selectedCardsEl = document.getElementById("selectedCards");
+const selectedPostingSectionEl = document.getElementById("selectedPostingSection");
+const selectedPostingCountEl = document.getElementById("selectedPostingCount");
 const emptyStateEl = document.getElementById("emptyState");
 const dealCountEl = document.getElementById("dealCount");
 const updatedAtEl = document.getElementById("updatedAt");
@@ -8,6 +11,7 @@ const sortSelect = document.getElementById("sortSelect");
 const REMOVE_ASIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyXILMe0WvnvjD0PMT4e6W7xvlnGePpN8HT2Dj0gsAXxT0dOh_9-4lXK9NTDw-yL5gTLg/exec";
 const HIDDEN_DEALS_KEY = "keepa-dashboard-hidden-asins";
 const REMOVE_QUEUE_KEY = "keepa-dashboard-remove-queue-asins";
+const SELECTED_FOR_POSTING_KEY = "keepa-dashboard-selected-for-posting-asins";
 const HIDE_FOR_HOURS = 24;
 
 let allDeals = [];
@@ -74,10 +78,40 @@ function removeQueueAsins() {
   return readSet(REMOVE_QUEUE_KEY);
 }
 
+function selectedForPostingAsins() {
+  return readSet(SELECTED_FOR_POSTING_KEY);
+}
+
+function writeSelectedForPostingAsins(values) {
+  writeSet(SELECTED_FOR_POSTING_KEY, values);
+}
+
+function toggleSelectedForPosting(asin) {
+  const selected = selectedForPostingAsins();
+
+  if (selected.has(asin)) {
+    selected.delete(asin);
+  } else {
+    selected.add(asin);
+  }
+
+  writeSelectedForPostingAsins(selected);
+  applySearch();
+}
+
+function removeFromSelectedForPosting(asin) {
+  const selected = selectedForPostingAsins();
+  if (!selected.has(asin)) return;
+
+  selected.delete(asin);
+  writeSelectedForPostingAsins(selected);
+}
+
 function hideDeal(asin) {
   const hidden = activeHiddenMap();
   hidden[asin] = Date.now() + HIDE_FOR_HOURS * 60 * 60 * 1000;
   writeHiddenMap(hidden);
+  removeFromSelectedForPosting(asin);
   applySearch();
 }
 
@@ -107,6 +141,11 @@ async function queueRemoveDeal(asin) {
 
 function resetHiddenDeals() {
   localStorage.removeItem(HIDDEN_DEALS_KEY);
+  applySearch();
+}
+
+function clearSelectedForPosting() {
+  localStorage.removeItem(SELECTED_FOR_POSTING_KEY);
   applySearch();
 }
 
@@ -254,12 +293,16 @@ function tryNextImage(img) {
   img.remove();
 }
 
-function updateCounts(renderedCount) {
+function updateCounts(renderedCount, selectedCount) {
   const hiddenCount = hiddenAsins().size;
   const removeCount = removeQueueAsins().size;
   const totalCount = allDeals.length;
 
   dealCountEl.innerHTML = `${renderedCount} visible active deal${renderedCount === 1 ? "" : "s"}`;
+
+  if (selectedCount > 0) {
+    dealCountEl.innerHTML += ` <span class="count-note">${selectedCount} selected for posting</span>`;
+  }
 
   if (totalCount !== renderedCount) {
     dealCountEl.innerHTML += ` <span class="count-note">${totalCount} total active</span>`;
@@ -269,76 +312,113 @@ function updateCounts(renderedCount) {
     dealCountEl.innerHTML += ` <button class="reset-hidden" type="button" onclick="resetHiddenDeals()">Show hidden (${hiddenCount})</button>`;
   }
 
+  if (selectedCount > 0) {
+    dealCountEl.innerHTML += ` <button class="clear-selected" type="button" onclick="clearSelectedForPosting()">Clear selected</button>`;
+  }
+
   if (removeCount > 0) {
     dealCountEl.innerHTML += ` <button class="copy-remove" type="button" onclick="copyRemoveQueue()">Copy removals (${removeCount})</button>`;
     dealCountEl.innerHTML += ` <button class="clear-remove" type="button" onclick="clearRemoveQueue()">Clear removals</button>`;
   }
 }
 
-function renderDeals(deals) {
-  cardsEl.innerHTML = "";
-  emptyStateEl.hidden = deals.length !== 0;
-  updateCounts(deals.length);
+function buildCard(deal, isSelected, isSelectedSection) {
+  const card = document.createElement("article");
+  card.className = isSelected ? "card selected-card" : "card";
+  const postedAt = deal.posted_at || deal.first_seen_at || deal.checked_at;
+  const expiresAt = deal.expires_at;
+  const hoursLeft = hoursUntil(expiresAt);
+  const expiresText = hoursLeft === null ? "N/A" : `${hoursLeft.toFixed(1)} hrs left`;
 
-  deals.forEach((deal) => {
-    const card = document.createElement("article");
-    card.className = "card";
-    const postedAt = deal.posted_at || deal.first_seen_at || deal.checked_at;
-    const expiresAt = deal.expires_at;
-    const hoursLeft = hoursUntil(expiresAt);
-    const expiresText = hoursLeft === null ? "N/A" : `${hoursLeft.toFixed(1)} hrs left`;
+  const selectedPostingTools = isSelectedSection ? `
+    <div class="posting-helper-box">
+      <p>Make the link, post it, then hide this card.</p>
+      <button class="posted-hide-card" type="button" onclick="hideDeal('${deal.asin}')">Posted — Hide Card</button>
+    </div>
+  ` : "";
 
-    card.innerHTML = `
-      <a class="image-wrap" href="${deal.amazon_url}" target="_blank" rel="noopener noreferrer" aria-label="Open ${deal.title} on Amazon">
-        ${buildImageMarkup(deal)}
-        <div class="image-placeholder">
-          <span>No image available</span>
-          <small>${deal.asin}</small>
+  card.innerHTML = `
+    <div class="select-posting-row">
+      <label class="select-posting-control">
+        <input type="checkbox" ${isSelected ? "checked" : ""} onchange="toggleSelectedForPosting('${deal.asin}')">
+        <span>Select for posting</span>
+      </label>
+      ${isSelected ? `<span class="selected-pill">Selected</span>` : ""}
+    </div>
+    <a class="image-wrap" href="${deal.amazon_url}" target="_blank" rel="noopener noreferrer" aria-label="Open ${deal.title} on Amazon">
+      ${buildImageMarkup(deal)}
+      <div class="image-placeholder">
+        <span>No image available</span>
+        <small>${deal.asin}</small>
+      </div>
+    </a>
+    <div class="card-body">
+      <div class="card-top-row">
+        <span class="badge">${deal.drop_percent}% below 7-day average</span>
+        <div class="card-actions">
+          <button class="hide-card" type="button" onclick="hideDeal('${deal.asin}')">Hide 24h</button>
+          <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}')">Remove ASIN</button>
         </div>
-      </a>
-      <div class="card-body">
-        <div class="card-top-row">
-          <span class="badge">${deal.drop_percent}% below 7-day average</span>
-          <div class="card-actions">
-            <button class="hide-card" type="button" onclick="hideDeal('${deal.asin}')">Hide 24h</button>
-            <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}')">Remove ASIN</button>
-          </div>
-        </div>
-        <div class="deal-time">
-          <span>Posted: ${formatShortDate(postedAt)}</span>
-          <span>${expiresText}</span>
-        </div>
-        <h2>${deal.title}</h2>
-        <div class="asin">ASIN: ${deal.asin}</div>
-        <div class="price-row">
-          <div class="price-box">
-            <span>Current</span>
-            <strong>${money(deal.current_price)}</strong>
-          </div>
-          <div class="price-box">
-            <span>7-Day Avg.</span>
-            <strong>${money(deal.avg_7_price)}</strong>
-          </div>
-        </div>
-        <div class="price-row">
-          <div class="price-box">
-            <span>30-Day Avg.</span>
-            <strong>${money(deal.avg_30_price)}</strong>
-          </div>
-          <div class="price-box">
-            <span>30-Day Drop</span>
-            <strong>${deal.drop_30_percent === null || deal.drop_30_percent === undefined ? "N/A" : `${deal.drop_30_percent}%`}</strong>
-          </div>
+      </div>
+      <div class="deal-time">
+        <span>Posted: ${formatShortDate(postedAt)}</span>
+        <span>${expiresText}</span>
+      </div>
+      <h2>${deal.title}</h2>
+      <div class="asin">ASIN: ${deal.asin}</div>
+      <div class="price-row">
+        <div class="price-box">
+          <span>Current</span>
+          <strong>${money(deal.current_price)}</strong>
         </div>
         <div class="price-box">
-          <span>7-Day Low</span>
-          <strong>${money(deal.min_7_price)}</strong>
+          <span>7-Day Avg.</span>
+          <strong>${money(deal.avg_7_price)}</strong>
         </div>
-        <a class="button" href="${deal.amazon_url}" target="_blank" rel="noopener noreferrer">Open on Amazon</a>
       </div>
-    `;
+      <div class="price-row">
+        <div class="price-box">
+          <span>30-Day Avg.</span>
+          <strong>${money(deal.avg_30_price)}</strong>
+        </div>
+        <div class="price-box">
+          <span>30-Day Drop</span>
+          <strong>${deal.drop_30_percent === null || deal.drop_30_percent === undefined ? "N/A" : `${deal.drop_30_percent}%`}</strong>
+        </div>
+      </div>
+      <div class="price-box">
+        <span>7-Day Low</span>
+        <strong>${money(deal.min_7_price)}</strong>
+      </div>
+      ${selectedPostingTools}
+      <a class="button" href="${deal.amazon_url}" target="_blank" rel="noopener noreferrer">Open on Amazon</a>
+    </div>
+  `;
 
-    cardsEl.appendChild(card);
+  return card;
+}
+
+function renderDeals(deals) {
+  const selectedAsins = selectedForPostingAsins();
+  const selectedDeals = deals.filter((deal) => selectedAsins.has(deal.asin));
+  const regularDeals = deals.filter((deal) => !selectedAsins.has(deal.asin));
+
+  cardsEl.innerHTML = "";
+  selectedCardsEl.innerHTML = "";
+
+  const totalRendered = selectedDeals.length + regularDeals.length;
+  emptyStateEl.hidden = totalRendered !== 0;
+  updateCounts(totalRendered, selectedDeals.length);
+
+  selectedPostingSectionEl.hidden = selectedDeals.length === 0;
+  selectedPostingCountEl.textContent = `${selectedDeals.length} selected`;
+
+  selectedDeals.forEach((deal) => {
+    selectedCardsEl.appendChild(buildCard(deal, true, true));
+  });
+
+  regularDeals.forEach((deal) => {
+    cardsEl.appendChild(buildCard(deal, false, false));
   });
 }
 
