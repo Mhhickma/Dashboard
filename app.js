@@ -167,6 +167,27 @@ async function copyRemoveQueue() {
   }
 }
 
+async function copySelectedLinks() {
+  const selectedAsins = selectedForPostingAsins();
+  const selectedDeals = sortDeals(visibleDeals()).filter((deal) => selectedAsins.has(deal.asin));
+
+  if (selectedDeals.length === 0) {
+    alert("No selected links to copy.");
+    return;
+  }
+
+  const text = selectedDeals
+    .map((deal) => `${deal.title}\n${deal.amazon_url}`)
+    .join("\n\n");
+
+  try {
+    await navigator.clipboard.writeText(text);
+    alert(`Copied ${selectedDeals.length} selected link${selectedDeals.length === 1 ? "" : "s"}.`);
+  } catch {
+    prompt("Copy these selected links:", text);
+  }
+}
+
 function visibleDeals() {
   const hidden = hiddenAsins();
   const removeQueue = removeQueueAsins();
@@ -302,6 +323,7 @@ function updateCounts(renderedCount, selectedCount) {
 
   if (selectedCount > 0) {
     dealCountEl.innerHTML += ` <span class="count-note">${selectedCount} selected for posting</span>`;
+    dealCountEl.innerHTML += ` <button class="copy-selected" type="button" onclick="copySelectedLinks()">Copy selected links</button>`;
   }
 
   if (totalCount !== renderedCount) {
