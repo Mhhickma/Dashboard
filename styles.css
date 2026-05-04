@@ -356,6 +356,7 @@ button {
 .remove-card,
 .reset-hidden,
 .copy-remove,
+.copy-selected,
 .clear-remove,
 .clear-selected {
   border: 1px solid var(--border);
@@ -372,6 +373,7 @@ button {
 .hide-card:hover,
 .reset-hidden:hover,
 .copy-remove:hover,
+.copy-selected:hover,
 .clear-remove:hover,
 .clear-selected:hover {
   background: #f7f9fc;
@@ -406,6 +408,15 @@ button {
 .copy-remove {
   border-color: #fed7aa;
   color: var(--warning);
+}
+
+.copy-selected {
+  border-color: #bfdbfe;
+  color: var(--accent);
+}
+
+.copy-selected:hover {
+  background: #eff6ff;
 }
 
 .clear-remove {
