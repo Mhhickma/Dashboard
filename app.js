@@ -13,8 +13,65 @@ const HIDDEN_DEALS_KEY = "keepa-dashboard-hidden-asins";
 const REMOVE_QUEUE_KEY = "keepa-dashboard-remove-queue-asins";
 const SELECTED_FOR_POSTING_KEY = "keepa-dashboard-selected-for-posting-asins";
 const HIDE_FOR_HOURS = 24;
+const DEALS_PER_PAGE = 50;
 
 let allDeals = [];
+let shownRegularDealLimit = DEALS_PER_PAGE;
+let currentRenderedDeals = [];
+let loadMoreSectionEl = null;
+let loadMoreButtonEl = null;
+let loadMoreSummaryEl = null;
+
+function ensureLoadMoreControls() {
+  if (loadMoreSectionEl && loadMoreButtonEl && loadMoreSummaryEl) {
+    return;
+  }
+
+  loadMoreSectionEl = document.getElementById("loadMoreSection");
+
+  if (!loadMoreSectionEl) {
+    loadMoreSectionEl = document.createElement("section");
+    loadMoreSectionEl.id = "loadMoreSection";
+    loadMoreSectionEl.className = "load-more-section";
+    cardsEl.insertAdjacentElement("afterend", loadMoreSectionEl);
+  }
+
+  loadMoreSummaryEl = document.getElementById("loadMoreSummary");
+  if (!loadMoreSummaryEl) {
+    loadMoreSummaryEl = document.createElement("p");
+    loadMoreSummaryEl.id = "loadMoreSummary";
+    loadMoreSummaryEl.className = "load-more-summary";
+    loadMoreSectionEl.appendChild(loadMoreSummaryEl);
+  }
+
+  loadMoreButtonEl = document.getElementById("loadMoreButton");
+  if (!loadMoreButtonEl) {
+    loadMoreButtonEl = document.createElement("button");
+    loadMoreButtonEl.id = "loadMoreButton";
+    loadMoreButtonEl.className = "load-more-button";
+    loadMoreButtonEl.type = "button";
+    loadMoreButtonEl.addEventListener("click", loadMoreDeals);
+    loadMoreSectionEl.appendChild(loadMoreButtonEl);
+  }
+}
+
+function resetDealLimit() {
+  shownRegularDealLimit = DEALS_PER_PAGE;
+}
+
+function loadMoreDeals() {
+  shownRegularDealLimit += DEALS_PER_PAGE;
+  renderDeals(currentRenderedDeals);
+}
+
+function updateLoadMoreControls(showingRegularCount, totalRegularCount) {
+  ensureLoadMoreControls();
+
+  const remainingCount = Math.max(0, totalRegularCount - showingRegularCount);
+  loadMoreSectionEl.hidden = totalRegularCount <= DEALS_PER_PAGE || remainingCount === 0;
+  loadMoreSummaryEl.textContent = `Showing ${showingRegularCount} of ${totalRegularCount} unselected deal${totalRegularCount === 1 ? "" : "s"}.`;
+  loadMoreButtonEl.textContent = `Load ${Math.min(DEALS_PER_PAGE, remainingCount)} more deal${Math.min(DEALS_PER_PAGE, remainingCount) === 1 ? "" : "s"}`;
+}
 
 function readHiddenMap() {
   try {
@@ -96,7 +153,7 @@ function toggleSelectedForPosting(asin) {
   }
 
   writeSelectedForPostingAsins(selected);
-  applySearch();
+  applySearch(false);
 }
 
 function removeFromSelectedForPosting(asin) {
@@ -112,7 +169,7 @@ function hideDeal(asin) {
   hidden[asin] = Date.now() + HIDE_FOR_HOURS * 60 * 60 * 1000;
   writeHiddenMap(hidden);
   removeFromSelectedForPosting(asin);
-  applySearch();
+  applySearch(false);
 }
 
 async function queueRemoveDeal(asin) {
@@ -146,12 +203,12 @@ function resetHiddenDeals() {
 
 function clearSelectedForPosting() {
   localStorage.removeItem(SELECTED_FOR_POSTING_KEY);
-  applySearch();
+  applySearch(false);
 }
 
 function clearRemoveQueue() {
   localStorage.removeItem(REMOVE_QUEUE_KEY);
-  applySearch();
+  applySearch(false);
 }
 
 async function copyRemoveQueue() {
@@ -314,19 +371,19 @@ function tryNextImage(img) {
   img.remove();
 }
 
-function updateCounts(renderedCount, selectedCount) {
+function updateCounts(renderedCount, selectedCount, totalMatchingCount) {
   const hiddenCount = hiddenAsins().size;
   const removeCount = removeQueueAsins().size;
   const totalCount = allDeals.length;
 
-  dealCountEl.innerHTML = `${renderedCount} visible active deal${renderedCount === 1 ? "" : "s"}`;
+  dealCountEl.innerHTML = `${renderedCount} shown of ${totalMatchingCount} visible active deal${totalMatchingCount === 1 ? "" : "s"}`;
 
   if (selectedCount > 0) {
     dealCountEl.innerHTML += ` <span class="count-note">${selectedCount} selected for posting</span>`;
     dealCountEl.innerHTML += ` <button class="copy-selected" type="button" onclick="copySelectedLinks()">Copy selected links</button>`;
   }
 
-  if (totalCount !== renderedCount) {
+  if (totalCount !== totalMatchingCount) {
     dealCountEl.innerHTML += ` <span class="count-note">${totalCount} total active</span>`;
   }
 
@@ -421,16 +478,19 @@ function buildCard(deal, isSelected, isSelectedSection) {
 }
 
 function renderDeals(deals) {
+  currentRenderedDeals = deals;
+
   const selectedAsins = selectedForPostingAsins();
   const selectedDeals = deals.filter((deal) => selectedAsins.has(deal.asin));
   const regularDeals = deals.filter((deal) => !selectedAsins.has(deal.asin));
+  const visibleRegularDeals = regularDeals.slice(0, shownRegularDealLimit);
 
   cardsEl.innerHTML = "";
   selectedCardsEl.innerHTML = "";
 
-  const totalRendered = selectedDeals.length + regularDeals.length;
+  const totalRendered = selectedDeals.length + visibleRegularDeals.length;
   emptyStateEl.hidden = totalRendered !== 0;
-  updateCounts(totalRendered, selectedDeals.length);
+  updateCounts(totalRendered, selectedDeals.length, deals.length);
 
   selectedPostingSectionEl.hidden = selectedDeals.length === 0;
   selectedPostingCountEl.textContent = `${selectedDeals.length} selected`;
@@ -439,12 +499,18 @@ function renderDeals(deals) {
     selectedCardsEl.appendChild(buildCard(deal, true, true));
   });
 
-  regularDeals.forEach((deal) => {
+  visibleRegularDeals.forEach((deal) => {
     cardsEl.appendChild(buildCard(deal, false, false));
   });
+
+  updateLoadMoreControls(visibleRegularDeals.length, regularDeals.length);
 }
 
-function applySearch() {
+function applySearch(resetLimit = true) {
+  if (resetLimit) {
+    resetDealLimit();
+  }
+
   const term = searchInput.value.trim().toLowerCase();
   const baseDeals = sortDeals(visibleDeals());
 
@@ -479,6 +545,6 @@ async function loadDeals() {
   }
 }
 
-searchInput.addEventListener("input", applySearch);
-if (sortSelect) sortSelect.addEventListener("change", applySearch);
+searchInput.addEventListener("input", () => applySearch());
+if (sortSelect) sortSelect.addEventListener("change", () => applySearch());
 loadDeals();
