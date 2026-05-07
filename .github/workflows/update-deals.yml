@@ -3,7 +3,7 @@ name: Update Keepa Deals
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23,53 * * * *"
+    - cron: "*/30 * * * *"
 
 permissions:
   contents: write
