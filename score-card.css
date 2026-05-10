@@ -5,17 +5,26 @@
   gap: 6px;
 }
 
-.score-badge {
+.score-badge,
+.best-price-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   width: fit-content;
   border-radius: 999px;
   padding: 7px 10px;
-  background: #eef2ff;
-  color: #3730a3;
   font-weight: 800;
   font-size: 0.84rem;
+}
+
+.score-badge {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.best-price-badge {
+  background: #fff7ed;
+  color: #9a3412;
 }
 
 .score-badge strong {
