@@ -44,7 +44,7 @@ jobs:
           KEEPA_RATE_LIMIT_WAIT_SECONDS: 70
           KEEPA_MAX_RETRIES: 5
           DEAL_TTL_HOURS: 24
-        run: python fetch_keepa.py
+        run: python fetch_keepa_history_probe.py
 
       - name: Commit updated scan data
         run: |
