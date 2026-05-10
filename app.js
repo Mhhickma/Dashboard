@@ -354,6 +354,16 @@ function dollarDrop(deal) {
   return Math.max(0, avg7Price - currentPrice);
 }
 
+function dealScore(deal) {
+  const dropPercent = numericValue(deal.drop_percent) || 0;
+  const drop30Percent = numericValue(deal.drop_30_percent) || 0;
+  const savings = dollarDrop(deal) || 0;
+  const freshnessHours = hoursUntil(deal.expires_at);
+  const freshnessBonus = freshnessHours === null ? 0 : Math.max(0, Math.min(24, freshnessHours)) / 24;
+
+  return (dropPercent * 2) + drop30Percent + Math.min(savings, 100) + freshnessBonus;
+}
+
 function compareText(aValue, bValue) {
   return String(aValue || "").localeCompare(String(bValue || ""), undefined, {
     numeric: true,
@@ -374,10 +384,15 @@ function expiresDateValue(deal) {
 }
 
 function sortDeals(deals) {
-  const sortMode = sortSelect ? sortSelect.value : "newest";
+  const sortMode = sortSelect ? sortSelect.value : "best-score";
   const sorted = [...deals];
 
   sorted.sort((a, b) => {
+    if (sortMode === "best-score") {
+      const scoreCompare = compareNullableNumbers(dealScore(a), dealScore(b));
+      return scoreCompare || postedDateValue(b) - postedDateValue(a);
+    }
+
     if (sortMode === "newest-checked") {
       return checkedDateValue(b) - checkedDateValue(a);
     }
