@@ -22,7 +22,7 @@ A personal Amazon deal dashboard that scans ASINs with Keepa, keeps recent price
 - `data/deals.json` - Current dashboard data
 - `data/deals_memory.json` - 24-hour active deal memory
 - `data/scan_state.json` - Rotating scan position
-- `.github/workflows/keepa-rotating-scan.yml` - Manual/external-trigger scanner workflow
+- `.github/workflows/update-deals.yml` - Manual/external-trigger scanner workflow
 
 ## Required Setup
 
@@ -41,7 +41,7 @@ If `ASIN_CSV_URL` is not set, the scanner uses `asins.csv` in this repository.
 
 ## How The Scan Runs
 
-The active workflow is `Keepa Rotating Price Scan` in `.github/workflows/keepa-rotating-scan.yml`.
+The active workflow is `Update Keepa Deals` in `.github/workflows/update-deals.yml`.
 
 It is intentionally configured with `workflow_dispatch` only. That means it can be started manually from GitHub Actions or triggered by an external scheduler such as cron-job.org. The workflow comments currently expect an external trigger every 15 minutes.
 
@@ -79,9 +79,9 @@ The scanner defaults to a 5 percent minimum drop and Amazon US unless those valu
 
 ## Removing ASINs From The Dashboard
 
-The `Remove ASIN` button queues the ASIN locally and hides that card from the dashboard view. Once at least one ASIN is queued, use the `Copy removals` button at the top of the dashboard, then remove those ASINs from the source Google Sheet or `asins.csv`.
+The `Remove ASIN` button calls the connected Google Apps Script web app to remove the ASIN from the source Google Sheet, then hides the card after the sheet confirms the removal.
 
-This avoids pretending that a browser-only static page can confirm a source-sheet delete when no verified backend response is available.
+If the Google Apps Script request fails, the ASIN is queued locally instead. Once at least one ASIN is queued, use the `Copy removals` button at the top of the dashboard, then remove those ASINs from the source Google Sheet manually.
 
 ## Local Testing
 
