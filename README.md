@@ -77,6 +77,12 @@ The workflow currently sets:
 
 The scanner defaults to a 5 percent minimum drop and Amazon US unless those values are changed with environment variables.
 
+## Removing ASINs From The Dashboard
+
+The `Remove ASIN` button queues the ASIN locally and hides that card from the dashboard view. Once at least one ASIN is queued, use the `Copy removals` button at the top of the dashboard, then remove those ASINs from the source Google Sheet or `asins.csv`.
+
+This avoids pretending that a browser-only static page can confirm a source-sheet delete when no verified backend response is available.
+
 ## Local Testing
 
 ```bash
