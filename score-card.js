@@ -41,13 +41,22 @@
     return getDealScore(deal).toFixed(1);
   }
 
+  function bestPriceText(deal) {
+    if (deal.best_price_message) return deal.best_price_message;
+
+    const days = numericValue(deal.best_price_days);
+    if (days === null) return "";
+
+    return `best price in ${days} day${days === 1 ? "" : "s"}`;
+  }
+
   const originalBuildCard = window.buildCard;
   if (typeof originalBuildCard !== "function") return;
 
   window.buildCard = function buildCardWithDealScore(deal, isSelected, isSelectedSection) {
     const card = originalBuildCard(deal, isSelected, isSelectedSection);
     const topRow = card.querySelector(".card-top-row");
-    if (!topRow || card.querySelector(".score-badge")) return card;
+    if (!topRow) return card;
 
     let metrics = topRow.querySelector(".deal-metrics");
     if (!metrics) {
@@ -60,11 +69,22 @@
       topRow.insertBefore(metrics, topRow.firstChild);
     }
 
-    const scoreBadge = document.createElement("span");
-    scoreBadge.className = "score-badge";
-    scoreBadge.title = "Best deal score uses 7-day discount, 30-day discount, dollar savings, and freshness.";
-    scoreBadge.innerHTML = `Deal score <strong>${formatDealScore(deal)}</strong>`;
-    metrics.appendChild(scoreBadge);
+    if (!card.querySelector(".score-badge")) {
+      const scoreBadge = document.createElement("span");
+      scoreBadge.className = "score-badge";
+      scoreBadge.title = "Best deal score uses 7-day discount, 30-day discount, dollar savings, and freshness.";
+      scoreBadge.innerHTML = `Deal score <strong>${formatDealScore(deal)}</strong>`;
+      metrics.appendChild(scoreBadge);
+    }
+
+    const bestPrice = bestPriceText(deal);
+    if (bestPrice && !card.querySelector(".best-price-badge")) {
+      const bestPriceBadge = document.createElement("span");
+      bestPriceBadge.className = "best-price-badge";
+      bestPriceBadge.title = "How long it has been since Keepa history showed this ASIN at or below the current price.";
+      bestPriceBadge.textContent = bestPrice;
+      metrics.appendChild(bestPriceBadge);
+    }
 
     return card;
   };
