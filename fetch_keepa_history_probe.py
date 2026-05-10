@@ -32,32 +32,37 @@ def parse_price_history(product, history_index):
     return entries
 
 
-def previous_comparable_low(product, current_price):
+def best_price_age(product, current_price):
+    """Return how long it has been since this ASIN was at or below today's price."""
     if not current_price:
         return None
 
     cutoff = fetch_keepa.utc_now() - timedelta(hours=24)
-    candidates = []
+    matches = []
 
     for history_index in PRICE_HISTORY_INDEXES:
         for changed_at, price in parse_price_history(product, history_index):
             if changed_at >= cutoff:
                 continue
-            if price >= current_price:
-                candidates.append((price, changed_at, history_index))
+            if price <= current_price:
+                matches.append((changed_at, price, history_index))
 
-    if not candidates:
-        return None
+    if not matches:
+        return {
+            "days": None,
+            "message": "best price in available Keepa history",
+            "prior_price": None,
+            "prior_date": None,
+        }
 
-    price, changed_at, history_index = min(
-        candidates,
-        key=lambda item: (item[0], -item[1].timestamp()),
-    )
+    changed_at, price, history_index = max(matches, key=lambda item: item[0])
+    age_days = max(1, (fetch_keepa.utc_now() - changed_at).days)
 
     return {
-        "price": price,
-        "date": changed_at.date().isoformat(),
-        "days_ago": max(0, (fetch_keepa.utc_now() - changed_at).days),
+        "days": age_days,
+        "message": f"best price in {age_days} days",
+        "prior_price": price,
+        "prior_date": changed_at.date().isoformat(),
         "history_index": history_index,
     }
 
@@ -68,9 +73,9 @@ def print_history_examples(products, limit=HISTORY_EXAMPLE_LIMIT):
     for product in products:
         stats = product.get("stats") or {}
         current_price = fetch_keepa.price_from_stats_array(stats, "current")
-        prior_low = previous_comparable_low(product, current_price)
-        if current_price and prior_low:
-            examples.append((product.get("asin"), current_price, prior_low))
+        age = best_price_age(product, current_price)
+        if current_price and age:
+            examples.append((product.get("asin"), current_price, age))
         if len(examples) >= limit:
             break
 
@@ -79,15 +84,14 @@ def print_history_examples(products, limit=HISTORY_EXAMPLE_LIMIT):
     print("Keepa history probe examples:")
 
     if not examples:
-        print("  No comparable prior lows found in this run's history data.")
+        print("  No usable price-history examples found in this run's history data.")
         return
 
-    for asin, current_price, prior_low in examples:
-        print(
-            f"  {asin}: current ${current_price:.2f}; "
-            f"previous comparable low ${prior_low['price']:.2f} "
-            f"on {prior_low['date']} ({prior_low['days_ago']} days ago)"
-        )
+    for asin, current_price, age in examples:
+        line = f"  {asin}: current ${current_price:.2f}; {age['message']}"
+        if age.get("prior_price") and age.get("prior_date"):
+            line += f"; last at/below this price ${age['prior_price']:.2f} on {age['prior_date']}"
+        print(line)
 
 
 def fetch_keepa_products_with_history_probe(asins):
