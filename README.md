@@ -1,35 +1,71 @@
 # Keepa Price Dashboard
 
-A personal dashboard for scanning a list of Amazon ASINs with Keepa and displaying clickable deal cards.
+A personal Amazon deal dashboard that scans ASINs with Keepa, keeps recent price drops active for 24 hours, and displays clickable deal cards in a static web page.
 
-## What it does
+## What It Does
 
-- Reads ASINs from `asins.csv`
-- Uses the Keepa API to check pricing history
-- Detects products that dropped below their recent average price
-- Writes results to `data/deals.json`
-- Displays the results as cards in `index.html`
+- Reads ASINs from a Google Sheet CSV when `ASIN_CSV_URL` is configured, otherwise from `asins.csv`
+- Scans the ASIN list in rotating windows so large lists can be checked over multiple runs
+- Uses Keepa pricing stats to find products below their recent average price
+- Keeps active deals in `data/deals_memory.json` until their 24-hour TTL expires
+- Writes dashboard data to `data/deals.json`
+- Tracks the next scan position in `data/scan_state.json`
+- Displays searchable, sortable deal cards in `index.html`
 
-## Important setup
+## Repository Layout
 
-Do not put your Keepa API key directly in the code.
+- `fetch_keepa.py` - Keepa scanner, deal detection, memory cleanup, and scan-state rotation
+- `index.html` - Static dashboard page
+- `app.js` - Dashboard filtering, sorting, posting helpers, hide/remove actions, and image fallbacks
+- `styles.css` - Dashboard styling
+- `asins.csv` - Local fallback ASIN list
+- `data/deals.json` - Current dashboard data
+- `data/deals_memory.json` - 24-hour active deal memory
+- `data/scan_state.json` - Rotating scan position
+- `.github/workflows/keepa-rotating-scan.yml` - Manual/external-trigger scanner workflow
 
-For GitHub Actions, add this secret:
+## Required Setup
 
-- `KEEPA_API_KEY`
+Do not put API keys directly in the code.
 
-Optional variable/secret:
+Add this GitHub Actions secret:
 
-- `AMAZON_TAG` — your Amazon affiliate tag, such as `simplewoodsho-20`
+- `KEEPA_API_KEY` - your Keepa API key
 
-## How to use
+Optional GitHub Actions secrets:
 
-1. Add ASINs to `asins.csv`.
-2. Add your Keepa API key as a GitHub secret named `KEEPA_API_KEY`.
-3. Run the GitHub Action manually, or let it run on schedule.
-4. Open the site/dashboard to view price-drop cards.
+- `AMAZON_TAG` - your Amazon affiliate tag, such as `simplewoodsho-20`
+- `ASIN_CSV_URL` - published CSV URL for the Google Sheet ASIN source
 
-## Local testing
+If `ASIN_CSV_URL` is not set, the scanner uses `asins.csv` in this repository.
+
+## How The Scan Runs
+
+The active workflow is `Keepa Rotating Price Scan` in `.github/workflows/keepa-rotating-scan.yml`.
+
+It is intentionally configured with `workflow_dispatch` only. That means it can be started manually from GitHub Actions or triggered by an external scheduler such as cron-job.org. The workflow comments currently expect an external trigger every 15 minutes.
+
+Each run:
+
+1. Installs Python and `requests`.
+2. Runs `python fetch_keepa.py`.
+3. Updates `data/deals.json`, `data/deals_memory.json`, and `data/scan_state.json`.
+4. Commits those data changes back to `main` when anything changed.
+
+## Current Scan Settings
+
+The workflow currently sets:
+
+- `SCAN_LIMIT`: `50`
+- `KEEPA_BATCH_SIZE`: `50`
+- `KEEPA_REQUEST_DELAY_SECONDS`: `2`
+- `KEEPA_RATE_LIMIT_WAIT_SECONDS`: `70`
+- `KEEPA_MAX_RETRIES`: `5`
+- `DEAL_TTL_HOURS`: `24`
+
+The scanner defaults to a 5 percent minimum drop and Amazon US unless those values are changed with environment variables.
+
+## Local Testing
 
 ```bash
 pip install requests
@@ -40,8 +76,14 @@ python fetch_keepa.py
 
 Then open `index.html` in your browser.
 
-## Last scan trigger
+On Windows PowerShell, set temporary environment variables like this:
 
-A harmless README update can be used to trigger the GitHub Action when testing the scanner.
+```powershell
+$env:KEEPA_API_KEY="your_key_here"
+$env:AMAZON_TAG="simplewoodsho-20"
+python fetch_keepa.py
+```
 
-Latest low-token test scan trigger: requested from ChatGPT.
+## Notes
+
+The `data/*.json` files are committed on purpose so the static dashboard can load the latest generated deal data without a separate backend.
