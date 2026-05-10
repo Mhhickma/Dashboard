@@ -25,10 +25,17 @@
         <label class="sort-control" for="sortSelect">
           <span>Sort by</span>
           <select id="sortSelect">
+            <option value="best-score">Best deal score</option>
             <option value="newest">Newest posted</option>
+            <option value="newest-checked">Newest checked</option>
+            <option value="expiring-soon">Expiring soon</option>
             <option value="highest-drop">Highest % off</option>
             <option value="highest-30-drop">Highest 30-day drop</option>
+            <option value="highest-dollar-drop">Biggest dollar drop</option>
             <option value="lowest-price">Lowest current price</option>
+            <option value="highest-price">Highest current price</option>
+            <option value="title-az">Title A-Z</option>
+            <option value="asin-az">ASIN A-Z</option>
           </select>
         </label>
         <input id="searchInput" type="search" placeholder="Search title or ASIN..." />
@@ -59,6 +66,6 @@
     </section>
   </main>
 
-  <script src="app.js?v=load-more-deals-20260507-1"></script>
+  <script src="app.js?v=best-score-sort-20260510-1"></script>
 </body>
 </html>

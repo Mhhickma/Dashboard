@@ -335,31 +335,101 @@ function hoursUntil(value) {
   return Math.max(0, diffMs / (1000 * 60 * 60));
 }
 
+function compareNullableNumbers(aValue, bValue, direction = "desc") {
+  const aNumber = numericValue(aValue);
+  const bNumber = numericValue(bValue);
+
+  if (aNumber === null && bNumber === null) return 0;
+  if (aNumber === null) return 1;
+  if (bNumber === null) return -1;
+
+  return direction === "asc" ? aNumber - bNumber : bNumber - aNumber;
+}
+
+function dollarDrop(deal) {
+  const currentPrice = numericValue(deal.current_price);
+  const avg7Price = numericValue(deal.avg_7_price);
+
+  if (currentPrice === null || avg7Price === null) return null;
+  return Math.max(0, avg7Price - currentPrice);
+}
+
+function dealScore(deal) {
+  const dropPercent = numericValue(deal.drop_percent) || 0;
+  const drop30Percent = numericValue(deal.drop_30_percent) || 0;
+  const savings = dollarDrop(deal) || 0;
+  const freshnessHours = hoursUntil(deal.expires_at);
+  const freshnessBonus = freshnessHours === null ? 0 : Math.max(0, Math.min(24, freshnessHours)) / 24;
+
+  return (dropPercent * 2) + drop30Percent + Math.min(savings, 100) + freshnessBonus;
+}
+
+function compareText(aValue, bValue) {
+  return String(aValue || "").localeCompare(String(bValue || ""), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+function postedDateValue(deal) {
+  return dateValue(deal.posted_at || deal.first_seen_at || deal.checked_at);
+}
+
+function checkedDateValue(deal) {
+  return dateValue(deal.last_checked_at || deal.checked_at);
+}
+
+function expiresDateValue(deal) {
+  return dateValue(deal.expires_at);
+}
+
 function sortDeals(deals) {
-  const sortMode = sortSelect ? sortSelect.value : "newest";
+  const sortMode = sortSelect ? sortSelect.value : "best-score";
   const sorted = [...deals];
 
   sorted.sort((a, b) => {
+    if (sortMode === "best-score") {
+      const scoreCompare = compareNullableNumbers(dealScore(a), dealScore(b));
+      return scoreCompare || postedDateValue(b) - postedDateValue(a);
+    }
+
+    if (sortMode === "newest-checked") {
+      return checkedDateValue(b) - checkedDateValue(a);
+    }
+
+    if (sortMode === "expiring-soon") {
+      return expiresDateValue(a) - expiresDateValue(b);
+    }
+
     if (sortMode === "highest-drop") {
-      return (numericValue(b.drop_percent) || 0) - (numericValue(a.drop_percent) || 0);
+      return compareNullableNumbers(a.drop_percent, b.drop_percent);
     }
 
     if (sortMode === "highest-30-drop") {
-      return (numericValue(b.drop_30_percent) || 0) - (numericValue(a.drop_30_percent) || 0);
+      return compareNullableNumbers(a.drop_30_percent, b.drop_30_percent);
+    }
+
+    if (sortMode === "highest-dollar-drop") {
+      return compareNullableNumbers(dollarDrop(a), dollarDrop(b));
     }
 
     if (sortMode === "lowest-price") {
-      const aPrice = numericValue(a.current_price);
-      const bPrice = numericValue(b.current_price);
-      if (aPrice === null && bPrice === null) return 0;
-      if (aPrice === null) return 1;
-      if (bPrice === null) return -1;
-      return aPrice - bPrice;
+      return compareNullableNumbers(a.current_price, b.current_price, "asc");
     }
 
-    const aPosted = a.posted_at || a.first_seen_at || a.checked_at;
-    const bPosted = b.posted_at || b.first_seen_at || b.checked_at;
-    return dateValue(bPosted) - dateValue(aPosted);
+    if (sortMode === "highest-price") {
+      return compareNullableNumbers(a.current_price, b.current_price);
+    }
+
+    if (sortMode === "title-az") {
+      return compareText(a.title, b.title);
+    }
+
+    if (sortMode === "asin-az") {
+      return compareText(a.asin, b.asin);
+    }
+
+    return postedDateValue(b) - postedDateValue(a);
   });
 
   return sorted;
