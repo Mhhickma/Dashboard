@@ -172,28 +172,17 @@ function hideDeal(asin) {
   applySearch(false);
 }
 
-async function queueRemoveDeal(asin) {
-  const confirmRemove = confirm(`Remove ASIN ${asin} from the spreadsheet?`);
+function queueRemoveDeal(asin) {
+  const confirmRemove = confirm(`Queue ASIN ${asin} for removal?`);
   if (!confirmRemove) return;
 
-  if (!REMOVE_ASIN_WEB_APP_URL || REMOVE_ASIN_WEB_APP_URL.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
-    alert("Remove ASIN is not connected yet. Add your Google Apps Script Web App URL to app.js.");
-    return;
-  }
+  const removeQueue = removeQueueAsins();
+  removeQueue.add(asin);
+  writeSet(REMOVE_QUEUE_KEY, removeQueue);
+  removeFromSelectedForPosting(asin);
+  applySearch(false);
 
-  try {
-    await fetch(REMOVE_ASIN_WEB_APP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({ asin: asin })
-    });
-
-    hideDeal(asin);
-    alert(`Remove request sent for ${asin}. Check the ASIN_List sheet and Remove ASIN Log.`);
-  } catch (error) {
-    alert("Could not connect to the spreadsheet removal script.");
-    console.error(error);
-  }
+  alert(`Queued ${asin} for removal. Use "Copy removals" at the top of the dashboard, then remove those ASINs from the source sheet.`);
 }
 
 function resetHiddenDeals() {
