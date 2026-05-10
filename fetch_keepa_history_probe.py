@@ -7,6 +7,8 @@ KEEPA_TIME_BASE = datetime(2011, 1, 1, tzinfo=timezone.utc)
 # Keepa product csv indexes: 0 Amazon, 1 Marketplace New, 10 New FBA, 17 Buy Box with shipping.
 PRICE_HISTORY_INDEXES = (0, 1, 10, 17)
 _original_fetch_keepa_products = fetch_keepa.fetch_keepa_products
+_original_build_deal = fetch_keepa.build_deal
+_product_history_by_asin = {}
 
 
 def keepa_minutes_to_datetime(value):
@@ -67,6 +69,26 @@ def best_price_age(product, current_price):
     }
 
 
+def add_best_price_age_to_deal(deal, product):
+    if not deal:
+        return deal
+
+    age = best_price_age(product, deal.get("current_price"))
+    if not age:
+        return deal
+
+    deal["best_price_days"] = age.get("days")
+    deal["best_price_message"] = age.get("message")
+    deal["best_price_previous_price"] = age.get("prior_price")
+    deal["best_price_previous_date"] = age.get("prior_date")
+    return deal
+
+
+def build_deal_with_best_price_age(product):
+    deal = _original_build_deal(product)
+    return add_best_price_age_to_deal(deal, product)
+
+
 def print_history_examples(products, limit=HISTORY_EXAMPLE_LIMIT):
     examples = []
 
@@ -105,9 +127,12 @@ def fetch_keepa_products_with_history_probe(asins):
     )
 
     products = _original_fetch_keepa_products(asins)
+    _product_history_by_asin.clear()
+    _product_history_by_asin.update({product.get("asin"): product for product in products if product.get("asin")})
     print_history_examples(products)
     return products
 
 
 fetch_keepa.fetch_keepa_products = fetch_keepa_products_with_history_probe
+fetch_keepa.build_deal = build_deal_with_best_price_age
 fetch_keepa.main()
