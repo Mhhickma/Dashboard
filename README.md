@@ -52,11 +52,17 @@ Each run:
 3. Updates `data/deals.json`, `data/deals_memory.json`, and `data/scan_state.json`.
 4. Commits those data changes back to `main` when anything changed.
 
+## Daily Scan Coverage
+
+With a 15-minute external trigger, the workflow can run 96 times per day.
+
+The current `SCAN_LIMIT` is `80`, which covers up to 7,680 ASINs per day. That is intended to scan the current list of about 7,407 ASINs once per day, with a small buffer for growth.
+
 ## Current Scan Settings
 
 The workflow currently sets:
 
-- `SCAN_LIMIT`: `50`
+- `SCAN_LIMIT`: `80`
 - `KEEPA_BATCH_SIZE`: `50`
 - `KEEPA_REQUEST_DELAY_SECONDS`: `2`
 - `KEEPA_RATE_LIMIT_WAIT_SECONDS`: `70`
