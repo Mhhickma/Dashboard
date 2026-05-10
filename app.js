@@ -172,27 +172,70 @@ function hideDeal(asin) {
   applySearch(false);
 }
 
+function removeAsinWithScript(asin) {
+  return new Promise((resolve, reject) => {
+    if (!REMOVE_ASIN_WEB_APP_URL || REMOVE_ASIN_WEB_APP_URL.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
+      reject(new Error("Remove ASIN is not connected yet."));
+      return;
+    }
+
+    const callbackName = `handleAsinRemoval_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    const url = new URL(REMOVE_ASIN_WEB_APP_URL);
+    let timeoutId = null;
+
+    function cleanup() {
+      if (timeoutId) clearTimeout(timeoutId);
+      delete window[callbackName];
+      script.remove();
+    }
+
+    window[callbackName] = (payload) => {
+      cleanup();
+      resolve(payload);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Could not connect to the ASIN removal script."));
+    };
+
+    timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error("The ASIN removal script did not respond."));
+    }, 15000);
+
+    url.searchParams.set("action", "removeAsin");
+    url.searchParams.set("asin", asin);
+    url.searchParams.set("callback", callbackName);
+    script.src = url.toString();
+    document.head.appendChild(script);
+  });
+}
+
 async function queueRemoveDeal(asin) {
-  const confirmRemove = confirm(`Remove ASIN ${asin} from the spreadsheet?`);
+  const confirmRemove = confirm(`Remove ASIN ${asin} from the source sheet?`);
   if (!confirmRemove) return;
 
-  if (!REMOVE_ASIN_WEB_APP_URL || REMOVE_ASIN_WEB_APP_URL.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
-    alert("Remove ASIN is not connected yet. Add your Google Apps Script Web App URL to app.js.");
-    return;
-  }
-
   try {
-    await fetch(REMOVE_ASIN_WEB_APP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({ asin: asin })
-    });
+    const result = await removeAsinWithScript(asin);
+
+    if (!result || !result.ok) {
+      const message = result && result.error ? result.error : "The source sheet did not confirm removal.";
+      alert(`Could not remove ${asin}: ${message}`);
+      return;
+    }
 
     hideDeal(asin);
-    alert(`Remove request sent for ${asin}. Check the ASIN_List sheet and Remove ASIN Log.`);
+    alert(`Removed ${asin} from ${result.sheet || "the source sheet"}.`);
   } catch (error) {
-    alert("Could not connect to the spreadsheet removal script.");
-    console.error(error);
+    const removeQueue = removeQueueAsins();
+    removeQueue.add(asin);
+    writeSet(REMOVE_QUEUE_KEY, removeQueue);
+    removeFromSelectedForPosting(asin);
+    applySearch(false);
+
+    alert(`${error.message} ${asin} was queued locally instead. Use "Copy removals" at the top of the dashboard if you need to remove it manually.`);
   }
 }
 
