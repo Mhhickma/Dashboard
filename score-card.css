@@ -6,7 +6,8 @@
 }
 
 .score-badge,
-.best-price-badge {
+.best-price-badge,
+.quality-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -27,6 +28,61 @@
   color: #9a3412;
 }
 
+.quality-badge {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.quality-elite {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.quality-strong {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.quality-good {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.quality-watch {
+  background: #f8fafc;
+  color: #475569;
+}
+
 .score-badge strong {
   font-size: 0.92rem;
+}
+
+.deal-reason {
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.scan-health {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.clear-posted {
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: white;
+  color: #9a3412;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.clear-posted:hover {
+  background: #fff7ed;
 }
