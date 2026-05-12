@@ -143,8 +143,9 @@
     window.updateCounts = function updateCountsWithPosted(renderedCount, selectedCount, totalMatchingCount) {
       originalUpdateCounts(renderedCount, selectedCount, totalMatchingCount);
       const postedCount = postedAsins().size;
-      if (postedCount > 0 && window.dealCountEl) {
-        window.dealCountEl.innerHTML += ` <button class="clear-posted" type="button" onclick="resetPostedDeals()">Show posted (${postedCount})</button>`;
+      const dealCountEl = document.getElementById("dealCount");
+      if (postedCount > 0 && dealCountEl) {
+        dealCountEl.innerHTML += ` <button class="clear-posted" type="button" onclick="resetPostedDeals()">Show posted (${postedCount})</button>`;
       }
     };
   }
@@ -214,7 +215,8 @@
   }
 
   async function renderScanHealth() {
-    if (!window.updatedAtEl) return;
+    const updatedAtEl = document.getElementById("updatedAt");
+    if (!updatedAtEl || updatedAtEl.querySelector(".scan-health")) return;
 
     try {
       const response = await fetch("data/deals.json", { cache: "no-store" });
@@ -232,10 +234,10 @@
       if (tokenTest.estimated_tokens_for_run) details.push(`~${tokenTest.estimated_tokens_for_run} token estimate`);
 
       if (details.length) {
-        window.updatedAtEl.innerHTML += `<br><span class="scan-health">${details.join(" · ")}</span>`;
+        updatedAtEl.innerHTML += `<br><span class="scan-health">${details.join(" · ")}</span>`;
       }
     } catch {}
   }
 
-  renderScanHealth();
+  setTimeout(renderScanHealth, 1000);
 })();
