@@ -2,19 +2,24 @@ import csv
 import io
 import json
 import os
+import re
+import sys
 import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import requests
 
+try:
+    csv.field_size_limit(sys.maxsize)
+except OverflowError:
+    csv.field_size_limit(1024 * 1024 * 1024)
+
 KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
 AMAZON_TAG = os.getenv("AMAZON_TAG") or "simplewoodsho-20"
-DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))  # 1 = Amazon US
+DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))
 MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "5"))
 
-# These can be controlled from GitHub Actions env.
-# Defaults are set here if GitHub does not provide them.
 BATCH_SIZE = int(os.getenv("KEEPA_BATCH_SIZE", "50"))
 REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "2"))
 RATE_LIMIT_WAIT_SECONDS = int(os.getenv("KEEPA_RATE_LIMIT_WAIT_SECONDS", "70"))
@@ -22,11 +27,16 @@ MAX_RETRIES = int(os.getenv("KEEPA_MAX_RETRIES", "5"))
 SCAN_LIMIT = int(os.getenv("SCAN_LIMIT", "100"))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 
+CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/influencer-prospects")
+CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "creator-connections")
+CREATOR_CONNECTIONS_REF = os.getenv("CREATOR_CONNECTIONS_REF", "main")
+
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
 OUTPUT_FILE = Path("data/deals.json")
 STATE_FILE = Path("data/scan_state.json")
 MEMORY_FILE = Path("data/deals_memory.json")
+ASIN_RE = re.compile(r"\bB[0-9A-Z]{9}\b")
 
 
 def utc_now():
@@ -41,7 +51,22 @@ def parse_iso_datetime(value):
     if not value:
         return None
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def parse_campaign_date(value):
+    value = str(value or "").strip()
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            pass
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
     except Exception:
         return None
 
@@ -92,58 +117,35 @@ def get_product_image(product, asin):
 
 
 def asins_from_csv_text(csv_text, source_name):
-    """
-    Reads ASINs from Column A first, then Column B.
-    Skips blanks, headers, invalid ASINs, and duplicates.
-    Keeps the first copy found.
-    """
-
     asins = []
     seen = set()
-
-    reader = csv.reader(io.StringIO(csv_text))
-    rows = list(reader)
+    rows = list(csv.reader(io.StringIO(csv_text)))
 
     if not rows:
         raise ValueError(f"No rows found in {source_name}")
 
-    # Skip header row.
-    data_rows = rows[1:]
-
     def add_asin(value):
         asin = str(value or "").strip().upper()
-
-        # Skip blanks and header text.
-        if not asin:
+        if not asin or asin in ("ASIN", "ASINS"):
             return
-        if asin in ("ASIN", "ASINS"):
-            return
-
-        # Amazon ASINs are normally 10 characters.
         if len(asin) != 10:
             print(f"Skipping invalid ASIN value: {asin}")
             return
-
-        # Skip duplicates.
         if asin in seen:
             return
-
         seen.add(asin)
         asins.append(asin)
 
-    # Column A first.
-    for row in data_rows:
+    for row in rows[1:]:
         if len(row) > 0:
             add_asin(row[0])
 
-    # Column B second.
-    for row in data_rows:
+    for row in rows[1:]:
         if len(row) > 1:
             add_asin(row[1])
 
     print(f"Loaded {len(asins)} unique ASINs from {source_name}")
     print("ASIN scan order: Column A first, then Column B")
-
     return asins
 
 
@@ -157,26 +159,18 @@ def read_asins_from_google_sheet():
 def read_asins_from_local_file():
     if not ASIN_FILE.exists():
         raise FileNotFoundError("Missing asins.csv")
-
-    with ASIN_FILE.open(newline="", encoding="utf-8") as f:
-        return asins_from_csv_text(f.read(), "asins.csv")
+    return asins_from_csv_text(ASIN_FILE.read_text(encoding="utf-8"), "asins.csv")
 
 
 def read_all_asins():
     try:
-        if ASIN_CSV_URL:
-            asins = read_asins_from_google_sheet()
-        else:
-            asins = read_asins_from_local_file()
+        return read_asins_from_google_sheet() if ASIN_CSV_URL else read_asins_from_local_file()
     except Exception as exc:
         if ASIN_CSV_URL:
             print(f"Could not read Google Sheet CSV: {exc}")
             print("Falling back to local asins.csv")
-            asins = read_asins_from_local_file()
-        else:
-            raise
-
-    return asins
+            return read_asins_from_local_file()
+        raise
 
 
 def load_scan_state():
@@ -184,8 +178,7 @@ def load_scan_state():
         return {"next_start_index": 0}
 
     try:
-        with STATE_FILE.open("r", encoding="utf-8") as f:
-            state = json.load(f)
+        state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
         if not isinstance(state.get("next_start_index"), int):
             state["next_start_index"] = 0
         return state
@@ -196,8 +189,7 @@ def load_scan_state():
 
 def save_scan_state(state):
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with STATE_FILE.open("w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2)
+    STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
 def load_deal_memory():
@@ -205,8 +197,7 @@ def load_deal_memory():
         return {}
 
     try:
-        with MEMORY_FILE.open("r", encoding="utf-8") as f:
-            payload = json.load(f)
+        payload = json.loads(MEMORY_FILE.read_text(encoding="utf-8"))
         if isinstance(payload, dict) and isinstance(payload.get("deals"), dict):
             return payload["deals"]
         if isinstance(payload, dict):
@@ -219,16 +210,17 @@ def load_deal_memory():
 
 def save_deal_memory(memory):
     MEMORY_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with MEMORY_FILE.open("w", encoding="utf-8") as f:
-        json.dump(
+    MEMORY_FILE.write_text(
+        json.dumps(
             {
                 "updated_at": iso_now(),
                 "deal_ttl_hours": DEAL_TTL_HOURS,
                 "deals": memory,
             },
-            f,
             indent=2,
-        )
+        ),
+        encoding="utf-8",
+    )
 
 
 def purge_expired_deals(memory):
@@ -237,9 +229,7 @@ def purge_expired_deals(memory):
     expired_count = 0
 
     for asin, deal in memory.items():
-        posted_at = parse_iso_datetime(
-            deal.get("posted_at") or deal.get("first_seen_at") or deal.get("checked_at")
-        )
+        posted_at = parse_iso_datetime(deal.get("posted_at") or deal.get("first_seen_at") or deal.get("checked_at"))
         if posted_at and posted_at > cutoff:
             kept[asin] = deal
         else:
@@ -247,7 +237,6 @@ def purge_expired_deals(memory):
 
     if expired_count:
         print(f"Purged {expired_count} expired deals older than {DEAL_TTL_HOURS} hours")
-
     return kept, expired_count
 
 
@@ -264,7 +253,6 @@ def merge_deals_with_memory(memory, new_deals):
 
         previous = memory.get(asin, {})
         posted_at = previous.get("posted_at") or previous.get("first_seen_at") or now_iso
-
         merged = {
             **previous,
             **deal,
@@ -278,7 +266,6 @@ def merge_deals_with_memory(memory, new_deals):
             updated_count += 1
         else:
             added_count += 1
-
         memory[asin] = merged
 
     return memory, added_count, updated_count
@@ -291,7 +278,6 @@ def select_asins_for_run(all_asins):
 
     limit = SCAN_LIMIT if SCAN_LIMIT > 0 else total
     limit = min(limit, total)
-
     state = load_scan_state()
     start_index = state.get("next_start_index", 0)
     if start_index >= total or start_index < 0:
@@ -327,6 +313,147 @@ def select_asins_for_run(all_asins):
     return selected, new_state, start_index, next_start_index
 
 
+def normalize_commission(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    if raw.endswith("%"):
+        number = raw[:-1].strip()
+    else:
+        number = raw
+    try:
+        numeric = float(number)
+        if numeric.is_integer():
+            return f"{int(numeric)}%"
+        return f"{numeric:g}%"
+    except ValueError:
+        return raw
+
+
+def commission_number(value):
+    text = normalize_commission(value).replace("%", "")
+    try:
+        return float(text)
+    except ValueError:
+        return 0.0
+
+
+def campaign_from_row(row, today):
+    start_date = parse_campaign_date(row.get("Campaign Start Date"))
+    end_date = parse_campaign_date(row.get("Campaign End Date"))
+    active = (start_date is None or start_date <= today) and (end_date is None or end_date >= today)
+    recommended = str(row.get("Recommended", "")).strip().lower() == "true"
+
+    return {
+        "campaign_id": str(row.get("Campaign Id", "")).strip(),
+        "campaign_name": str(row.get("Campaign Name", "")).strip(),
+        "campaign_brand": str(row.get("Brand Name", "")).strip(),
+        "commission_rate": normalize_commission(row.get("Commission Rate", "")),
+        "campaign_start_date": str(row.get("Campaign Start Date", "")).strip(),
+        "campaign_end_date": str(row.get("Campaign End Date", "")).strip(),
+        "recommended": recommended,
+        "active": active,
+    }
+
+
+def campaign_rank(campaign):
+    return (
+        1 if campaign.get("recommended") else 0,
+        commission_number(campaign.get("commission_rate")),
+        campaign.get("campaign_end_date") or "",
+    )
+
+
+def creator_connection_file_urls():
+    api_url = (
+        f"https://api.github.com/repos/{CREATOR_CONNECTIONS_REPO}/contents/"
+        f"{CREATOR_CONNECTIONS_PATH}?ref={CREATOR_CONNECTIONS_REF}"
+    )
+    response = requests.get(api_url, timeout=45)
+    response.raise_for_status()
+    files = response.json()
+    urls = []
+    for item in files:
+        if item.get("type") == "file" and item.get("name", "").lower().endswith(".csv"):
+            download_url = item.get("download_url")
+            if download_url:
+                urls.append(download_url)
+    return urls
+
+
+def find_creator_campaigns_for_asins(target_asins):
+    target_asins = {str(asin).strip().upper() for asin in target_asins if asin}
+    if not target_asins:
+        return {}, {"files_scanned": 0, "rows_scanned": 0, "asins_matched": 0}
+
+    today = utc_now().date()
+    matches = {}
+    files_scanned = 0
+    rows_scanned = 0
+
+    try:
+        urls = creator_connection_file_urls()
+    except Exception as exc:
+        print(f"Could not list Creator Connections files: {exc}")
+        return matches, {"files_scanned": 0, "rows_scanned": 0, "asins_matched": 0}
+
+    print(f"Checking Creator campaign status for {len(target_asins)} dashboard ASINs...")
+
+    for url in urls:
+        files_scanned += 1
+        print(f"Scanning Creator Connections file {files_scanned}/{len(urls)}")
+        try:
+            with requests.get(url, stream=True, timeout=180) as response:
+                response.raise_for_status()
+                lines = response.iter_lines(decode_unicode=True)
+                reader = csv.DictReader(lines)
+                for row in reader:
+                    rows_scanned += 1
+                    asin_list = row.get("ASIN List", "")
+                    row_asins = set(ASIN_RE.findall(asin_list.upper()))
+                    relevant_asins = target_asins.intersection(row_asins)
+                    if not relevant_asins:
+                        continue
+
+                    campaign = campaign_from_row(row, today)
+                    if not campaign.get("active"):
+                        continue
+
+                    for asin in relevant_asins:
+                        existing = matches.get(asin)
+                        if existing and campaign_rank(existing) >= campaign_rank(campaign):
+                            continue
+                        matches[asin] = campaign
+        except Exception as exc:
+            print(f"Could not scan Creator Connections file {url}: {exc}")
+
+    print(
+        f"Creator Connections: matched {len(matches)} ASINs "
+        f"from {files_scanned} files and {rows_scanned} rows"
+    )
+    return matches, {
+        "files_scanned": files_scanned,
+        "rows_scanned": rows_scanned,
+        "asins_matched": len(matches),
+    }
+
+
+def apply_creator_campaigns(memory, campaign_by_asin):
+    matched = 0
+    for asin, deal in memory.items():
+        campaign = campaign_by_asin.get(str(asin).upper())
+        if campaign:
+            deal["has_creator_campaign"] = True
+            deal["creator_campaign"] = campaign
+            deal["creator_commission_rate"] = campaign.get("commission_rate", "")
+            matched += 1
+        else:
+            deal.pop("has_creator_campaign", None)
+            deal.pop("creator_campaign", None)
+            deal.pop("creator_commission_rate", None)
+    return matched
+
+
 def fetch_keepa_batch(url, params, batch_number):
     for attempt in range(1, MAX_RETRIES + 1):
         response = requests.get(url, params=params, timeout=60)
@@ -360,7 +487,6 @@ def fetch_keepa_products(asins):
         batch = asins[i : i + BATCH_SIZE]
         batch_number = (i // BATCH_SIZE) + 1
         print(f"Fetching batch {batch_number}: {len(batch)} ASINs")
-
         params = {
             "key": KEEPA_API_KEY,
             "domain": DOMAIN_ID,
@@ -399,7 +525,6 @@ def build_deal(product):
 
     if not current_price or not avg_7_price or not min_7_price:
         return None
-
     if current_price >= avg_7_price:
         return None
 
@@ -452,6 +577,9 @@ def main():
     memory = load_deal_memory()
     memory, expired_count = purge_expired_deals(memory)
 
+    campaign_target_asins = set(asins) | set(memory.keys())
+    campaign_by_asin, campaign_stats = find_creator_campaigns_for_asins(campaign_target_asins)
+
     products = fetch_keepa_products(asins)
     print(f"Fetched {len(products)} products from Keepa")
 
@@ -474,16 +602,14 @@ def main():
             scan_deals.append(deal)
 
     memory, added_count, updated_count = merge_deals_with_memory(memory, scan_deals)
+    creator_campaign_deal_count = apply_creator_campaigns(memory, campaign_by_asin)
 
     all_deals = list(memory.values())
-    all_deals.sort(
-        key=lambda item: item.get("posted_at") or item.get("checked_at") or "",
-        reverse=True,
-    )
+    all_deals.sort(key=lambda item: item.get("posted_at") or item.get("checked_at") or "", reverse=True)
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with OUTPUT_FILE.open("w", encoding="utf-8") as f:
-        json.dump(
+    OUTPUT_FILE.write_text(
+        json.dumps(
             {
                 "updated_at": iso_now(),
                 "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
@@ -496,6 +622,12 @@ def main():
                 "expired_deals_removed": expired_count,
                 "skipped_count": skipped,
                 "missing_image_count": missing_images,
+                "creator_campaign_deal_count": creator_campaign_deal_count,
+                "creator_connections": {
+                    "repo": CREATOR_CONNECTIONS_REPO,
+                    "path": CREATOR_CONNECTIONS_PATH,
+                    **campaign_stats,
+                },
                 "scan_window": {
                     "total_asins": len(all_asins),
                     "start_index": start_index,
@@ -515,15 +647,17 @@ def main():
                 },
                 "deals": all_deals,
             },
-            f,
             indent=2,
-        )
+        ),
+        encoding="utf-8",
+    )
 
     save_deal_memory(memory)
     save_scan_state(new_state)
 
     print(f"Found {len(scan_deals)} price drops in this scan")
     print(f"Added {added_count} new deals and updated {updated_count} existing deals")
+    print(f"Marked {creator_campaign_deal_count} active deals with Creator campaign commission data")
     print(f"Saved {len(all_deals)} active 24-hour deals to {OUTPUT_FILE}")
     print(f"Saved deal memory to {MEMORY_FILE}")
     print(f"Saved next scan start index {new_state['next_start_index']} to {STATE_FILE}")
