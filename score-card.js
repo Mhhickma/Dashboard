@@ -46,6 +46,24 @@
     return rawUrl;
   }
 
+  function creatorCampaignText(deal) {
+    const campaign = deal && deal.creator_campaign;
+    if (!campaign && !(deal && deal.has_creator_campaign)) return "";
+
+    const commission = (campaign && campaign.commission_rate) || deal.creator_commission_rate || "";
+    const brand = campaign && campaign.campaign_brand;
+    const name = campaign && campaign.campaign_name;
+    const parts = ["Creator campaign"];
+
+    if (commission) parts.push(`${commission} commission`);
+    if (brand) parts.push(brand);
+
+    return {
+      label: parts.join(" - "),
+      title: name || parts.join(" - "),
+    };
+  }
+
   function injectAffiliateStyles() {
     if (document.getElementById("affiliate-copy-card-styles")) return;
 
@@ -80,6 +98,20 @@
 
       .link-actions .button {
         margin-top: 0;
+      }
+
+      .creator-campaign-badge {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        border: 1px solid #fed7aa;
+        border-radius: 999px;
+        padding: 7px 10px;
+        background: #fff7ed;
+        color: #9a3412;
+        font-size: 0.84rem;
+        font-weight: 900;
+        line-height: 1.2;
       }
     `;
     document.head.appendChild(style);
@@ -186,7 +218,7 @@
     if (drop30 !== null) parts.push(`${drop30}% below 30-day avg`);
     if (savings !== null && savings > 0) parts.push(`${money(savings)} drop`);
 
-    return parts.slice(0, 4).join(" · ");
+    return parts.slice(0, 4).join(" - ");
   }
 
   function readPostedMap() {
@@ -288,6 +320,16 @@
         actionWrap.appendChild(openButton);
       }
 
+      const campaignInfo = creatorCampaignText(deal);
+      const asinLine = card.querySelector(".asin");
+      if (campaignInfo && asinLine && !card.querySelector(".creator-campaign-badge")) {
+        const campaignBadge = document.createElement("div");
+        campaignBadge.className = "creator-campaign-badge";
+        campaignBadge.textContent = campaignInfo.label;
+        campaignBadge.title = campaignInfo.title;
+        asinLine.insertAdjacentElement("afterend", campaignBadge);
+      }
+
       if (!topRow) return card;
 
       let metrics = topRow.querySelector(".deal-metrics");
@@ -356,16 +398,19 @@
       const scan = data.scan_window || {};
       const settings = data.settings || {};
       const tokenTest = data.token_test || {};
+      const creatorConnections = data.creator_connections || {};
       const details = [];
 
       if (scan.scan_count && scan.total_asins) details.push(`scanned ${scan.scan_count} of ${scan.total_asins}`);
       if (scan.next_start_sheet_row) details.push(`next row ${scan.next_start_sheet_row}`);
       if (data.deal_count !== undefined) details.push(`${data.deal_count} active deals`);
+      if (data.creator_campaign_deal_count !== undefined) details.push(`${data.creator_campaign_deal_count} creator campaigns`);
       if (settings.scan_limit) details.push(`${settings.scan_limit}/run`);
       if (tokenTest.estimated_tokens_for_run) details.push(`~${tokenTest.estimated_tokens_for_run} token estimate`);
+      if (creatorConnections.asins_matched !== undefined) details.push(`${creatorConnections.asins_matched} campaign ASIN matches`);
 
       if (details.length) {
-        updatedAtEl.innerHTML += `<br><span class="scan-health">${details.join(" · ")}</span>`;
+        updatedAtEl.innerHTML += `<br><span class="scan-health">${details.join(" - ")}</span>`;
       }
     } catch {}
   }
