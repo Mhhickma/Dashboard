@@ -1,6 +1,7 @@
 (() => {
   const POSTED_DEALS_KEY = "keepa-dashboard-posted-asins";
   const POSTED_HIDE_FOR_HOURS = 72;
+  const AMAZON_AFFILIATE_TAG = "simplewoodsho-20";
 
   function numericValue(value) {
     const number = Number(value);
@@ -19,6 +20,112 @@
     if (number === null) return "N/A";
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(number);
   }
+
+  function affiliateUrlForAsin(asin) {
+    const cleanAsin = String(asin || "").trim();
+    if (!cleanAsin) return "#";
+    return `https://www.amazon.com/dp/${encodeURIComponent(cleanAsin)}?tag=${encodeURIComponent(AMAZON_AFFILIATE_TAG)}`;
+  }
+
+  function affiliateUrlForDeal(deal) {
+    if (deal && deal.asin) return affiliateUrlForAsin(deal.asin);
+
+    const rawUrl = String((deal && (deal.amazon_url || deal.url || deal.link)) || "").trim();
+    if (!rawUrl) return "#";
+
+    try {
+      const url = new URL(rawUrl, window.location.href);
+      const asinMatch = url.pathname.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+      if (asinMatch) return affiliateUrlForAsin(asinMatch[1].toUpperCase());
+      if (url.hostname.includes("amazon.")) {
+        url.searchParams.set("tag", AMAZON_AFFILIATE_TAG);
+        return url.toString();
+      }
+    } catch {}
+
+    return rawUrl;
+  }
+
+  function injectAffiliateStyles() {
+    if (document.getElementById("affiliate-copy-card-styles")) return;
+
+    const style = document.createElement("style");
+    style.id = "affiliate-copy-card-styles";
+    style.textContent = `
+      .link-actions {
+        display: grid;
+        grid-template-columns: minmax(104px, 0.8fr) minmax(140px, 1.2fr);
+        gap: 10px;
+        margin-top: auto;
+      }
+
+      .copy-link-card {
+        border: 1px solid #bbf7d0;
+        border-radius: 14px;
+        padding: 12px;
+        background: white;
+        color: #15803d;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.86rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .copy-link-card:hover,
+      .copy-link-card.copied {
+        background: #f0fdf4;
+        color: #166534;
+      }
+
+      .link-actions .button {
+        margin-top: 0;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  window.copyAmazonAffiliateLink = async function copyAmazonAffiliateLink(asin, button) {
+    const affiliateUrl = affiliateUrlForAsin(asin);
+
+    try {
+      await navigator.clipboard.writeText(affiliateUrl);
+      if (button) {
+        const originalText = button.textContent;
+        button.textContent = "Copied";
+        button.classList.add("copied");
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.classList.remove("copied");
+        }, 1600);
+      }
+    } catch {
+      prompt("Copy this affiliate link:", affiliateUrl);
+    }
+  };
+
+  window.copySelectedLinks = async function copySelectedLinks() {
+    const selectedAsins = typeof window.selectedForPostingAsins === "function" ? window.selectedForPostingAsins() : new Set();
+    const visible = typeof window.visibleDeals === "function" ? window.visibleDeals() : [];
+    const sorted = typeof window.sortDeals === "function" ? window.sortDeals(visible) : visible;
+    const selectedDeals = sorted.filter((deal) => selectedAsins.has(deal.asin));
+
+    if (selectedDeals.length === 0) {
+      alert("No selected links to copy.");
+      return;
+    }
+
+    const text = selectedDeals
+      .map((deal) => `${deal.title}\n${affiliateUrlForDeal(deal)}`)
+      .join("\n\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      alert(`Copied ${selectedDeals.length} selected link${selectedDeals.length === 1 ? "" : "s"}.`);
+    } catch {
+      prompt("Copy these selected links:", text);
+    }
+  };
 
   function fallbackDollarDrop(deal) {
     const currentPrice = numericValue(deal.current_price);
@@ -155,8 +262,32 @@
   const originalBuildCard = window.buildCard;
   if (typeof originalBuildCard === "function") {
     window.buildCard = function buildCardWithUxUpgrades(deal, isSelected, isSelectedSection) {
+      injectAffiliateStyles();
+
       const card = originalBuildCard(deal, isSelected, isSelectedSection);
       const topRow = card.querySelector(".card-top-row");
+      const affiliateUrl = affiliateUrlForDeal(deal);
+
+      card.querySelectorAll(".image-wrap, .button").forEach((link) => {
+        link.href = affiliateUrl;
+      });
+
+      const openButton = card.querySelector(".button");
+      if (openButton && !card.querySelector(".copy-link-card")) {
+        const actionWrap = document.createElement("div");
+        actionWrap.className = "link-actions";
+
+        const copyButton = document.createElement("button");
+        copyButton.className = "copy-link-card";
+        copyButton.type = "button";
+        copyButton.textContent = "Copy Link";
+        copyButton.addEventListener("click", () => window.copyAmazonAffiliateLink(deal.asin, copyButton));
+
+        openButton.insertAdjacentElement("beforebegin", actionWrap);
+        actionWrap.appendChild(copyButton);
+        actionWrap.appendChild(openButton);
+      }
+
       if (!topRow) return card;
 
       let metrics = topRow.querySelector(".deal-metrics");
