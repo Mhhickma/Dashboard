@@ -46,21 +46,60 @@
     return rawUrl;
   }
 
+  function parseCampaignDate(value) {
+    const text = String(value || "").trim();
+    if (!text) return null;
+
+    const isoMatch = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (isoMatch) {
+      return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+    }
+
+    const slashMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+    if (slashMatch) {
+      let year = Number(slashMatch[3]);
+      if (year < 100) year += 2000;
+      return new Date(year, Number(slashMatch[1]) - 1, Number(slashMatch[2]));
+    }
+
+    const parsed = new Date(text);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function campaignDaysLeftText(campaign) {
+    if (!campaign) return "";
+    const endDate = parseCampaignDate(campaign.campaign_end_date);
+    if (!endDate) return "";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (!Number.isFinite(daysLeft)) return "";
+    if (daysLeft < 0) return "campaign ended";
+    if (daysLeft === 0) return "ends today";
+    return `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
+  }
+
   function creatorCampaignText(deal) {
     const campaign = deal && deal.creator_campaign;
     if (!campaign && !(deal && deal.has_creator_campaign)) return "";
 
     const commission = (campaign && campaign.commission_rate) || deal.creator_commission_rate || "";
+    const daysLeft = campaignDaysLeftText(campaign);
     const brand = campaign && campaign.campaign_brand;
     const name = campaign && campaign.campaign_name;
+    const endDate = campaign && campaign.campaign_end_date;
     const parts = ["Creator campaign"];
 
     if (commission) parts.push(`${commission} commission`);
+    if (daysLeft) parts.push(daysLeft);
     if (brand) parts.push(brand);
 
     return {
       label: parts.join(" - "),
-      title: name || parts.join(" - "),
+      title: [name, endDate ? `Ends ${endDate}` : ""].filter(Boolean).join(" - ") || parts.join(" - "),
     };
   }
 
@@ -104,6 +143,7 @@
         display: inline-flex;
         align-items: center;
         width: fit-content;
+        max-width: 100%;
         border: 1px solid #fed7aa;
         border-radius: 999px;
         padding: 7px 10px;
@@ -112,6 +152,7 @@
         font-size: 0.84rem;
         font-weight: 900;
         line-height: 1.2;
+        white-space: normal;
       }
     `;
     document.head.appendChild(style);
