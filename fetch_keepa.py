@@ -582,18 +582,15 @@ def build_deal(product):
     avg_30_price = price_from_stats_array(stats, "avg30")
     min_30_price = None
 
-    if not current_price or not avg_7_price or not min_7_price:
+    if not current_price or not avg_7_price or not min_7_price or not avg_30_price:
         return None
-    if current_price >= avg_7_price:
+    if current_price >= avg_30_price:
         return None
 
     drop_percent = round(((avg_7_price - current_price) / avg_7_price) * 100, 1)
-    if drop_percent < MIN_DROP_PERCENT:
+    drop_30_percent = round(((avg_30_price - current_price) / avg_30_price) * 100, 1)
+    if drop_30_percent < MIN_DROP_PERCENT:
         return None
-
-    drop_30_percent = None
-    if avg_30_price and current_price < avg_30_price:
-        drop_30_percent = round(((avg_30_price - current_price) / avg_30_price) * 100, 1)
 
     image = get_product_image(product, asin)
     amazon_url = f"https://www.amazon.com/dp/{asin}?tag={AMAZON_TAG}"
@@ -609,7 +606,7 @@ def build_deal(product):
         "min_30_price": min_30_price,
         "drop_percent": drop_percent,
         "drop_30_percent": drop_30_percent,
-        "price_stats_source": "keepa_stats_7_days",
+        "price_stats_source": "keepa_stats_30_day_threshold",
         "image": image,
         "amazon_url": amazon_url,
         "checked_at": checked_at,
@@ -630,7 +627,8 @@ def main():
     print(f"Rate-limit retry wait: {RATE_LIMIT_WAIT_SECONDS} seconds")
     print(f"Scan limit: {SCAN_LIMIT if SCAN_LIMIT > 0 else 'off'}")
     print(f"Deal TTL: {DEAL_TTL_HOURS} hours")
-    print("Keepa stats=7 is used: avg = 7-day average, minInInterval = 7-day low")
+    print("Deal threshold: current price must be at least 5% below the Keepa 30-day average")
+    print("Keepa stats=7 is still used for 7-day average and 7-day low display values")
     print(f"ASIN source: {'Google Sheet CSV' if ASIN_CSV_URL else 'local asins.csv'}")
 
     memory = load_deal_memory()
@@ -672,7 +670,7 @@ def main():
             {
                 "updated_at": iso_now(),
                 "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
-                "comparison_window": "Keepa stats=7 for 7-day average and 7-day low",
+                "comparison_window": "Deals qualify at 5% below Keepa 30-day average; 7-day average and low are shown for context",
                 "deal_ttl_hours": DEAL_TTL_HOURS,
                 "deal_count": len(all_deals),
                 "new_scan_deal_count": len(scan_deals),

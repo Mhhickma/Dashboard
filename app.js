@@ -570,7 +570,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
     </a>
     <div class="card-body">
       <div class="card-top-row">
-        <span class="badge">${deal.drop_percent}% below 7-day average</span>
+        <span class="badge">${deal.drop_30_percent}% below 30-day average</span>
         <div class="card-actions">
           <button class="hide-card" type="button" onclick="hideDeal('${deal.asin}')">Hide 24h</button>
           <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}')">Remove ASIN</button>

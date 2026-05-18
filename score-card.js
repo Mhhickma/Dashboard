@@ -269,7 +269,7 @@
     const savings = fallbackDollarDrop(deal);
 
     if (bestPrice) parts.push(bestPrice);
-    if (drop !== null) parts.push(`${drop}% below 7-day avg`);
+    if (drop !== null && drop > 0) parts.push(`${drop}% below 7-day avg`);
     if (drop30 !== null) parts.push(`${drop30}% below 30-day avg`);
     if (savings !== null && savings > 0) parts.push(`${money(savings)} drop`);
 
