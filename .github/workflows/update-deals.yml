@@ -4,6 +4,8 @@ on:
   # cron-job.org should trigger this workflow every 15 minutes.
   # GitHub's built-in schedule is intentionally disabled to avoid duplicate runs.
   workflow_dispatch:
+  repository_dispatch:
+    types: [creator-campaigns-updated]
 
 permissions:
   contents: write
@@ -44,6 +46,8 @@ jobs:
           KEEPA_RATE_LIMIT_WAIT_SECONDS: 70
           KEEPA_MAX_RETRIES: 5
           DEAL_TTL_HOURS: 24
+          CREATOR_CONNECTIONS_MAX_FILES: 40
+          CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS: 45
         run: python fetch_keepa_history_probe.py
 
       - name: Commit updated scan data

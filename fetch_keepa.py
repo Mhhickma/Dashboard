@@ -30,6 +30,8 @@ DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/influencer-prospects")
 CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "creator-connections")
 CREATOR_CONNECTIONS_REF = os.getenv("CREATOR_CONNECTIONS_REF", "main")
+CREATOR_CONNECTIONS_MAX_FILES = int(os.getenv("CREATOR_CONNECTIONS_MAX_FILES", "40"))
+CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS = int(os.getenv("CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS", "45"))
 
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
@@ -364,21 +366,71 @@ def campaign_rank(campaign):
     )
 
 
+def github_api_get(url, timeout=45):
+    headers = {"Accept": "application/vnd.github+json"}
+    token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    response = requests.get(url, headers=headers, timeout=timeout)
+    response.raise_for_status()
+    return response
+
+
+def creator_connection_file_commit_date(path):
+    api_url = (
+        f"https://api.github.com/repos/{CREATOR_CONNECTIONS_REPO}/commits"
+        f"?path={path}&sha={CREATOR_CONNECTIONS_REF}&per_page=1"
+    )
+    try:
+        commits = github_api_get(api_url).json()
+        if not commits:
+            return None
+        commit = commits[0].get("commit", {})
+        author = commit.get("author", {})
+        return parse_iso_datetime(author.get("date"))
+    except Exception as exc:
+        print(f"Could not read Creator Connections commit date for {path}: {exc}")
+        return None
+
+
 def creator_connection_file_urls():
     api_url = (
         f"https://api.github.com/repos/{CREATOR_CONNECTIONS_REPO}/contents/"
         f"{CREATOR_CONNECTIONS_PATH}?ref={CREATOR_CONNECTIONS_REF}"
     )
-    response = requests.get(api_url, timeout=45)
-    response.raise_for_status()
-    files = response.json()
-    urls = []
+    files = github_api_get(api_url).json()
+    csv_files = []
     for item in files:
         if item.get("type") == "file" and item.get("name", "").lower().endswith(".csv"):
             download_url = item.get("download_url")
-            if download_url:
-                urls.append(download_url)
-    return urls
+            path = item.get("path")
+            if download_url and path:
+                csv_files.append(
+                    {
+                        "name": item.get("name", ""),
+                        "path": path,
+                        "download_url": download_url,
+                        "updated_at": creator_connection_file_commit_date(path),
+                    }
+                )
+
+    csv_files.sort(key=lambda item: item.get("updated_at") or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+
+    latest_updated_at = csv_files[0].get("updated_at") if csv_files else None
+    cutoff = utc_now() - timedelta(days=CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS)
+    selected = [
+        item for item in csv_files
+        if item.get("updated_at") is None or item.get("updated_at") >= cutoff
+    ][:CREATOR_CONNECTIONS_MAX_FILES]
+
+    return selected, {
+        "files_available": len(csv_files),
+        "files_selected": len(selected),
+        "latest_csv_file": csv_files[0].get("name") if csv_files else "",
+        "latest_csv_updated_at": latest_updated_at.isoformat() if latest_updated_at else "",
+        "max_files": CREATOR_CONNECTIONS_MAX_FILES,
+        "max_file_age_days": CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS,
+    }
 
 
 def find_creator_campaigns_for_asins(target_asins):
@@ -392,16 +444,22 @@ def find_creator_campaigns_for_asins(target_asins):
     rows_scanned = 0
 
     try:
-        urls = creator_connection_file_urls()
+        files, file_stats = creator_connection_file_urls()
     except Exception as exc:
         print(f"Could not list Creator Connections files: {exc}")
         return matches, {"files_scanned": 0, "rows_scanned": 0, "asins_matched": 0}
 
     print(f"Checking Creator campaign status for {len(target_asins)} dashboard ASINs...")
+    if file_stats.get("latest_csv_updated_at"):
+        print(
+            "Latest Creator Connections CSV update: "
+            f"{file_stats['latest_csv_updated_at']} ({file_stats.get('latest_csv_file', '')})"
+        )
 
-    for url in urls:
+    for item in files:
         files_scanned += 1
-        print(f"Scanning Creator Connections file {files_scanned}/{len(urls)}")
+        url = item.get("download_url")
+        print(f"Scanning Creator Connections file {files_scanned}/{len(files)}: {item.get('name', '')}")
         try:
             with requests.get(url, stream=True, timeout=180) as response:
                 response.raise_for_status()
@@ -435,6 +493,7 @@ def find_creator_campaigns_for_asins(target_asins):
         "files_scanned": files_scanned,
         "rows_scanned": rows_scanned,
         "asins_matched": len(matches),
+        **file_stats,
     }
 
 
@@ -626,6 +685,7 @@ def main():
                 "creator_connections": {
                     "repo": CREATOR_CONNECTIONS_REPO,
                     "path": CREATOR_CONNECTIONS_PATH,
+                    "ref": CREATOR_CONNECTIONS_REF,
                     **campaign_stats,
                 },
                 "scan_window": {

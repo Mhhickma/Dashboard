@@ -1,4 +1,4 @@
-const cardsEl = document.getElementById("cards");
+﻿const cardsEl = document.getElementById("cards");
 const selectedCardsEl = document.getElementById("selectedCards");
 const selectedPostingSectionEl = document.getElementById("selectedPostingSection");
 const selectedPostingCountEl = document.getElementById("selectedPostingCount");
@@ -354,6 +354,23 @@ function dollarDrop(deal) {
   return Math.max(0, avg7Price - currentPrice);
 }
 
+function hasCreatorCampaign(deal) {
+  return Boolean(
+    deal && (
+      deal.has_creator_campaign ||
+      deal.creator_campaign ||
+      deal.creator_commission_rate
+    )
+  );
+}
+
+function creatorCampaignEndDateValue(deal) {
+  const campaign = deal && deal.creator_campaign;
+  if (!campaign || !campaign.campaign_end_date) return Number.MAX_SAFE_INTEGER;
+  const endTime = dateValue(campaign.campaign_end_date);
+  return endTime || Number.MAX_SAFE_INTEGER;
+}
+
 function dealScore(deal) {
   const dropPercent = numericValue(deal.drop_percent) || 0;
   const drop30Percent = numericValue(deal.drop_30_percent) || 0;
@@ -391,6 +408,13 @@ function sortDeals(deals) {
     if (sortMode === "best-score") {
       const scoreCompare = compareNullableNumbers(dealScore(a), dealScore(b));
       return scoreCompare || postedDateValue(b) - postedDateValue(a);
+    }
+
+    if (sortMode === "creator-first") {
+      const creatorCompare = Number(hasCreatorCampaign(b)) - Number(hasCreatorCampaign(a));
+      const endDateCompare = creatorCampaignEndDateValue(a) - creatorCampaignEndDateValue(b);
+      const scoreCompare = compareNullableNumbers(dealScore(a), dealScore(b));
+      return creatorCompare || endDateCompare || scoreCompare || postedDateValue(b) - postedDateValue(a);
     }
 
     if (sortMode === "newest-checked") {
@@ -525,7 +549,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
   const selectedPostingTools = isSelectedSection ? `
     <div class="posting-helper-box">
       <p>Make the link, post it, then hide this card.</p>
-      <button class="posted-hide-card" type="button" onclick="hideDeal('${deal.asin}')">Posted — Hide Card</button>
+      <button class="posted-hide-card" type="button" onclick="hideDeal('${deal.asin}')">Posted â€” Hide Card</button>
     </div>
   ` : "";
 
@@ -648,8 +672,12 @@ async function loadDeals() {
     if (!response.ok) throw new Error("Could not load deals.json");
 
     const data = await response.json();
+    const creatorConnections = data.creator_connections || {};
+    const creatorUpdatedAt = creatorConnections.latest_csv_updated_at
+      ? ` - Creator CSV: ${formatDate(creatorConnections.latest_csv_updated_at)}`
+      : "";
     allDeals = data.deals || [];
-    updatedAtEl.textContent = `Last updated: ${formatDate(data.updated_at)} · Deals kept for ${data.deal_ttl_hours || 24} hours`;
+    updatedAtEl.textContent = `Last updated: ${formatDate(data.updated_at)} - Deals kept for ${data.deal_ttl_hours || 24} hours${creatorUpdatedAt}`;
     applySearch();
   } catch (error) {
     dealCountEl.textContent = "Could not load deal data";
@@ -661,3 +689,4 @@ async function loadDeals() {
 searchInput.addEventListener("input", () => applySearch());
 if (sortSelect) sortSelect.addEventListener("change", () => applySearch());
 loadDeals();
+

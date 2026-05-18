@@ -66,16 +66,22 @@
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
-  function campaignDaysLeftText(campaign) {
-    if (!campaign) return "";
+  function campaignDaysLeft(campaign) {
+    if (!campaign) return null;
     const endDate = parseCampaignDate(campaign.campaign_end_date);
-    if (!endDate) return "";
+    if (!endDate) return null;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     endDate.setHours(0, 0, 0, 0);
 
     const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return Number.isFinite(daysLeft) ? daysLeft : null;
+  }
+
+  function campaignDaysLeftText(campaign) {
+    const daysLeft = campaignDaysLeft(campaign);
+    if (daysLeft === null) return "";
     if (!Number.isFinite(daysLeft)) return "";
     if (daysLeft < 0) return "campaign ended";
     if (daysLeft === 0) return "ends today";
@@ -91,6 +97,7 @@
     const brand = campaign && campaign.campaign_brand;
     const name = campaign && campaign.campaign_name;
     const endDate = campaign && campaign.campaign_end_date;
+    const rawDaysLeft = campaignDaysLeft(campaign);
     const parts = ["Creator campaign"];
 
     if (commission) parts.push(`${commission} commission`);
@@ -100,6 +107,7 @@
     return {
       label: parts.join(" - "),
       title: [name, endDate ? `Ends ${endDate}` : ""].filter(Boolean).join(" - ") || parts.join(" - "),
+      urgent: rawDaysLeft !== null && rawDaysLeft <= 3,
     };
   }
 
@@ -153,6 +161,12 @@
         font-weight: 900;
         line-height: 1.2;
         white-space: normal;
+      }
+
+      .creator-campaign-badge.ending-soon {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #991b1b;
       }
     `;
     document.head.appendChild(style);
@@ -366,6 +380,7 @@
       if (campaignInfo && asinLine && !card.querySelector(".creator-campaign-badge")) {
         const campaignBadge = document.createElement("div");
         campaignBadge.className = "creator-campaign-badge";
+        campaignBadge.classList.toggle("ending-soon", Boolean(campaignInfo.urgent));
         campaignBadge.textContent = campaignInfo.label;
         campaignBadge.title = campaignInfo.title;
         asinLine.insertAdjacentElement("afterend", campaignBadge);
