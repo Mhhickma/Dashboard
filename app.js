@@ -21,6 +21,7 @@ let currentRenderedDeals = [];
 let loadMoreSectionEl = null;
 let loadMoreButtonEl = null;
 let loadMoreSummaryEl = null;
+let loadMoreButtonListenerAttached = false;
 
 function ensureLoadMoreControls() {
   if (loadMoreSectionEl && loadMoreButtonEl && loadMoreSummaryEl) {
@@ -50,8 +51,12 @@ function ensureLoadMoreControls() {
     loadMoreButtonEl.id = "loadMoreButton";
     loadMoreButtonEl.className = "load-more-button";
     loadMoreButtonEl.type = "button";
-    loadMoreButtonEl.addEventListener("click", loadMoreDeals);
     loadMoreSectionEl.appendChild(loadMoreButtonEl);
+  }
+
+  if (!loadMoreButtonListenerAttached) {
+    loadMoreButtonEl.addEventListener("click", loadMoreDeals);
+    loadMoreButtonListenerAttached = true;
   }
 }
 
