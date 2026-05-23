@@ -1,4 +1,4 @@
-// Tune deal score so best-price age matters less.
+// Tune deal score to a true 100-point scale.
 (function () {
   function num(value) {
     var number = Number(value);
@@ -22,22 +22,34 @@
     return num(deal.best_price_days) || 0;
   }
 
+  function points(value, maxValue, maxPoints) {
+    if (!value || value <= 0) return 0;
+    return Math.min(maxPoints, (value / maxValue) * maxPoints);
+  }
+
   function tunedDealScore(deal) {
     var drop7 = num(deal.drop_percent) || 0;
     var drop30 = num(deal.drop_30_percent) || 0;
+    var savings = dollarSavings(deal);
     var freshHours = hoursUntil(deal.expires_at);
-    var freshness = freshHours === null ? 0 : Math.max(0, Math.min(24, freshHours)) / 24;
-    var rarity = Math.min(bestDays(deal), 90) / 6;
-    return (drop7 * 2) + drop30 + Math.min(dollarSavings(deal), 100) + freshness + rarity;
+    var bestPriceAge = bestDays(deal);
+
+    var drop7Points = points(drop7, 25, 25);
+    var drop30Points = points(drop30, 25, 25);
+    var savingsPoints = points(savings, 100, 30);
+    var rarityPoints = points(Math.min(bestPriceAge, 90), 90, 15);
+    var freshnessPoints = freshHours === null ? 0 : points(Math.min(freshHours, 24), 24, 5);
+
+    return drop7Points + drop30Points + savingsPoints + rarityPoints + freshnessPoints;
   }
 
   function tunedQualityLabel(deal) {
     var score = tunedDealScore(deal);
     var days = bestDays(deal);
     var drop = num(deal.drop_percent) || 0;
-    if (score >= 120 || (days >= 90 && drop >= 10)) return "Elite";
-    if (score >= 80 || (days >= 90 && drop >= 6)) return "Strong";
-    if (score >= 55 || days >= 30) return "Good";
+    if (score >= 85 || (days >= 90 && drop >= 10)) return "Elite";
+    if (score >= 70 || (days >= 90 && drop >= 6)) return "Strong";
+    if (score >= 50 || days >= 30) return "Good";
     return "Watch";
   }
 
@@ -57,7 +69,7 @@
       }
 
       if (scoreBadge) {
-        scoreBadge.title = "Best deal score uses discount, dollar savings, freshness, and a smaller best-price-age bonus.";
+        scoreBadge.title = "100-point score: 25 points for 7-day drop, 25 for 30-day drop, 30 for dollar savings, 15 for best-price age, and 5 for freshness.";
         scoreBadge.textContent = "Deal score " + tunedDealScore(deal).toFixed(1);
       }
 
