@@ -1,4 +1,6 @@
+import json
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 
 import fetch_keepa
 
@@ -6,9 +8,14 @@ HISTORY_EXAMPLE_LIMIT = 5
 KEEPA_TIME_BASE = datetime(2011, 1, 1, tzinfo=timezone.utc)
 # Keepa product csv indexes: 0 Amazon, 1 Marketplace New, 10 New FBA, 17 Buy Box with shipping.
 PRICE_HISTORY_INDEXES = (0, 1, 10, 17)
+PERFORMANCE_FILE = Path("data/asin_performance.json")
+
 _original_fetch_keepa_products = fetch_keepa.fetch_keepa_products
 _original_build_deal = fetch_keepa.build_deal
+_original_select_asins_for_run = fetch_keepa.select_asins_for_run
+_original_merge_deals_with_memory = fetch_keepa.merge_deals_with_memory
 _product_history_by_asin = {}
+_selected_asins_for_run = []
 
 
 def keepa_minutes_to_datetime(value):
@@ -133,6 +140,122 @@ def fetch_keepa_products_with_history_probe(asins):
     return products
 
 
+def select_asins_for_run_with_performance_capture(all_asins):
+    selected, new_state, start_index, next_start_index = _original_select_asins_for_run(all_asins)
+    _selected_asins_for_run.clear()
+    _selected_asins_for_run.extend(selected)
+    return selected, new_state, start_index, next_start_index
+
+
+def load_asin_performance():
+    if not PERFORMANCE_FILE.exists():
+        return {}
+    try:
+        payload = json.loads(PERFORMANCE_FILE.read_text(encoding="utf-8"))
+        if isinstance(payload, dict) and isinstance(payload.get("asins"), dict):
+            return payload["asins"]
+        if isinstance(payload, dict):
+            return payload
+    except Exception as exc:
+        print(f"Could not read ASIN performance file; starting fresh. Error: {exc}")
+    return {}
+
+
+def save_asin_performance(performance):
+    PERFORMANCE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    PERFORMANCE_FILE.write_text(
+        json.dumps(
+            {
+                "updated_at": fetch_keepa.iso_now(),
+                "description": "Long-term ASIN scan performance used to identify which products produce postable deals.",
+                "asins": performance,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def score_100_point(deal):
+    current = float(deal.get("current_price") or 0)
+    avg7 = float(deal.get("avg_7_price") or 0)
+    savings = max(0, avg7 - current) if current and avg7 else 0
+    drop7 = float(deal.get("drop_percent") or 0)
+    drop30 = float(deal.get("drop_30_percent") or 0)
+    best_days = float(deal.get("best_price_days") or 0)
+
+    drop7_points = min(25, (drop7 / 25) * 25) if drop7 > 0 else 0
+    drop30_points = min(25, (drop30 / 25) * 25) if drop30 > 0 else 0
+    savings_points = min(30, (savings / 100) * 30) if savings > 0 else 0
+    rarity_points = min(15, (min(best_days, 90) / 90) * 15) if best_days > 0 else 0
+    return round(drop7_points + drop30_points + savings_points + rarity_points, 1)
+
+
+def suggested_priority(record):
+    best_score = float(record.get("best_score_seen") or 0)
+    times_scanned = int(record.get("times_scanned") or 0)
+    times_deal_found = int(record.get("times_deal_found") or 0)
+
+    if best_score >= 70 or times_deal_found >= 3:
+        return "A"
+    if best_score >= 50 or times_deal_found >= 1:
+        return "B"
+    if times_scanned >= 20:
+        return "D"
+    return "C"
+
+
+def update_asin_performance(scanned_asins, new_deals):
+    performance = load_asin_performance()
+    now = fetch_keepa.iso_now()
+    deals_by_asin = {str(deal.get("asin", "")).upper(): deal for deal in new_deals if deal.get("asin")}
+
+    for asin in scanned_asins:
+        asin = str(asin or "").strip().upper()
+        if not asin:
+            continue
+        record = performance.setdefault(
+            asin,
+            {
+                "asin": asin,
+                "times_scanned": 0,
+                "times_deal_found": 0,
+                "times_selected": 0,
+                "times_posted": 0,
+                "best_score_seen": 0,
+                "priority": "C",
+            },
+        )
+        record["times_scanned"] = int(record.get("times_scanned") or 0) + 1
+        record["last_scanned_at"] = now
+
+        deal = deals_by_asin.get(asin)
+        if deal:
+            score = score_100_point(deal)
+            record["times_deal_found"] = int(record.get("times_deal_found") or 0) + 1
+            record["last_deal_date"] = now
+            record["last_title"] = deal.get("title")
+            record["last_price"] = deal.get("current_price")
+            record["last_drop_percent"] = deal.get("drop_percent")
+            record["last_drop_30_percent"] = deal.get("drop_30_percent")
+            record["last_best_price_days"] = deal.get("best_price_days")
+            record["last_score_seen"] = score
+            record["best_score_seen"] = max(float(record.get("best_score_seen") or 0), score)
+
+        record["priority"] = suggested_priority(record)
+
+    save_asin_performance(performance)
+    print(f"Saved ASIN performance for {len(performance)} ASINs to {PERFORMANCE_FILE}")
+
+
+def merge_deals_with_performance(memory, new_deals):
+    result = _original_merge_deals_with_memory(memory, new_deals)
+    update_asin_performance(_selected_asins_for_run, new_deals)
+    return result
+
+
+fetch_keepa.select_asins_for_run = select_asins_for_run_with_performance_capture
 fetch_keepa.fetch_keepa_products = fetch_keepa_products_with_history_probe
 fetch_keepa.build_deal = build_deal_with_best_price_age
+fetch_keepa.merge_deals_with_memory = merge_deals_with_performance
 fetch_keepa.main()
