@@ -50,6 +50,21 @@ jobs:
           CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS: 45
         run: python fetch_keepa_history_probe.py
 
+      - name: Validate ASIN performance data
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('data/asin_performance.json')
+          if not path.exists() or path.stat().st_size == 0:
+              raise SystemExit('data/asin_performance.json was not created or is empty')
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          records = payload.get('asins', {}) if isinstance(payload, dict) else {}
+          print(f"ASIN performance records: {len(records)}")
+          if not records:
+              raise SystemExit('data/asin_performance.json has no ASIN records')
+          PY
+
       - name: Commit updated scan data
         run: |
           git config user.name "github-actions[bot]"
