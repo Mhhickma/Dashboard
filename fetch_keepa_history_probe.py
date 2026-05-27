@@ -10,12 +10,43 @@ KEEPA_TIME_BASE = datetime(2011, 1, 1, tzinfo=timezone.utc)
 PRICE_HISTORY_INDEXES = (0, 1, 10, 17)
 PERFORMANCE_FILE = Path("data/asin_performance.json")
 
+_original_read_all_asins = fetch_keepa.read_all_asins
+_original_load_deal_memory = fetch_keepa.load_deal_memory
 _original_fetch_keepa_products = fetch_keepa.fetch_keepa_products
 _original_build_deal = fetch_keepa.build_deal
 _original_select_asins_for_run = fetch_keepa.select_asins_for_run
 _original_merge_deals_with_memory = fetch_keepa.merge_deals_with_memory
 _product_history_by_asin = {}
 _selected_asins_for_run = []
+_all_source_asins = set()
+
+
+def read_all_asins_with_source_capture():
+    asins = _original_read_all_asins()
+    _all_source_asins.clear()
+    _all_source_asins.update(str(asin or "").strip().upper() for asin in asins if asin)
+    return asins
+
+
+def load_deal_memory_without_removed_asins():
+    memory = _original_load_deal_memory()
+    if not _all_source_asins:
+        return memory
+
+    pruned_memory = {
+        asin: deal
+        for asin, deal in memory.items()
+        if str(asin or "").strip().upper() in _all_source_asins
+    }
+    removed_count = len(memory) - len(pruned_memory)
+
+    if removed_count:
+        print(
+            f"Removed {removed_count} stale deal(s) from data/deals_memory.json "
+            "because their ASINs are no longer in the source sheet."
+        )
+
+    return pruned_memory
 
 
 def keepa_minutes_to_datetime(value):
@@ -254,6 +285,8 @@ def merge_deals_with_performance(memory, new_deals):
     return result
 
 
+fetch_keepa.read_all_asins = read_all_asins_with_source_capture
+fetch_keepa.load_deal_memory = load_deal_memory_without_removed_asins
 fetch_keepa.select_asins_for_run = select_asins_for_run_with_performance_capture
 fetch_keepa.fetch_keepa_products = fetch_keepa_products_with_history_probe
 fetch_keepa.build_deal = build_deal_with_best_price_age
