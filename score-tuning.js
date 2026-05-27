@@ -1,4 +1,4 @@
-// Tune deal score to a true 100-point scale.
+// Tune deal score to a true 100-point scale and highlight key deal-drop values.
 (function () {
   function num(value) {
     var number = Number(value);
@@ -53,6 +53,43 @@
     return "Watch";
   }
 
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function highlightDropBox(card) {
+    card.querySelectorAll(".price-box").forEach(function (box) {
+      var label = box.querySelector("span");
+      if (label && label.textContent.trim().toLowerCase() === "30-day drop") {
+        box.classList.add("drop-highlight");
+      }
+    });
+  }
+
+  function highlightDealReason(card) {
+    var reasonLine = card.querySelector(".deal-reason");
+    if (!reasonLine || reasonLine.dataset.dropHighlightsApplied === "true") return;
+
+    var parts = reasonLine.textContent.split(" - ");
+    reasonLine.innerHTML = parts.map(function (part) {
+      var safePart = escapeHtml(part);
+      if (/below 7-day avg/i.test(part)) {
+        return '<span class="inline-drop-7">' + safePart + "</span>";
+      }
+      if (/below 30-day avg/i.test(part)) {
+        return '<span class="inline-drop-30">' + safePart + "</span>";
+      }
+      return safePart;
+    }).join(' <span class="reason-separator">-</span> ');
+
+    reasonLine.dataset.dropHighlightsApplied = "true";
+  }
+
   window.dealScore = tunedDealScore;
 
   var originalBuildCard = window.buildCard;
@@ -72,6 +109,9 @@
         scoreBadge.title = "100-point score: 25 points for 7-day drop, 25 for 30-day drop, 30 for dollar savings, 15 for best-price age, and 5 for freshness.";
         scoreBadge.textContent = "Deal score " + tunedDealScore(deal).toFixed(1);
       }
+
+      highlightDropBox(card);
+      highlightDealReason(card);
 
       return card;
     };
