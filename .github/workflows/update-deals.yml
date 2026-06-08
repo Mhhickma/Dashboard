@@ -40,6 +40,7 @@ jobs:
           KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
           AMAZON_TAG: ${{ secrets.AMAZON_TAG }}
           ASIN_CSV_URL: ${{ secrets.ASIN_CSV_URL }}
+          MIN_DROP_PERCENT: 0
           SCAN_LIMIT: 105
           KEEPA_BATCH_SIZE: 25
           KEEPA_REQUEST_DELAY_SECONDS: 60
@@ -49,6 +50,9 @@ jobs:
           CREATOR_CONNECTIONS_MAX_FILES: 40
           CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS: 45
         run: python fetch_keepa_history_probe.py
+
+      - name: Apply stronger deal qualification
+        run: python filter_deals.py
 
       - name: Validate ASIN performance data
         run: |
