@@ -1,5 +1,7 @@
 // Add deal explanations and copy-ready Facebook post text to each product card.
 (function () {
+  var FACEBOOK_POST_MAX_LENGTH = 129;
+
   function number(value) {
     var parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -33,41 +35,44 @@
     return reasons;
   }
 
-  function facebookDealDescription(deal) {
-    var drop7 = number(deal.drop_percent);
-    var drop30 = number(deal.drop_30_percent);
-    var bestDays = number(deal.best_price_days);
-    var descriptions = [];
+  function stableNumber(value) {
+    return String(value || "").split("").reduce(function (total, character) {
+      return ((total * 31) + character.charCodeAt(0)) >>> 0;
+    }, 0);
+  }
 
-    if (bestDays >= 365) {
-      descriptions.push("This is one of its lowest prices in years.");
-    } else if (bestDays >= 90) {
-      descriptions.push("This is one of its lowest prices in months.");
-    }
+  function cleanTitle(value) {
+    return String(value || "Great Amazon find")
+      .replace(/[®™©]/g, "")
+      .replace(/\s+/g, " ")
+      .replace(/\s*[-–—|]\s*Amazon.*$/i, "")
+      .trim();
+  }
 
-    if (drop7 >= 7 && drop30 >= 7) {
-      descriptions.push("It is currently well below both its recent and longer-term average prices.");
-    } else if (drop30 >= 10) {
-      descriptions.push("It is currently well below its usual recent price.");
-    }
+  function shortenText(value, maxLength) {
+    var text = cleanTitle(value);
+    if (text.length <= maxLength) return text;
 
-    if (descriptions.length === 0) {
-      descriptions.push("This item is currently showing a strong deal based on its recent price history.");
-    }
-
-    return descriptions.join(" ");
+    var shortened = text.slice(0, maxLength + 1).replace(/\s+\S*$/, "").replace(/[,:;\-\s]+$/, "");
+    return shortened || text.slice(0, maxLength).trim();
   }
 
   function facebookPostText(deal) {
-    return [
-      "Deal alert: " + deal.title,
-      "",
-      facebookDealDescription(deal),
-      "",
-      deal.amazon_url,
-      "",
-      "ad"
-    ].join("\n");
+    var templates = [
+      ["Standout find: ", ". A rare deal based on its recent history. ad"],
+      ["Worth a look: ", ". This deal stands out from its recent history. ad"],
+      ["Deal watch: ", ". A stronger-than-usual find right now. ad"],
+      ["Good find: ", ". This one rarely reaches this deal level. ad"],
+      ["Spotted: ", ". Its recent history makes this a standout deal. ad"],
+      ["Take a look at ", ". This is an uncommon deal for this item. ad"],
+      ["Today's find: ", ". This one stands apart from its usual history. ad"],
+      ["On my deal radar: ", ". A notable find based on its recent history. ad"]
+    ];
+    var template = templates[stableNumber(deal.asin) % templates.length];
+    var titleBudget = FACEBOOK_POST_MAX_LENGTH - template[0].length - template[1].length;
+    var post = template[0] + shortenText(deal.title, titleBudget) + template[1];
+
+    return post.slice(0, FACEBOOK_POST_MAX_LENGTH - 3).replace(/[,:;\-\s]+$/, "") + " ad";
   }
 
   async function copyFacebookPost(text, button) {
@@ -122,7 +127,7 @@
 
     var heading = document.createElement("strong");
     heading.className = "facebook-post-heading";
-    heading.textContent = "Facebook Post";
+    heading.textContent = "Facebook Post - " + postText.length + " characters";
     box.appendChild(heading);
 
     var preview = document.createElement("p");
