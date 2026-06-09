@@ -1,30 +1,36 @@
 {
-  "updated_at": "2026-06-09T06:49:42.564376+00:00",
+  "updated_at": "2026-06-09T07:05:24.848571+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
-  "deal_count": 57,
+  "deal_count": 56,
   "new_scan_deal_count": 5,
   "new_deals_added": 5,
   "existing_deals_updated": 0,
-  "expired_deals_removed": 0,
+  "expired_deals_removed": 2,
   "skipped_count": 0,
   "missing_image_count": 0,
-  "creator_campaign_deal_count": 0,
+  "creator_campaign_deal_count": 1,
   "creator_connections": {
     "repo": "Mhhickma/influencer-prospects",
     "path": "creator-connections",
     "ref": "main",
-    "files_scanned": 0,
-    "rows_scanned": 0,
-    "asins_matched": 0
+    "files_scanned": 7,
+    "rows_scanned": 700402,
+    "asins_matched": 2,
+    "files_available": 7,
+    "files_selected": 7,
+    "latest_csv_file": "result_0_117000.csv",
+    "latest_csv_updated_at": "2026-05-27T09:30:05+00:00",
+    "max_files": 40,
+    "max_file_age_days": 45
   },
   "scan_window": {
     "total_asins": 9797,
-    "start_index": 2628,
-    "start_sheet_row": 2630,
-    "next_start_index": 2733,
-    "next_start_sheet_row": 2735,
+    "start_index": 2733,
+    "start_sheet_row": 2735,
+    "next_start_index": 2838,
+    "next_start_sheet_row": 2840,
     "scan_count": 105
   },
   "settings": {
@@ -37,6 +43,33 @@
     "keepa_stats_days": 7
   },
   "deals": [
+    {
+      "asin": "B00CP8DF3O",
+      "title": "DEWALT 20V MAX Cordless Shop Vac, Wet Dry Vacuum Cleaner, Portable 2 Gallon Wet Dry Vac, Strong Suction Shop Vacuum with Hepa Filter, Tool Only (DCV580H)",
+      "current_price": 79.0,
+      "avg_7_price": 123.46,
+      "min_7_price": 79.0,
+      "avg_30_price": 116.65,
+      "min_30_price": null,
+      "drop_percent": 36.0,
+      "drop_30_percent": 32.3,
+      "price_stats_source": "keepa_stats_30_day_threshold",
+      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B00CP8DF3O&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
+      "amazon_url": "https://www.amazon.com/dp/B00CP8DF3O?tag=simplewoodsho-20",
+      "checked_at": "2026-06-09T07:05:24.752320+00:00",
+      "last_checked_at": "2026-06-09T07:05:24.773403+00:00",
+      "best_price_days": 2,
+      "best_price_message": "best price in 2 days",
+      "best_price_previous_price": 79.0,
+      "best_price_previous_date": "2026-06-07",
+      "posted_at": "2026-06-09T07:05:24.773403+00:00",
+      "first_seen_at": "2026-06-09T07:05:24.773403+00:00",
+      "expires_at": "2026-06-10T07:05:24.773405+00:00",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages"
+      ]
+    },
     {
       "asin": "B0D78PJBCJ",
       "title": "POWERTEC 3 Inch Double Loop Hose Clamps for Dust Collection Hose and Dryer Vent Hose, Quick Release Spring Clamps for Dust Collector and Dust Collection Fittings, 2 pack (70409)",
@@ -1185,7 +1218,19 @@
       "qualification_reasons": [
         "10%+ below 30-day average",
         "7%+ below both 7-day and 30-day averages"
-      ]
+      ],
+      "has_creator_campaign": true,
+      "creator_campaign": {
+        "campaign_id": "amzn1.campaign.2435UUCL5HK5F",
+        "campaign_name": "\ud83c\udfe1 Spring Farm Essential! 15% OFF Milking Machine \ud83c\udf89#Eva",
+        "campaign_brand": "GarveeHome",
+        "commission_rate": "11%",
+        "campaign_start_date": "2026-03-18",
+        "campaign_end_date": "2026-08-31",
+        "recommended": false,
+        "active": true
+      },
+      "creator_commission_rate": "11%"
     },
     {
       "asin": "B08XK1DS14",
@@ -1505,58 +1550,6 @@
       "qualification_reasons": [
         "7%+ below both 7-day and 30-day averages"
       ]
-    },
-    {
-      "asin": "B001AZTCWQ",
-      "title": "Powermatic 16-Inch Parallelogram Jointer, Helical, 7.5 HP, 230/460V 3Ph (PJ1696)",
-      "current_price": 9999.0,
-      "avg_7_price": 10004.35,
-      "min_7_price": 9999.0,
-      "avg_30_price": 11150.25,
-      "min_30_price": null,
-      "drop_percent": 0.1,
-      "drop_30_percent": 10.3,
-      "price_stats_source": "keepa_stats_30_day_threshold",
-      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B001AZTCWQ&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
-      "amazon_url": "https://www.amazon.com/dp/B001AZTCWQ?tag=simplewoodsho-20",
-      "checked_at": "2026-06-09T06:05:18.198244+00:00",
-      "last_checked_at": "2026-06-09T06:05:18.216458+00:00",
-      "best_price_days": 6,
-      "best_price_message": "best price in 6 days",
-      "best_price_previous_price": 9999.0,
-      "best_price_previous_date": "2026-06-02",
-      "posted_at": "2026-06-08T06:50:16.982372+00:00",
-      "first_seen_at": "2026-06-08T06:50:16.982372+00:00",
-      "expires_at": "2026-06-10T06:05:18.216460+00:00",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ]
-    },
-    {
-      "asin": "B0FBPB1MJ8",
-      "title": "Metabo HPT 10-Inch Single Bevel Compound Miter Saw, 15-Amp Power Saw with Xact Cut Shadow Line, Precision Miter Angles, Single Bevel 0-45\u00b0, 40T TCT Miter Saw Blade, Lightweight Design, C10FCG2",
-      "current_price": 139.0,
-      "avg_7_price": 139.0,
-      "min_7_price": 139.0,
-      "avg_30_price": 161.61,
-      "min_30_price": null,
-      "drop_percent": 0.0,
-      "drop_30_percent": 14.0,
-      "price_stats_source": "keepa_stats_30_day_threshold",
-      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B0FBPB1MJ8&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
-      "amazon_url": "https://www.amazon.com/dp/B0FBPB1MJ8?tag=simplewoodsho-20",
-      "checked_at": "2026-06-09T06:05:18.214659+00:00",
-      "last_checked_at": "2026-06-09T06:05:18.216458+00:00",
-      "best_price_days": 7,
-      "best_price_message": "best price in 7 days",
-      "best_price_previous_price": 139.0,
-      "best_price_previous_date": "2026-06-01",
-      "posted_at": "2026-06-08T06:50:16.982372+00:00",
-      "first_seen_at": "2026-06-08T06:50:16.982372+00:00",
-      "expires_at": "2026-06-10T06:05:18.216460+00:00",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ]
     }
   ],
   "qualification_rules": {
@@ -1565,5 +1558,5 @@
     "min_rare_price_days": 90,
     "logic": "any rule may qualify a deal"
   },
-  "qualification_filter_removed": 5
+  "qualification_filter_removed": 4
 }
