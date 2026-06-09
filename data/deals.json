@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-06-09T01:50:16.855069+00:00",
+  "updated_at": "2026-06-09T02:05:12.754975+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
-  "deal_count": 57,
-  "new_scan_deal_count": 2,
-  "new_deals_added": 2,
+  "deal_count": 58,
+  "new_scan_deal_count": 7,
+  "new_deals_added": 7,
   "existing_deals_updated": 0,
   "expired_deals_removed": 0,
   "skipped_count": 0,
@@ -17,7 +17,7 @@
     "ref": "main",
     "files_scanned": 7,
     "rows_scanned": 700402,
-    "asins_matched": 4,
+    "asins_matched": 1,
     "files_available": 7,
     "files_selected": 7,
     "latest_csv_file": "result_0_117000.csv",
@@ -27,10 +27,10 @@
   },
   "scan_window": {
     "total_asins": 9797,
-    "start_index": 528,
-    "start_sheet_row": 530,
-    "next_start_index": 633,
-    "next_start_sheet_row": 635,
+    "start_index": 633,
+    "start_sheet_row": 635,
+    "next_start_index": 738,
+    "next_start_sheet_row": 740,
     "scan_count": 105
   },
   "settings": {
@@ -43,6 +43,34 @@
     "keepa_stats_days": 7
   },
   "deals": [
+    {
+      "asin": "B00004TRCD",
+      "title": "BESSEY LM2.004 LM General Purpose Clamp, 1 Pack",
+      "current_price": 6.5,
+      "avg_7_price": 7.46,
+      "min_7_price": 6.5,
+      "avg_30_price": 7.91,
+      "min_30_price": null,
+      "drop_percent": 12.9,
+      "drop_30_percent": 17.8,
+      "price_stats_source": "keepa_stats_30_day_threshold",
+      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B00004TRCD&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
+      "amazon_url": "https://www.amazon.com/dp/B00004TRCD?tag=simplewoodsho-20",
+      "checked_at": "2026-06-09T02:05:12.631564+00:00",
+      "last_checked_at": "2026-06-09T02:05:12.683845+00:00",
+      "best_price_days": 217,
+      "best_price_message": "best price in 217 days",
+      "best_price_previous_price": 6.5,
+      "best_price_previous_date": "2025-11-03",
+      "posted_at": "2026-06-09T02:05:12.683845+00:00",
+      "first_seen_at": "2026-06-09T02:05:12.683845+00:00",
+      "expires_at": "2026-06-10T02:05:12.683848+00:00",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ]
+    },
     {
       "asin": "B07S1MXRRK",
       "title": "HYCHIKA Mini Circular Saw, Compact with 3 Blades 4A Pure Copper Motor, Scale Ruler, 3-3/8\u201d4500RPM Ideal for Wood, Soft Metal and Plastic Cuts",
@@ -1579,5 +1607,5 @@
     "min_rare_price_days": 90,
     "logic": "any rule may qualify a deal"
   },
-  "qualification_filter_removed": 1
+  "qualification_filter_removed": 6
 }
