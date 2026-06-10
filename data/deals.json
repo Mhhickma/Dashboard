@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-06-10T09:50:09.449441+00:00",
+  "updated_at": "2026-06-10T10:05:20.100080+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
   "deal_count": 62,
-  "new_scan_deal_count": 5,
-  "new_deals_added": 5,
+  "new_scan_deal_count": 11,
+  "new_deals_added": 11,
   "existing_deals_updated": 0,
-  "expired_deals_removed": 0,
+  "expired_deals_removed": 1,
   "skipped_count": 0,
   "missing_image_count": 0,
   "creator_campaign_deal_count": 1,
@@ -17,7 +17,7 @@
     "ref": "main",
     "files_scanned": 8,
     "rows_scanned": 616453,
-    "asins_matched": 5,
+    "asins_matched": 2,
     "files_available": 8,
     "files_selected": 8,
     "latest_csv_file": "result_0_116200.csv",
@@ -27,10 +27,10 @@
   },
   "scan_window": {
     "total_asins": 9793,
-    "start_index": 3964,
-    "start_sheet_row": 3966,
-    "next_start_index": 4069,
-    "next_start_sheet_row": 4071,
+    "start_index": 4069,
+    "start_sheet_row": 4071,
+    "next_start_index": 4174,
+    "next_start_sheet_row": 4176,
     "scan_count": 105
   },
   "settings": {
@@ -43,6 +43,33 @@
     "keepa_stats_days": 7
   },
   "deals": [
+    {
+      "asin": "B0FTRSQVZ1",
+      "title": "POWERTEC 70358V 4 Inch Wall Mounting Blast Gate with Bracket, Threaded Dust Collection Fitting - 1 Pack",
+      "current_price": 9.58,
+      "avg_7_price": 11.03,
+      "min_7_price": 9.58,
+      "avg_30_price": 11.17,
+      "min_30_price": null,
+      "drop_percent": 13.1,
+      "drop_30_percent": 14.2,
+      "price_stats_source": "keepa_stats_30_day_threshold",
+      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B0FTRSQVZ1&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
+      "amazon_url": "https://www.amazon.com/dp/B0FTRSQVZ1?tag=simplewoodsho-20",
+      "checked_at": "2026-06-10T10:05:19.971939+00:00",
+      "last_checked_at": "2026-06-10T10:05:19.972052+00:00",
+      "best_price_days": 2,
+      "best_price_message": "best price in 2 days",
+      "best_price_previous_price": 9.58,
+      "best_price_previous_date": "2026-06-08",
+      "posted_at": "2026-06-10T10:05:19.972052+00:00",
+      "first_seen_at": "2026-06-10T10:05:19.972052+00:00",
+      "expires_at": "2026-06-11T10:05:19.972054+00:00",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages"
+      ]
+    },
     {
       "asin": "B07C18767H",
       "title": "Makita B-60545 Impact Gold T25 Torx 2\u2033 Power Bit, 15/Pk",
@@ -1666,32 +1693,6 @@
         "10%+ below 30-day average",
         "7%+ below both 7-day and 30-day averages"
       ]
-    },
-    {
-      "asin": "B08XZZ3F9X",
-      "title": "Metabo HPT 12-Inch Compound Miter Saw | Xact Cut LED Shadow Line System | Dual Bevel | C12FDHB",
-      "current_price": 199.0,
-      "avg_7_price": 199.0,
-      "min_7_price": 199.0,
-      "avg_30_price": 260.46,
-      "min_30_price": null,
-      "drop_percent": 0.0,
-      "drop_30_percent": 23.6,
-      "price_stats_source": "keepa_stats_30_day_threshold",
-      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B08XZZ3F9X&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
-      "amazon_url": "https://www.amazon.com/dp/B08XZZ3F9X?tag=simplewoodsho-20",
-      "checked_at": "2026-06-10T09:35:14.746701+00:00",
-      "last_checked_at": "2026-06-10T09:35:14.756873+00:00",
-      "best_price_days": 12,
-      "best_price_message": "best price in 12 days",
-      "best_price_previous_price": 199.0,
-      "best_price_previous_date": "2026-05-29",
-      "posted_at": "2026-06-09T09:50:15.247565+00:00",
-      "first_seen_at": "2026-06-09T09:50:15.247565+00:00",
-      "expires_at": "2026-06-11T09:35:14.756875+00:00",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ]
     }
   ],
   "qualification_rules": {
@@ -1700,5 +1701,5 @@
     "min_rare_price_days": 90,
     "logic": "any rule may qualify a deal"
   },
-  "qualification_filter_removed": 5
+  "qualification_filter_removed": 10
 }
