@@ -1,12 +1,12 @@
 {
-  "updated_at": "2026-06-11T21:35:19.628683+00:00",
+  "updated_at": "2026-06-11T21:50:22.778944+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
-  "deal_count": 82,
+  "deal_count": 84,
   "new_scan_deal_count": 6,
-  "new_deals_added": 5,
-  "existing_deals_updated": 1,
+  "new_deals_added": 6,
+  "existing_deals_updated": 0,
   "expired_deals_removed": 0,
   "skipped_count": 0,
   "missing_image_count": 0,
@@ -27,10 +27,10 @@
   },
   "scan_window": {
     "total_asins": 10084,
-    "start_index": 8788,
-    "start_sheet_row": 8790,
-    "next_start_index": 8893,
-    "next_start_sheet_row": 8895,
+    "start_index": 8893,
+    "start_sheet_row": 8895,
+    "next_start_index": 8998,
+    "next_start_sheet_row": 9000,
     "scan_count": 105
   },
   "settings": {
@@ -43,6 +43,58 @@
     "keepa_stats_days": 7
   },
   "deals": [
+    {
+      "asin": "B005SP1BJG",
+      "title": "Jorgensen 33804 E-Z HOLD 4-Inch Hobby/Craft Clamp, black/brown",
+      "current_price": 5.99,
+      "avg_7_price": 6.4,
+      "min_7_price": 5.99,
+      "avg_30_price": 6.88,
+      "min_30_price": null,
+      "drop_percent": 6.4,
+      "drop_30_percent": 12.9,
+      "price_stats_source": "keepa_stats_30_day_threshold",
+      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B005SP1BJG&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
+      "amazon_url": "https://www.amazon.com/dp/B005SP1BJG?tag=simplewoodsho-20",
+      "checked_at": "2026-06-11T21:50:22.693597+00:00",
+      "last_checked_at": "2026-06-11T21:50:22.699545+00:00",
+      "best_price_days": 3,
+      "best_price_message": "best price in 3 days",
+      "best_price_previous_price": 5.99,
+      "best_price_previous_date": "2026-06-07",
+      "posted_at": "2026-06-11T21:50:22.699545+00:00",
+      "first_seen_at": "2026-06-11T21:50:22.699545+00:00",
+      "expires_at": "2026-06-12T21:50:22.699547+00:00",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ]
+    },
+    {
+      "asin": "B001HSO6WW",
+      "title": "BESSEY KR-AS, Pivot jaw add-on accessory, PK2",
+      "current_price": 9.63,
+      "avg_7_price": 9.82,
+      "min_7_price": 9.63,
+      "avg_30_price": 11.21,
+      "min_30_price": null,
+      "drop_percent": 1.9,
+      "drop_30_percent": 14.1,
+      "price_stats_source": "keepa_stats_30_day_threshold",
+      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B001HSO6WW&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
+      "amazon_url": "https://www.amazon.com/dp/B001HSO6WW?tag=simplewoodsho-20",
+      "checked_at": "2026-06-11T21:50:22.696047+00:00",
+      "last_checked_at": "2026-06-11T21:50:22.699545+00:00",
+      "best_price_days": 5,
+      "best_price_message": "best price in 5 days",
+      "best_price_previous_price": 9.63,
+      "best_price_previous_date": "2026-06-06",
+      "posted_at": "2026-06-11T21:50:22.699545+00:00",
+      "first_seen_at": "2026-06-11T21:50:22.699545+00:00",
+      "expires_at": "2026-06-12T21:50:22.699547+00:00",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ]
+    },
     {
       "asin": "B008FYUUQM",
       "title": "BOSCH DCB1244 12 In. 44 Tooth Daredevil Table and Miter Saw Blade General Purpose",
@@ -2243,5 +2295,5 @@
     "min_rare_price_days": 90,
     "logic": "any rule may qualify a deal"
   },
-  "qualification_filter_removed": 5
+  "qualification_filter_removed": 4
 }
