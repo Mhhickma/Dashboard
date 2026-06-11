@@ -1,30 +1,36 @@
 {
-  "updated_at": "2026-06-11T12:49:48.915694+00:00",
+  "updated_at": "2026-06-11T13:05:24.690798+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
   "deal_count": 83,
-  "new_scan_deal_count": 2,
-  "new_deals_added": 2,
+  "new_scan_deal_count": 0,
+  "new_deals_added": 0,
   "existing_deals_updated": 0,
   "expired_deals_removed": 0,
   "skipped_count": 0,
   "missing_image_count": 0,
-  "creator_campaign_deal_count": 0,
+  "creator_campaign_deal_count": 1,
   "creator_connections": {
     "repo": "Mhhickma/influencer-prospects",
     "path": "creator-connections",
     "ref": "main",
-    "files_scanned": 0,
-    "rows_scanned": 0,
-    "asins_matched": 0
+    "files_scanned": 8,
+    "rows_scanned": 616453,
+    "asins_matched": 3,
+    "files_available": 8,
+    "files_selected": 8,
+    "latest_csv_file": "result_0_116200.csv",
+    "latest_csv_updated_at": "2026-06-09T12:01:00+00:00",
+    "max_files": 40,
+    "max_file_age_days": 45
   },
   "scan_window": {
     "total_asins": 10084,
-    "start_index": 5113,
-    "start_sheet_row": 5115,
-    "next_start_index": 5218,
-    "next_start_sheet_row": 5220,
+    "start_index": 5218,
+    "start_sheet_row": 5220,
+    "next_start_index": 5323,
+    "next_start_sheet_row": 5325,
     "scan_count": 105
   },
   "settings": {
@@ -303,7 +309,19 @@
       "qualification_reasons": [
         "10%+ below 30-day average",
         "7%+ below both 7-day and 30-day averages"
-      ]
+      ],
+      "has_creator_campaign": true,
+      "creator_campaign": {
+        "campaign_id": "amzn1.campaign.2435UUCL5HK5F",
+        "campaign_name": "\ud83c\udfe1 Spring Farm Essential! 15% OFF Milking Machine \ud83c\udf89#Eva",
+        "campaign_brand": "GarveeHome",
+        "commission_rate": "11%",
+        "campaign_start_date": "2026-03-18",
+        "campaign_end_date": "2026-08-31",
+        "recommended": false,
+        "active": true
+      },
+      "creator_commission_rate": "11%"
     },
     {
       "asin": "B00KWRM5Z4",
@@ -2249,5 +2267,5 @@
     "min_rare_price_days": 90,
     "logic": "any rule may qualify a deal"
   },
-  "qualification_filter_removed": 2
+  "qualification_filter_removed": 0
 }
