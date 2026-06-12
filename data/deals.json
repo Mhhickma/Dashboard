@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-06-12T20:05:30.233181+00:00",
+  "updated_at": "2026-06-12T20:20:25.755895+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
-  "deal_count": 33,
-  "new_scan_deal_count": 0,
-  "new_deals_added": 0,
+  "deal_count": 34,
+  "new_scan_deal_count": 2,
+  "new_deals_added": 2,
   "existing_deals_updated": 0,
   "expired_deals_removed": 0,
   "skipped_count": 0,
@@ -27,10 +27,10 @@
   },
   "scan_window": {
     "total_asins": 10082,
-    "start_index": 8154,
-    "start_sheet_row": 8156,
-    "next_start_index": 8259,
-    "next_start_sheet_row": 8261,
+    "start_index": 8259,
+    "start_sheet_row": 8261,
+    "next_start_index": 8364,
+    "next_start_sheet_row": 8366,
     "scan_count": 105
   },
   "settings": {
@@ -43,6 +43,34 @@
     "keepa_stats_days": 7
   },
   "deals": [
+    {
+      "asin": "B0002FUOR2",
+      "title": "Shop-Vac 9064900 2.5 Inch to 1.5 Inch Conversion Unit, Durable Design For Adapting Hose Sizes, (1-Pack)",
+      "current_price": 9.99,
+      "avg_7_price": 11.39,
+      "min_7_price": 9.99,
+      "avg_30_price": 11.5,
+      "min_30_price": null,
+      "drop_percent": 12.3,
+      "drop_30_percent": 13.1,
+      "price_stats_source": "keepa_stats_30_day_threshold",
+      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B0002FUOR2&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
+      "amazon_url": "https://www.amazon.com/dp/B0002FUOR2?tag=simplewoodsho-20",
+      "checked_at": "2026-06-12T20:20:25.657418+00:00",
+      "last_checked_at": "2026-06-12T20:20:25.660068+00:00",
+      "best_price_days": 445,
+      "best_price_message": "best price in 445 days",
+      "best_price_previous_price": 9.49,
+      "best_price_previous_date": "2025-03-24",
+      "posted_at": "2026-06-12T20:20:25.660068+00:00",
+      "first_seen_at": "2026-06-12T20:20:25.660068+00:00",
+      "expires_at": "2026-06-13T20:20:25.660071+00:00",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ]
+    },
     {
       "asin": "B0CJLRDH97",
       "title": "POWERTEC Router Subbase Centering Pin & Cone Set w/ 1/2\" & 1/4\" Inside Centering Guide & 1/4\" Outside Centering Guide. Works w/Collet for Alignment of Most Router Subbases & Template Guides (71840)",
@@ -929,5 +957,5 @@
     "min_rare_price_days": 90,
     "logic": "any rule may qualify a deal"
   },
-  "qualification_filter_removed": 0
+  "qualification_filter_removed": 1
 }
