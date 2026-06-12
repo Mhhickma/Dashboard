@@ -12,11 +12,8 @@
     var drop7 = number(deal.drop_percent);
     var drop30 = number(deal.drop_30_percent);
     var bestDays = number(deal.best_price_days);
-
     if (drop30 >= 10) reasons.push(drop30.toFixed(1) + "% below its 30-day average");
-    if (drop7 >= 7 && drop30 >= 7) {
-      reasons.push(drop7.toFixed(1) + "% below its 7-day average and " + drop30.toFixed(1) + "% below its 30-day average");
-    }
+    if (drop7 >= 7 && drop30 >= 7) reasons.push(drop7.toFixed(1) + "% below its 7-day average and " + drop30.toFixed(1) + "% below its 30-day average");
     if (bestDays >= 90) reasons.push("Lowest price in at least " + Math.round(bestDays) + " days");
     if (reasons.length === 0 && Array.isArray(deal.qualification_reasons)) reasons = deal.qualification_reasons.slice();
     return reasons;
@@ -28,12 +25,28 @@
     }, 0);
   }
 
+  function isModelNumber(token) {
+    var clean = token.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.-]+$/g, "");
+    if (!clean) return false;
+    if (/^\d{4,}(?:-[A-Za-z0-9]+)?$/i.test(clean)) return true;
+    if (/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/i.test(clean)) {
+      return !/^\d+(?:\.\d+)?(?:v|ah|in|inch|ft|oz|lb|lbs|mm|cm|pk)$/i.test(clean);
+    }
+    return false;
+  }
+
   function cleanTitle(value) {
-    return String(value || "Great Amazon find")
-      .replace(/[®™©]/g, "")
+    var title = String(value || "Great Amazon find")
+      .replace(/[®™©*]/g, "")
+      .replace(/\([^)]*(?=[A-Za-z-]*\d)[^)]*\)/g, "")
       .replace(/\s+/g, " ")
       .replace(/\s*[-–—|]\s*Amazon.*$/i, "")
       .trim();
+
+    title = title.split(" ").filter(function (token) { return !isModelNumber(token); }).join(" ");
+    title = title.replace(/\s+([,.;:)])/g, "$1").replace(/([(])\s+/g, "$1").replace(/\(\s*\)/g, "");
+    title = title.split(/,\s+(?=(?:black|white|red|blue|gray|grey|orange|yellow|green|silver|gold)\b)/i)[0];
+    return title.replace(/[,:;\-\s]+$/, "").trim() || "Great Amazon find";
   }
 
   function shortenText(value, maxLength) {
@@ -52,17 +65,29 @@
       ["Spotted: ", ". Its recent history makes this a standout deal. ad"],
       ["Take a look at ", ". This is an uncommon deal for this item. ad"],
       ["Today's find: ", ". This one stands apart from its usual history. ad"],
-      ["On my deal radar: ", ". A notable find based on its recent history. ad"]
+      ["On my deal radar: ", ". A notable find based on its recent history. ad"],
+      ["This caught my eye: ", ". It is showing an unusually strong deal. ad"],
+      ["One to check out: ", ". Its recent history makes it worth a look. ad"],
+      ["Found a good one: ", ". This deal is stronger than usual. ad"],
+      ["A solid find: ", ". This one does not hit this deal level often. ad"],
+      ["Deal worth seeing: ", ". It stands out against its recent history. ad"],
+      ["Keep an eye on this: ", ". It is showing a notably strong deal. ad"],
+      ["This one stands out: ", ". A worthwhile find based on recent history. ad"],
+      ["Notable deal: ", ". This item is at an uncommon deal level. ad"],
+      ["A good time to look at ", ". This deal is outside the usual pattern. ad"],
+      ["Deal radar find: ", ". This one is showing unusual deal strength. ad"],
+      ["This may be worth a look: ", ". A standout based on recent history. ad"],
+      ["Interesting find: ", ". This deal is not showing up every day. ad"],
+      ["One for the workshop: ", ". This one stands out from the usual. ad"],
+      ["Tool deal to check: ", ". Its recent history makes it notable. ad"],
+      ["This deal looks strong: ", ". It is an uncommon find for this item. ad"],
+      ["A deal that stood out: ", ". This one is worth checking today. ad"]
     ];
-    var template = templates[stableNumber(deal.asin) % templates.length];
+    var template = templates[stableNumber(deal.asin + cleanTitle(deal.title)) % templates.length];
     var titleBudget = FACEBOOK_POST_MAX_LENGTH - template[0].length - template[1].length;
     var post = template[0] + shortenText(deal.title, titleBudget) + template[1];
-
     if (post.length <= FACEBOOK_POST_MAX_LENGTH) return post;
-    return post
-      .slice(0, FACEBOOK_POST_MAX_LENGTH - 3)
-      .replace(/\s+ad\s*$/i, "")
-      .replace(/[,:;\-\s]+$/, "") + " ad";
+    return post.slice(0, FACEBOOK_POST_MAX_LENGTH - 3).replace(/\s+ad\s*$/i, "").replace(/[,:;\-\s]+$/, "") + " ad";
   }
 
   async function copyFacebookPost(text, button) {
@@ -81,7 +106,6 @@
     if (!asin || card.querySelector(".why-deal-box")) return;
     var reasons = displayReasons(deal);
     if (reasons.length === 0) return;
-
     var box = document.createElement("section");
     box.className = "why-deal-box";
     box.setAttribute("aria-label", "Why this is a deal");
@@ -91,11 +115,7 @@
     box.appendChild(heading);
     var list = document.createElement("ul");
     list.className = "why-deal-list";
-    reasons.forEach(function (reason) {
-      var item = document.createElement("li");
-      item.textContent = reason;
-      list.appendChild(item);
-    });
+    reasons.forEach(function (reason) { var item = document.createElement("li"); item.textContent = reason; list.appendChild(item); });
     box.appendChild(list);
     asin.insertAdjacentElement("afterend", box);
   }
