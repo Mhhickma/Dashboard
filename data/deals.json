@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-06-13T01:50:21.989572+00:00",
+  "updated_at": "2026-06-13T02:05:23.710876+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
-  "deal_count": 29,
-  "new_scan_deal_count": 3,
-  "new_deals_added": 3,
+  "deal_count": 31,
+  "new_scan_deal_count": 6,
+  "new_deals_added": 6,
   "existing_deals_updated": 0,
   "expired_deals_removed": 0,
   "skipped_count": 0,
@@ -17,7 +17,7 @@
     "ref": "main",
     "files_scanned": 8,
     "rows_scanned": 616453,
-    "asins_matched": 3,
+    "asins_matched": 1,
     "files_available": 8,
     "files_selected": 8,
     "latest_csv_file": "result_0_116200.csv",
@@ -27,10 +27,10 @@
   },
   "scan_window": {
     "total_asins": 10079,
-    "start_index": 490,
-    "start_sheet_row": 492,
-    "next_start_index": 595,
-    "next_start_sheet_row": 597,
+    "start_index": 595,
+    "start_sheet_row": 597,
+    "next_start_index": 700,
+    "next_start_sheet_row": 702,
     "scan_count": 105
   },
   "settings": {
@@ -43,6 +43,61 @@
     "keepa_stats_days": 7
   },
   "deals": [
+    {
+      "asin": "B00004TRCD",
+      "title": "BESSEY LM2.004 LM General Purpose Clamp, 1 Pack",
+      "current_price": 6.5,
+      "avg_7_price": 7.05,
+      "min_7_price": 6.5,
+      "avg_30_price": 7.67,
+      "min_30_price": null,
+      "drop_percent": 7.8,
+      "drop_30_percent": 15.3,
+      "price_stats_source": "keepa_stats_30_day_threshold",
+      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B00004TRCD&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
+      "amazon_url": "https://www.amazon.com/dp/B00004TRCD?tag=simplewoodsho-20",
+      "checked_at": "2026-06-13T02:05:23.576999+00:00",
+      "last_checked_at": "2026-06-13T02:05:23.614468+00:00",
+      "best_price_days": 4,
+      "best_price_message": "best price in 4 days",
+      "best_price_previous_price": 6.5,
+      "best_price_previous_date": "2026-06-08",
+      "posted_at": "2026-06-13T02:05:23.614468+00:00",
+      "first_seen_at": "2026-06-13T02:05:23.614468+00:00",
+      "expires_at": "2026-06-14T02:05:23.614471+00:00",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages"
+      ]
+    },
+    {
+      "asin": "B01M0J08MF",
+      "title": "BOSCH PR20EVS Colt 1.0 HP Variable-Speed Palm Router - 5.6 Amp Motor, Soft Start, Constant ResponsCircuitry, Ergonomic Grip, Rugged Aluminum Base, Fixed, Quick-Clamp System, 1/4\" Collet",
+      "current_price": 99.99,
+      "avg_7_price": 113.26,
+      "min_7_price": 99.99,
+      "avg_30_price": 115.78,
+      "min_30_price": null,
+      "drop_percent": 11.7,
+      "drop_30_percent": 13.6,
+      "price_stats_source": "keepa_stats_30_day_threshold",
+      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B01M0J08MF&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
+      "amazon_url": "https://www.amazon.com/dp/B01M0J08MF?tag=simplewoodsho-20",
+      "checked_at": "2026-06-13T02:05:23.582896+00:00",
+      "last_checked_at": "2026-06-13T02:05:23.614468+00:00",
+      "best_price_days": 162,
+      "best_price_message": "best price in 162 days",
+      "best_price_previous_price": 79.99,
+      "best_price_previous_date": "2026-01-01",
+      "posted_at": "2026-06-13T02:05:23.614468+00:00",
+      "first_seen_at": "2026-06-13T02:05:23.614468+00:00",
+      "expires_at": "2026-06-14T02:05:23.614471+00:00",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ]
+    },
     {
       "asin": "B085DVKM62",
       "title": "Makita E-00789 Impact XPS\u2122 #3 Phillips 2\" Power Bit, 3/pk",
@@ -817,5 +872,5 @@
     "min_rare_price_days": 90,
     "logic": "any rule may qualify a deal"
   },
-  "qualification_filter_removed": 1
+  "qualification_filter_removed": 4
 }
