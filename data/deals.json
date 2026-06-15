@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-06-15T20:20:29.033254+00:00",
+  "updated_at": "2026-06-15T20:37:08.547285+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
-  "deal_count": 66,
-  "new_scan_deal_count": 3,
-  "new_deals_added": 2,
-  "existing_deals_updated": 1,
-  "expired_deals_removed": 0,
+  "deal_count": 65,
+  "new_scan_deal_count": 0,
+  "new_deals_added": 0,
+  "existing_deals_updated": 0,
+  "expired_deals_removed": 1,
   "skipped_count": 0,
   "missing_image_count": 0,
   "creator_campaign_deal_count": 3,
@@ -17,20 +17,20 @@
     "ref": "main",
     "files_scanned": 8,
     "rows_scanned": 616453,
-    "asins_matched": 3,
+    "asins_matched": 5,
     "files_available": 8,
     "files_selected": 8,
-    "latest_csv_file": "result_0_116200.csv",
+    "latest_csv_file": "result_1_106400.csv",
     "latest_csv_updated_at": "2026-06-09T12:01:00+00:00",
     "max_files": 40,
     "max_file_age_days": 45
   },
   "scan_window": {
     "total_asins": 10073,
-    "start_index": 8269,
-    "start_sheet_row": 8271,
-    "next_start_index": 8374,
-    "next_start_sheet_row": 8376,
+    "start_index": 8374,
+    "start_sheet_row": 8376,
+    "next_start_index": 8479,
+    "next_start_sheet_row": 8481,
     "scan_count": 105
   },
   "settings": {
@@ -1801,32 +1801,6 @@
       "qualification_reasons": [
         "7%+ below both 7-day and 30-day averages"
       ]
-    },
-    {
-      "asin": "B0002FUOR2",
-      "title": "Shop-Vac 9064900 2.5 Inch to 1.5 Inch Conversion Unit, Durable Design For Adapting Hose Sizes, (1-Pack)",
-      "current_price": 9.99,
-      "avg_7_price": 10.73,
-      "min_7_price": 9.99,
-      "avg_30_price": 11.35,
-      "min_30_price": null,
-      "drop_percent": 6.9,
-      "drop_30_percent": 12.0,
-      "price_stats_source": "keepa_stats_30_day_threshold",
-      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B0002FUOR2&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
-      "amazon_url": "https://www.amazon.com/dp/B0002FUOR2?tag=simplewoodsho-20",
-      "checked_at": "2026-06-15T20:20:28.930101+00:00",
-      "last_checked_at": "2026-06-15T20:20:28.932683+00:00",
-      "best_price_days": 3,
-      "best_price_message": "best price in 3 days",
-      "best_price_previous_price": 9.99,
-      "best_price_previous_date": "2026-06-12",
-      "posted_at": "2026-06-14T20:20:16.285324+00:00",
-      "first_seen_at": "2026-06-14T20:20:16.285324+00:00",
-      "expires_at": "2026-06-16T20:20:28.932684+00:00",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ]
     }
   ],
   "qualification_rules": {
@@ -1835,5 +1809,5 @@
     "min_rare_price_days": 90,
     "logic": "any rule may qualify a deal"
   },
-  "qualification_filter_removed": 2
+  "qualification_filter_removed": 0
 }
