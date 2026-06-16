@@ -68,6 +68,7 @@
   function facebookPostText(deal) {
     var templates = [
       ["", " on sale today. ad", ""],
+      ["", ". ", " ad"],
       ["", ", lower price than usual right now. Linked below, ad", ""],
       ["", ", lower price than normal right now. ad", ""],
       ["", ". Worth checking today. ad", ""],
@@ -75,7 +76,7 @@
       ["", " on sale right now. ad", ""]
     ];
     var template = templates[stableNumber(deal.asin + cleanTitle(deal.title)) % templates.length];
-    var suffix = template[1];
+    var suffix = template[1] + (template[2] ? dealFact(deal) + template[2] : "");
     var titleBudget = FACEBOOK_POST_MAX_LENGTH - template[0].length - suffix.length;
     var post = template[0] + shortenText(deal.title, Math.max(24, titleBudget)) + suffix;
     if (post.length <= FACEBOOK_POST_MAX_LENGTH) return post;
