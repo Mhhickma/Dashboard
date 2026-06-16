@@ -56,36 +56,30 @@
     return shortened || text.slice(0, maxLength).trim();
   }
 
+  function dealFact(deal) {
+    var bestDays = Math.round(number(deal.best_price_days));
+
+    if (bestDays >= 335) return "Best price this year.";
+    if (bestDays >= 180) return "Best price in months.";
+    if (bestDays >= 30) return "Lowest price in " + bestDays + " days.";
+    return "Lower price than normal right now.";
+  }
+
   function facebookPostText(deal) {
     var templates = [
-      ["Standout find: ", ". A rare deal based on its recent history. ad"],
-      ["Worth a look: ", ". This deal stands out from its recent history. ad"],
-      ["Deal watch: ", ". A stronger-than-usual find right now. ad"],
-      ["Good find: ", ". This one rarely reaches this deal level. ad"],
-      ["Spotted: ", ". Its recent history makes this a standout deal. ad"],
-      ["Take a look at ", ". This is an uncommon deal for this item. ad"],
-      ["Today's find: ", ". This one stands apart from its usual history. ad"],
-      ["On my deal radar: ", ". A notable find based on its recent history. ad"],
-      ["This caught my eye: ", ". It is showing an unusually strong deal. ad"],
-      ["One to check out: ", ". Its recent history makes it worth a look. ad"],
-      ["Found a good one: ", ". This deal is stronger than usual. ad"],
-      ["A solid find: ", ". This one does not hit this deal level often. ad"],
-      ["Deal worth seeing: ", ". It stands out against its recent history. ad"],
-      ["Keep an eye on this: ", ". It is showing a notably strong deal. ad"],
-      ["This one stands out: ", ". A worthwhile find based on recent history. ad"],
-      ["Notable deal: ", ". This item is at an uncommon deal level. ad"],
-      ["A good time to look at ", ". This deal is outside the usual pattern. ad"],
-      ["Deal radar find: ", ". This one is showing unusual deal strength. ad"],
-      ["This may be worth a look: ", ". A standout based on recent history. ad"],
-      ["Interesting find: ", ". This deal is not showing up every day. ad"],
-      ["One for the workshop: ", ". This one stands out from the usual. ad"],
-      ["Tool deal to check: ", ". Its recent history makes it notable. ad"],
-      ["This deal looks strong: ", ". It is an uncommon find for this item. ad"],
-      ["A deal that stood out: ", ". This one is worth checking today. ad"]
+      ["", " on sale today. ad", ""],
+      ["", ", lower price than usual right now. Linked below, ad", ""],
+      ["", ", lower price than normal right now. ad", ""],
+      ["", ". Worth checking today. ad", ""],
+      ["", ". Linked below, ad", ""],
+      ["", " on sale right now. ad", ""]
     ];
     var template = templates[stableNumber(deal.asin + cleanTitle(deal.title)) % templates.length];
-    var titleBudget = FACEBOOK_POST_MAX_LENGTH - template[0].length - template[1].length;
-    var post = template[0] + shortenText(deal.title, titleBudget) + template[1];
+    var suffix = template[1];
+    var titleBudget = FACEBOOK_POST_MAX_LENGTH - template[0].length - suffix.length;
+    var post = template[0] + shortenText(deal.title, Math.max(24, titleBudget)) + suffix;
+    if (post.length <= FACEBOOK_POST_MAX_LENGTH) return post;
+    post = shortenText(deal.title, 70) + " on sale today. ad";
     if (post.length <= FACEBOOK_POST_MAX_LENGTH) return post;
     return post.slice(0, FACEBOOK_POST_MAX_LENGTH - 3).replace(/\s+ad\s*$/i, "").replace(/[,:;\-\s]+$/, "") + " ad";
   }
