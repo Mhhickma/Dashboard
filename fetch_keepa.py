@@ -24,7 +24,9 @@ BATCH_SIZE = int(os.getenv("KEEPA_BATCH_SIZE", "50"))
 REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "2"))
 RATE_LIMIT_WAIT_SECONDS = int(os.getenv("KEEPA_RATE_LIMIT_WAIT_SECONDS", "70"))
 MAX_RETRIES = int(os.getenv("KEEPA_MAX_RETRIES", "5"))
-SCAN_LIMIT = int(os.getenv("SCAN_LIMIT", "100"))
+SCAN_LIMIT_RAW = os.getenv("SCAN_LIMIT", "100").strip().lower()
+SCAN_RUNS_PER_DAY = max(1, int(os.getenv("SCAN_RUNS_PER_DAY", "96")))
+SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", "10")))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/influencer-prospects")
@@ -275,7 +277,17 @@ def select_asins_for_run(all_asins):
     if total == 0:
         return [], {"next_start_index": 0}, 0, 0
 
-    limit = SCAN_LIMIT if SCAN_LIMIT > 0 else total
+    if SCAN_LIMIT_RAW in ("auto", "dynamic"):
+        daily_buffer = 1 + (SCAN_LIMIT_BUFFER_PERCENT / 100)
+        limit = int((total * daily_buffer + SCAN_RUNS_PER_DAY - 1) // SCAN_RUNS_PER_DAY)
+        print(
+            f"Auto scan limit: {limit} ASINs per run for {total} total ASINs, "
+            f"{SCAN_RUNS_PER_DAY} runs/day, {SCAN_LIMIT_BUFFER_PERCENT:g}% buffer"
+        )
+    else:
+        limit = int(SCAN_LIMIT_RAW)
+
+    limit = limit if limit > 0 else total
     limit = min(limit, total)
     state = load_scan_state()
     start_index = state.get("next_start_index", 0)
@@ -622,7 +634,7 @@ def main():
     print(f"Batch size: {BATCH_SIZE}")
     print(f"Normal delay between batches: {REQUEST_DELAY_SECONDS} seconds")
     print(f"Rate-limit retry wait: {RATE_LIMIT_WAIT_SECONDS} seconds")
-    print(f"Scan limit: {SCAN_LIMIT if SCAN_LIMIT > 0 else 'off'}")
+    print(f"Scan limit setting: {SCAN_LIMIT_RAW}")
     print(f"Deal TTL: {DEAL_TTL_HOURS} hours")
     print("Deal threshold: current price must be at least 5% below the Keepa 30-day average")
     print("Keepa stats=7 is still used for 7-day average and 7-day low display values")
@@ -696,7 +708,9 @@ def main():
                     "batch_size": BATCH_SIZE,
                     "request_delay_seconds": REQUEST_DELAY_SECONDS,
                     "rate_limit_wait_seconds": RATE_LIMIT_WAIT_SECONDS,
-                    "scan_limit": SCAN_LIMIT,
+                    "scan_limit": SCAN_LIMIT_RAW,
+                    "scan_runs_per_day": SCAN_RUNS_PER_DAY,
+                    "scan_limit_buffer_percent": SCAN_LIMIT_BUFFER_PERCENT,
                     "deal_ttl_hours": DEAL_TTL_HOURS,
                     "keepa_stats_days": 7,
                 },

@@ -57,19 +57,21 @@ Each run:
 
 With a 15-minute external trigger, the workflow can run 96 times per day.
 
-The current `SCAN_LIMIT` is `105`, which covers up to 10,080 ASINs per day. That is intended to scan a 10,000-ASIN list once per day, with a small buffer for growth.
+The current `SCAN_LIMIT` is `auto`. Each run counts the current ASIN list and scans enough rows to cover the full sheet within 24 hours, with a 10% buffer for growth.
 
 ## Keepa Token Use
 
 The current settings are designed for a Keepa refill rate of 25 tokens per minute.
 
-Each scheduled run scans 105 ASINs, split into batches of 25 with a 60-second delay between batches. That keeps requests paced near the token refill rate while still averaging only about 7 ASINs per minute across the full day.
+Each scheduled run automatically sizes the ASIN window, split into batches of 25 with a 60-second delay between batches. That keeps requests paced near the token refill rate while covering the full list within the daily window.
 
 ## Current Scan Settings
 
 The workflow currently sets:
 
-- `SCAN_LIMIT`: `105`
+- `SCAN_LIMIT`: `auto`
+- `SCAN_RUNS_PER_DAY`: `96`
+- `SCAN_LIMIT_BUFFER_PERCENT`: `10`
 - `KEEPA_BATCH_SIZE`: `25`
 - `KEEPA_REQUEST_DELAY_SECONDS`: `60`
 - `KEEPA_RATE_LIMIT_WAIT_SECONDS`: `70`
