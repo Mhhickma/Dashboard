@@ -138,16 +138,13 @@ def asins_from_csv_text(csv_text, source_name):
         seen.add(asin)
         asins.append(asin)
 
-    for row in rows[1:]:
-        if len(row) > 0:
-            add_asin(row[0])
-
-    for row in rows[1:]:
-        if len(row) > 1:
-            add_asin(row[1])
+    for column_index in range(3):
+        for row in rows[1:]:
+            if len(row) > column_index:
+                add_asin(row[column_index])
 
     print(f"Loaded {len(asins)} unique ASINs from {source_name}")
-    print("ASIN scan order: Column A first, then Column B")
+    print("ASIN scan order: Column A first, then Column B, then Column C")
     return asins
 
 
