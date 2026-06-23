@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-06-23T08:37:55.570179+00:00",
+  "updated_at": "2026-06-23T08:52:36.684061+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
   "deal_count": 108,
-  "new_scan_deal_count": 10,
-  "new_deals_added": 10,
+  "new_scan_deal_count": 6,
+  "new_deals_added": 6,
   "existing_deals_updated": 0,
-  "expired_deals_removed": 0,
+  "expired_deals_removed": 1,
   "skipped_count": 0,
   "missing_image_count": 0,
   "creator_campaign_deal_count": 0,
@@ -27,10 +27,10 @@
   },
   "scan_window": {
     "total_asins": 14421,
-    "start_index": 7928,
-    "start_sheet_row": 7930,
-    "next_start_index": 8094,
-    "next_start_sheet_row": 8096,
+    "start_index": 8094,
+    "start_sheet_row": 8096,
+    "next_start_index": 8260,
+    "next_start_sheet_row": 8262,
     "scan_count": 166
   },
   "settings": {
@@ -45,6 +45,33 @@
     "keepa_stats_days": 7
   },
   "deals": [
+    {
+      "asin": "B004ST0U7W",
+      "title": "Kings County Tool Portable Drill Guide Jig | Convert Hand Drill to Drill Press | Bore Up To 45-Degree Angles | 3/8-Inch Shaft and Chuck | 5-Degree Increments | Depth Stop Included",
+      "current_price": 29.0,
+      "avg_7_price": 37.31,
+      "min_7_price": 29.0,
+      "avg_30_price": 37.33,
+      "min_30_price": null,
+      "drop_percent": 22.3,
+      "drop_30_percent": 22.3,
+      "price_stats_source": "keepa_stats_30_day_threshold",
+      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B004ST0U7W&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
+      "amazon_url": "https://www.amazon.com/dp/B004ST0U7W?tag=simplewoodsho-20",
+      "checked_at": "2026-06-23T08:52:36.500476+00:00",
+      "last_checked_at": "2026-06-23T08:52:36.504001+00:00",
+      "best_price_days": null,
+      "best_price_message": "best price in available Keepa history",
+      "best_price_previous_price": null,
+      "best_price_previous_date": null,
+      "posted_at": "2026-06-23T08:52:36.504001+00:00",
+      "first_seen_at": "2026-06-23T08:52:36.504001+00:00",
+      "expires_at": "2026-06-24T08:52:36.504003+00:00",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages"
+      ]
+    },
     {
       "asin": "B0BXWSGX73",
       "title": "GOFLAME 2-Pack Folding Sawhorses, 2644 Lbs Portable Metal Saw Horses with Convenient Handle & Detachable 2 x 4 Support Arms, Heavy Duty, No Assembly Required",
@@ -2879,33 +2906,6 @@
       "qualification_reasons": [
         "10%+ below 30-day average"
       ]
-    },
-    {
-      "asin": "B0FW5S61YK",
-      "title": "Makita BL1840BDC2X 18V LXT\u00ae Lithium-Ion Battery and Rapid Optimum Charger Starter Pack (4.0Ah)",
-      "current_price": 119.0,
-      "avg_7_price": 161.92,
-      "min_7_price": 119.0,
-      "avg_30_price": 143.57,
-      "min_30_price": null,
-      "drop_percent": 26.5,
-      "drop_30_percent": 17.1,
-      "price_stats_source": "keepa_stats_30_day_threshold",
-      "image": "https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=B0FW5S61YK&Format=_SL500_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822",
-      "amazon_url": "https://www.amazon.com/dp/B0FW5S61YK?tag=simplewoodsho-20",
-      "checked_at": "2026-06-22T08:37:47.244015+00:00",
-      "last_checked_at": "2026-06-22T08:37:47.244996+00:00",
-      "best_price_days": null,
-      "best_price_message": "best price in available Keepa history",
-      "best_price_previous_price": null,
-      "best_price_previous_date": null,
-      "posted_at": "2026-06-22T08:37:47.244996+00:00",
-      "first_seen_at": "2026-06-22T08:37:47.244996+00:00",
-      "expires_at": "2026-06-23T08:37:47.244998+00:00",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages"
-      ]
     }
   ],
   "qualification_rules": {
@@ -2914,5 +2914,5 @@
     "min_rare_price_days": 90,
     "logic": "any rule may qualify a deal"
   },
-  "qualification_filter_removed": 10
+  "qualification_filter_removed": 5
 }
