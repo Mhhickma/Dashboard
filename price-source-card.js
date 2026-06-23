@@ -9,5 +9,4 @@
       .price-source-pill {
         display: inline-flex;
         align-items: center;
-        border-radius: 999px;
-        padding: 0.25rem 0.55
+        border-radius
