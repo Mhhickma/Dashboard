@@ -31,23 +31,14 @@ SCAN_RUNS_PER_DAY = max(1, int(os.getenv("SCAN_RUNS_PER_DAY", "48")))
 SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", "10")))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 
-# Keepa stats array price indexes.
-# Common Keepa indexes used here:
-# 0 = Amazon, 1 = New, 10 = New FBA, 18 = Buy Box shipping.
-# Prime Exclusive has varied in Keepa exports, so scan configured index 32 plus alternate 33.
-PRIME_EXCLUSIVE_PRICE_INDEX = int(os.getenv("KEEPA_PRIME_EXCLUSIVE_PRICE_INDEX", "32"))
-PRIME_EXCLUSIVE_ALT_PRICE_INDEX = int(os.getenv("KEEPA_PRIME_EXCLUSIVE_ALT_PRICE_INDEX", "33"))
-PRICE_TRACKS = []
-for track in [
+# Keepa stats array price indexes. These are fallback tracks only.
+# Prime Exclusive is parsed from offers[].isPrimeExcl + offers[].primeExclCSV.
+PRICE_TRACKS = [
     {"type": "amazon", "label": "Amazon price", "index": 0, "source_suffix": "amazon"},
     {"type": "new", "label": "New price", "index": 1, "source_suffix": "new"},
     {"type": "new_fba_prime", "label": "New FBA / Prime price", "index": 10, "source_suffix": "new_fba_prime"},
     {"type": "buy_box", "label": "Buy Box price", "index": 18, "source_suffix": "buy_box"},
-    {"type": "prime_exclusive_new", "label": "New, Prime Exclusive", "index": PRIME_EXCLUSIVE_PRICE_INDEX, "source_suffix": "prime_exclusive_new"},
-    {"type": "prime_exclusive_new_alt", "label": "New, Prime Exclusive", "index": PRIME_EXCLUSIVE_ALT_PRICE_INDEX, "source_suffix": "prime_exclusive_new_alt"},
-]:
-    if track["index"] not in {item["index"] for item in PRICE_TRACKS}:
-        PRICE_TRACKS.append(track)
+]
 
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
@@ -57,6 +48,7 @@ MEMORY_FILE = Path("data/deals_memory.json")
 ASIN_RE = re.compile(r"\bB[0-9A-Z]{9}\b")
 KEEPA_EPOCH = datetime(2011, 1, 1, tzinfo=timezone.utc)
 NON_AMAZON_PRICE_TYPES = {track["type"] for track in PRICE_TRACKS if track["type"] != "amazon"}
+NON_AMAZON_PRICE_TYPES.add("prime_exclusive_offer")
 
 
 def utc_now():
@@ -318,7 +310,14 @@ def fetch_keepa_products(asins):
         batch = asins[i : i + BATCH_SIZE]
         batch_number = (i // BATCH_SIZE) + 1
         print(f"Fetching batch {batch_number}: {len(batch)} ASINs")
-        params = {"key": KEEPA_API_KEY, "domain": DOMAIN_ID, "asin": ",".join(batch), "stats": 7, "history": 1}
+        params = {
+            "key": KEEPA_API_KEY,
+            "domain": DOMAIN_ID,
+            "asin": ",".join(batch),
+            "stats": 7,
+            "history": 1,
+            "offers": 1,
+        }
         payload = fetch_keepa_batch(url, params, batch_number)
         all_products.extend(payload.get("products", []))
         tokens_left = payload.get("tokensLeft")
@@ -339,37 +338,138 @@ def keepa_minutes_to_datetime(minutes):
     return KEEPA_EPOCH + timedelta(minutes=minutes)
 
 
-def best_price_days_for_track(product, track_index, current_price):
-    csv_tracks = product.get("csv") or []
-    if track_index >= len(csv_tracks) or not isinstance(csv_tracks[track_index], list):
-        return 0, None, None
-    history = csv_tracks[track_index]
-    if len(history) < 2:
-        return 0, None, None
+def normalize_keepa_csv(raw_csv):
+    if not raw_csv:
+        return []
+    if isinstance(raw_csv, str):
+        try:
+            raw_csv = json.loads(raw_csv)
+        except Exception:
+            raw_csv = [part.strip() for part in raw_csv.split(",") if part.strip()]
+    if not isinstance(raw_csv, list):
+        return []
+    values = []
+    for item in raw_csv:
+        try:
+            values.append(int(float(item)))
+        except Exception:
+            continue
+    return values
 
+
+def decode_keepa_price_csv(raw_csv):
+    values = normalize_keepa_csv(raw_csv)
+    points = []
+    for i in range(0, len(values) - 1, 2):
+        dt = keepa_minutes_to_datetime(values[i])
+        price_cents = values[i + 1]
+        if not dt or price_cents is None or price_cents <= 0:
+            continue
+        points.append((dt, round(price_cents / 100, 2)))
+    points.sort(key=lambda item: item[0])
+    return points
+
+
+def latest_price_from_points(points):
+    if not points:
+        return None
+    return points[-1][1]
+
+
+def window_stats_from_points(points, days):
+    if not points:
+        return None, None
+    now = utc_now()
+    start = now - timedelta(days=days)
+    relevant = []
+    carry_price = None
+    carry_time = start
+
+    for dt, price in points:
+        if dt <= start:
+            carry_price = price
+            carry_time = start
+        elif dt <= now:
+            relevant.append((dt, price))
+
+    segments = []
+    if carry_price is not None:
+        last_time = carry_time
+        last_price = carry_price
+    elif relevant:
+        last_time = relevant[0][0]
+        last_price = relevant[0][1]
+        relevant = relevant[1:]
+    else:
+        last_time = points[-1][0]
+        last_price = points[-1][1]
+
+    for dt, price in relevant:
+        duration = max(0, (dt - last_time).total_seconds())
+        if duration > 0 and last_price and last_price > 0:
+            segments.append((duration, last_price))
+        last_time = dt
+        last_price = price
+
+    duration = max(0, (now - last_time).total_seconds())
+    if duration > 0 and last_price and last_price > 0:
+        segments.append((duration, last_price))
+
+    if not segments:
+        prices = [price for _, price in points if price and price > 0]
+        if not prices:
+            return None, None
+        return round(sum(prices) / len(prices), 2), min(prices)
+
+    total_seconds = sum(duration for duration, _ in segments)
+    avg_price = sum(duration * price for duration, price in segments) / total_seconds if total_seconds else None
+    min_price = min(price for _, price in segments)
+    return round(avg_price, 2) if avg_price else None, round(min_price, 2)
+
+
+def best_price_days_from_points(points, current_price):
+    if not points or not current_price:
+        return 0, None, None
     current_cents = int(round(current_price * 100))
     best_date = None
     best_price = None
     last_seen_date = None
-    for i in range(0, len(history) - 1, 2):
-        keepa_minute = history[i]
-        price_cents = history[i + 1]
-        if not isinstance(price_cents, (int, float)) or price_cents <= 0:
-            continue
-        point_date = keepa_minutes_to_datetime(keepa_minute)
-        if not point_date:
-            continue
-        last_seen_date = point_date
+    for dt, price in points:
+        price_cents = int(round(price * 100))
+        last_seen_date = dt
         if price_cents <= current_cents:
-            best_date = point_date
-            best_price = round(price_cents / 100, 2)
-
+            best_date = dt
+            best_price = price
     if not last_seen_date:
         return 0, None, None
     if not best_date:
-        best_date = keepa_minutes_to_datetime(history[0]) or last_seen_date
+        best_date = points[0][0]
     days = max(0, int((utc_now() - best_date).total_seconds() // 86400))
     return days, best_price, best_date.date().isoformat()
+
+
+def best_price_days_for_track(product, track_index, current_price):
+    csv_tracks = product.get("csv") or []
+    if track_index >= len(csv_tracks) or not isinstance(csv_tracks[track_index], list):
+        return 0, None, None
+    points = decode_keepa_price_csv(csv_tracks[track_index])
+    return best_price_days_from_points(points, current_price)
+
+
+def prime_exclusive_offer_points(product):
+    points = []
+    offers = product.get("offers") or []
+    if not isinstance(offers, list):
+        return points
+    for offer in offers:
+        if not isinstance(offer, dict):
+            continue
+        if not offer.get("isPrimeExcl"):
+            continue
+        prime_points = decode_keepa_price_csv(offer.get("primeExclCSV"))
+        points.extend(prime_points)
+    points.sort(key=lambda item: item[0])
+    return points
 
 
 def build_track_presence_summary(products):
@@ -401,7 +501,76 @@ def build_track_presence_summary(products):
             "products_lower_than_amazon_current": lower_than_amazon_count,
             "sample_current_prices": sample_asins,
         })
+
+    prime_current_count = 0
+    prime_lower_than_amazon_count = 0
+    prime_sample_asins = []
+    for product in products:
+        points = prime_exclusive_offer_points(product)
+        current = latest_price_from_points(points)
+        amazon_current = price_from_stats_array(product.get("stats") or {}, "current", 0)
+        if current:
+            prime_current_count += 1
+            if len(prime_sample_asins) < 10:
+                prime_sample_asins.append({"asin": product.get("asin"), "current_price": current, "amazon_current_price": amazon_current})
+            if amazon_current and current < amazon_current:
+                prime_lower_than_amazon_count += 1
+    summary.append({
+        "price_type": "prime_exclusive_offer",
+        "label": "New, Prime Exclusive",
+        "keepa_source": "offers[].isPrimeExcl + primeExclCSV",
+        "products_with_current_price": prime_current_count,
+        "products_with_avg30_price": prime_current_count,
+        "products_lower_than_amazon_current": prime_lower_than_amazon_count,
+        "sample_current_prices": prime_sample_asins,
+    })
     return summary
+
+
+def qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days):
+    drop_percent = round(((avg_7_price - current_price) / avg_7_price) * 100, 1)
+    drop_30_percent = round(((avg_30_price - current_price) / avg_30_price) * 100, 1)
+    qualification_reasons = []
+    if drop_30_percent >= 10:
+        qualification_reasons.append("10%+ below 30-day average")
+    if drop_percent >= 7 and drop_30_percent >= 7:
+        qualification_reasons.append("7%+ below both 7-day and 30-day averages")
+    if best_price_days >= 90:
+        qualification_reasons.append("best price in 90+ days")
+    if drop_30_percent < MIN_DROP_PERCENT and not qualification_reasons:
+        return None
+    if not qualification_reasons:
+        return None
+    return drop_percent, drop_30_percent, qualification_reasons
+
+
+def base_deal(product, asin, title, current_price, avg_7_price, min_7_price, avg_30_price, drop_percent, drop_30_percent, qualification_reasons, source, price_type, price_type_label, amazon_current_price, best_price_days, previous_price, previous_date, keepa_price_index=None):
+    checked_at = iso_now()
+    return {
+        "asin": asin,
+        "title": title,
+        "current_price": current_price,
+        "avg_7_price": avg_7_price,
+        "min_7_price": min_7_price,
+        "avg_30_price": avg_30_price,
+        "min_30_price": None,
+        "drop_percent": drop_percent,
+        "drop_30_percent": drop_30_percent,
+        "price_stats_source": source,
+        "image": get_product_image(product, asin),
+        "amazon_url": f"https://www.amazon.com/dp/{asin}?tag={AMAZON_TAG}",
+        "checked_at": checked_at,
+        "last_checked_at": checked_at,
+        "price_type": price_type,
+        "price_type_label": price_type_label,
+        "keepa_price_index": keepa_price_index,
+        "amazon_current_price": amazon_current_price,
+        "best_price_days": best_price_days,
+        "best_price_message": f"best price in {best_price_days} days" if best_price_days else "",
+        "best_price_previous_price": previous_price,
+        "best_price_previous_date": previous_date,
+        "qualification_reasons": qualification_reasons,
+    }
 
 
 def build_deal_candidate(product, track):
@@ -421,48 +590,50 @@ def build_deal_candidate(product, track):
     if current_price >= avg_30_price:
         return None
 
-    drop_percent = round(((avg_7_price - current_price) / avg_7_price) * 100, 1)
-    drop_30_percent = round(((avg_30_price - current_price) / avg_30_price) * 100, 1)
     best_price_days, previous_price, previous_date = best_price_days_for_track(product, price_index, current_price)
-
-    qualification_reasons = []
-    if drop_30_percent >= 10:
-        qualification_reasons.append("10%+ below 30-day average")
-    if drop_percent >= 7 and drop_30_percent >= 7:
-        qualification_reasons.append("7%+ below both 7-day and 30-day averages")
-    if best_price_days >= 90:
-        qualification_reasons.append("best price in 90+ days")
-    if drop_30_percent < MIN_DROP_PERCENT and not qualification_reasons:
+    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+    if not qualified:
         return None
-    if not qualification_reasons:
+    drop_percent, drop_30_percent, qualification_reasons = qualified
+
+    return base_deal(
+        product, asin, title, current_price, avg_7_price, min_7_price, avg_30_price,
+        drop_percent, drop_30_percent, qualification_reasons,
+        f"keepa_stats_30_day_threshold_{track['source_suffix']}",
+        track["type"], track["label"], amazon_current_price, best_price_days,
+        previous_price, previous_date, price_index,
+    )
+
+
+def build_prime_exclusive_offer_candidate(product):
+    asin = product.get("asin")
+    title = product.get("title") or asin
+    points = prime_exclusive_offer_points(product)
+    current_price = latest_price_from_points(points)
+    if not current_price:
         return None
 
-    checked_at = iso_now()
-    return {
-        "asin": asin,
-        "title": title,
-        "current_price": current_price,
-        "avg_7_price": avg_7_price,
-        "min_7_price": min_7_price,
-        "avg_30_price": avg_30_price,
-        "min_30_price": None,
-        "drop_percent": drop_percent,
-        "drop_30_percent": drop_30_percent,
-        "price_stats_source": f"keepa_stats_30_day_threshold_{track['source_suffix']}",
-        "image": get_product_image(product, asin),
-        "amazon_url": f"https://www.amazon.com/dp/{asin}?tag={AMAZON_TAG}",
-        "checked_at": checked_at,
-        "last_checked_at": checked_at,
-        "price_type": track["type"],
-        "price_type_label": track["label"],
-        "keepa_price_index": price_index,
-        "amazon_current_price": amazon_current_price,
-        "best_price_days": best_price_days,
-        "best_price_message": f"best price in {best_price_days} days" if best_price_days else "",
-        "best_price_previous_price": previous_price,
-        "best_price_previous_date": previous_date,
-        "qualification_reasons": qualification_reasons,
-    }
+    avg_7_price, min_7_price = window_stats_from_points(points, 7)
+    avg_30_price, _ = window_stats_from_points(points, 30)
+    amazon_current_price = price_from_stats_array(product.get("stats") or {}, "current", 0)
+    if not avg_7_price or not min_7_price or not avg_30_price:
+        return None
+    if current_price >= avg_30_price:
+        return None
+
+    best_price_days, previous_price, previous_date = best_price_days_from_points(points, current_price)
+    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+    if not qualified:
+        return None
+    drop_percent, drop_30_percent, qualification_reasons = qualified
+
+    return base_deal(
+        product, asin, title, current_price, avg_7_price, min_7_price, avg_30_price,
+        drop_percent, drop_30_percent, qualification_reasons,
+        "keepa_offers_prime_exclusive_csv",
+        "prime_exclusive_offer", "New, Prime Exclusive", amazon_current_price, best_price_days,
+        previous_price, previous_date, None,
+    )
 
 
 def deal_rank(deal):
@@ -471,7 +642,7 @@ def deal_rank(deal):
     amazon_current = float(deal.get("amazon_current_price") or current or 0)
     savings_vs_amazon = max(0, amazon_current - current)
     return (
-        1 if price_type in NON_AMAZON_PRICE_TYPES else 0,
+        2 if price_type == "prime_exclusive_offer" else 1 if price_type in NON_AMAZON_PRICE_TYPES else 0,
         savings_vs_amazon,
         float(deal.get("drop_30_percent") or 0),
         float(deal.get("drop_percent") or 0),
@@ -481,6 +652,9 @@ def deal_rank(deal):
 
 def build_deal(product):
     candidates = []
+    prime_offer_candidate = build_prime_exclusive_offer_candidate(product)
+    if prime_offer_candidate:
+        candidates.append(prime_offer_candidate)
     for track in PRICE_TRACKS:
         candidate = build_deal_candidate(product, track)
         if candidate:
@@ -491,8 +665,7 @@ def build_deal(product):
 
 
 def main():
-    print("Starting Keepa price scan with Amazon, New, FBA/Prime, Buy Box, and Prime Exclusive price tracks...")
-    print(f"Configured Prime Exclusive Keepa price indexes: {PRIME_EXCLUSIVE_PRICE_INDEX}, {PRIME_EXCLUSIVE_ALT_PRICE_INDEX}")
+    print("Starting Keepa price scan with offers=1 Prime Exclusive parsing plus stats fallback price tracks...")
 
     all_asins = read_all_asins()
     asins, new_state, start_index, next_start_index = select_asins_for_run(all_asins)
@@ -530,7 +703,7 @@ def main():
                 print(f"No image found for {deal.get('asin')}")
             if deal.get("price_type") in NON_AMAZON_PRICE_TYPES:
                 non_amazon_scan_deals += 1
-            if str(deal.get("price_type", "")).startswith("prime_exclusive"):
+            if deal.get("price_type") == "prime_exclusive_offer":
                 prime_exclusive_scan_deals += 1
             scan_deals.append(deal)
 
@@ -538,12 +711,12 @@ def main():
     all_deals = list(memory.values())
     all_deals.sort(key=lambda item: item.get("posted_at") or item.get("checked_at") or "", reverse=True)
     non_amazon_active_deals = sum(1 for deal in all_deals if deal.get("price_type") in NON_AMAZON_PRICE_TYPES)
-    prime_exclusive_active_deals = sum(1 for deal in all_deals if str(deal.get("price_type", "")).startswith("prime_exclusive"))
+    prime_exclusive_active_deals = sum(1 for deal in all_deals if deal.get("price_type") == "prime_exclusive_offer")
 
     output_payload = {
         "updated_at": iso_now(),
         "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
-        "comparison_window": "Deals qualify when Amazon, New, FBA/Prime, Buy Box, or Prime Exclusive pricing is at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
+        "comparison_window": "Deals qualify when Amazon, New, FBA/Prime, Buy Box, or Prime Exclusive offer pricing is at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
         "deal_ttl_hours": DEAL_TTL_HOURS,
         "deal_count": len(all_deals),
         "new_scan_deal_count": len(scan_deals),
@@ -575,12 +748,12 @@ def main():
             "scan_limit_buffer_percent": SCAN_LIMIT_BUFFER_PERCENT,
             "deal_ttl_hours": DEAL_TTL_HOURS,
             "keepa_stats_days": 7,
+            "keepa_product_params": {"stats": 7, "history": 1, "offers": 1},
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
                 for track in PRICE_TRACKS
             ],
-            "keepa_prime_exclusive_price_index": PRIME_EXCLUSIVE_PRICE_INDEX,
-            "keepa_prime_exclusive_alt_price_index": PRIME_EXCLUSIVE_ALT_PRICE_INDEX,
+            "prime_exclusive_source": "offers[].isPrimeExcl + primeExclCSV",
         },
         "price_track_scan_summary": price_track_scan_summary,
         "deals": all_deals,
@@ -593,7 +766,7 @@ def main():
 
     print(f"Found {len(scan_deals)} price drops in this scan")
     print(f"Non-Amazon price source deals in this scan: {non_amazon_scan_deals}")
-    print(f"Prime Exclusive deals in this scan: {prime_exclusive_scan_deals}")
+    print(f"Prime Exclusive offer deals in this scan: {prime_exclusive_scan_deals}")
     print(f"Prime Exclusive active deals: {prime_exclusive_active_deals}")
     print(f"Added {added_count} new deals and updated {updated_count} existing deals")
     print(f"Saved {len(all_deals)} active 24-hour deals to {OUTPUT_FILE}")
