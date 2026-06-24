@@ -42,10 +42,12 @@ jobs:
           ASIN_CSV_URL: ${{ secrets.ASIN_CSV_URL }}
           MIN_DROP_PERCENT: 0
           SCAN_LIMIT: auto
-          SCAN_RUNS_PER_DAY: 96
+          # 48 scan windows/day means a full spreadsheet rotation in about 12 hours.
+          SCAN_RUNS_PER_DAY: 48
           SCAN_LIMIT_BUFFER_PERCENT: 10
-          KEEPA_BATCH_SIZE: 25
-          KEEPA_REQUEST_DELAY_SECONDS: 60
+          # Larger batches prevent the 12-hour rotation from timing out on the 15-minute schedule.
+          KEEPA_BATCH_SIZE: 100
+          KEEPA_REQUEST_DELAY_SECONDS: 30
           KEEPA_RATE_LIMIT_WAIT_SECONDS: 70
           KEEPA_MAX_RETRIES: 5
           DEAL_TTL_HOURS: 24
