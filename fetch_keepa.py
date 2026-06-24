@@ -20,12 +20,14 @@ AMAZON_TAG = os.getenv("AMAZON_TAG") or "simplewoodsho-20"
 DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))
 MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "0"))
 
-BATCH_SIZE = int(os.getenv("KEEPA_BATCH_SIZE", "25"))
-REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "60"))
+# Defaults are set for an approximately 12-hour full spreadsheet rotation.
+# With a 15-minute workflow schedule, 48 scan windows/day checks about 300-331 ASINs per run.
+BATCH_SIZE = int(os.getenv("KEEPA_BATCH_SIZE", "100"))
+REQUEST_DELAY_SECONDS = int(os.getenv("KEEPA_REQUEST_DELAY_SECONDS", "30"))
 RATE_LIMIT_WAIT_SECONDS = int(os.getenv("KEEPA_RATE_LIMIT_WAIT_SECONDS", "70"))
 MAX_RETRIES = int(os.getenv("KEEPA_MAX_RETRIES", "5"))
 SCAN_LIMIT_RAW = os.getenv("SCAN_LIMIT", "auto").strip().lower()
-SCAN_RUNS_PER_DAY = max(1, int(os.getenv("SCAN_RUNS_PER_DAY", "96")))
+SCAN_RUNS_PER_DAY = max(1, int(os.getenv("SCAN_RUNS_PER_DAY", "48")))
 SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", "10")))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 
@@ -112,11 +114,13 @@ def asins_from_csv_text(csv_text, source_name):
         raise ValueError(f"No rows found in {source_name}")
 
     def add_asin(value):
-        asin = str(value or "").strip().upper()
-        if not asin or asin in ("ASIN", "ASINS"):
+        raw = str(value or "").strip().upper()
+        if not raw or raw in ("ASIN", "ASINS"):
             return
+        match = ASIN_RE.search(raw)
+        asin = match.group(0) if match else raw
         if len(asin) != 10:
-            print(f"Skipping invalid ASIN value: {asin}")
+            print(f"Skipping invalid ASIN value: {raw}")
             return
         if asin in seen:
             return
@@ -157,17 +161,23 @@ def read_all_asins():
         raise
 
 
-def load_scan_state():
-    if not STATE_FILE.exists():
-        return {"next_start_index": 0}
+def load_json_file(path, fallback):
+    if not path.exists():
+        return fallback
     try:
-        state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
-        if not isinstance(state.get("next_start_index"), int):
-            state["next_start_index"] = 0
-        return state
+        return json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
-        print(f"Could not read scan state; starting from top. Error: {exc}")
+        print(f"Could not read {path}; using fallback. Error: {exc}")
+        return fallback
+
+
+def load_scan_state():
+    state = load_json_file(STATE_FILE, {"next_start_index": 0})
+    if not isinstance(state, dict):
         return {"next_start_index": 0}
+    if not isinstance(state.get("next_start_index"), int):
+        state["next_start_index"] = 0
+    return state
 
 
 def save_scan_state(state):
@@ -176,16 +186,11 @@ def save_scan_state(state):
 
 
 def load_deal_memory():
-    if not MEMORY_FILE.exists():
-        return {}
-    try:
-        payload = json.loads(MEMORY_FILE.read_text(encoding="utf-8"))
-        if isinstance(payload, dict) and isinstance(payload.get("deals"), dict):
-            return payload["deals"]
-        if isinstance(payload, dict):
-            return payload
-    except Exception as exc:
-        print(f"Could not read deal memory; starting new memory. Error: {exc}")
+    payload = load_json_file(MEMORY_FILE, {})
+    if isinstance(payload, dict) and isinstance(payload.get("deals"), dict):
+        return payload["deals"]
+    if isinstance(payload, dict):
+        return payload
     return {}
 
 
@@ -223,7 +228,14 @@ def merge_deals_with_memory(memory, new_deals):
             continue
         previous = memory.get(asin, {})
         posted_at = previous.get("posted_at") or previous.get("first_seen_at") or now_iso
-        merged = {**previous, **deal, "posted_at": posted_at, "first_seen_at": posted_at, "last_checked_at": now_iso, "expires_at": expires_at}
+        merged = {
+            **previous,
+            **deal,
+            "posted_at": posted_at,
+            "first_seen_at": posted_at,
+            "last_checked_at": now_iso,
+            "expires_at": expires_at,
+        }
         if asin in memory:
             updated_count += 1
         else:
@@ -243,10 +255,12 @@ def select_asins_for_run(all_asins):
     else:
         limit = int(SCAN_LIMIT_RAW)
     limit = min(limit if limit > 0 else total, total)
+
     state = load_scan_state()
     start_index = state.get("next_start_index", 0)
     if start_index >= total or start_index < 0:
         start_index = 0
+
     end_index = start_index + limit
     wrapped = end_index > total
     if wrapped:
@@ -255,6 +269,7 @@ def select_asins_for_run(all_asins):
     else:
         selected = all_asins[start_index:end_index]
         next_start_index = 0 if end_index >= total else end_index
+
     new_state = {
         "next_start_index": next_start_index,
         "last_start_index": start_index,
@@ -379,7 +394,7 @@ def build_deal_candidate(product, track):
         return None
 
     checked_at = iso_now()
-    deal = {
+    return {
         "asin": asin,
         "title": title,
         "current_price": current_price,
@@ -403,7 +418,6 @@ def build_deal_candidate(product, track):
         "best_price_previous_date": previous_date,
         "qualification_reasons": qualification_reasons,
     }
-    return deal
 
 
 def deal_rank(deal):
@@ -436,6 +450,8 @@ def main():
     print(f"Loaded {len(all_asins)} total ASINs from source")
     print(f"Loaded {len(asins)} ASINs for this run")
     print(f"Batch size: {BATCH_SIZE}")
+    print(f"Request delay seconds: {REQUEST_DELAY_SECONDS}")
+    print(f"Scan windows per day: {SCAN_RUNS_PER_DAY}")
     print(f"ASIN source: {'Google Sheet CSV' if ASIN_CSV_URL else 'local asins.csv'}")
 
     memory = load_deal_memory()
@@ -469,55 +485,50 @@ def main():
     all_deals.sort(key=lambda item: item.get("posted_at") or item.get("checked_at") or "", reverse=True)
     prime_exclusive_active_deals = sum(1 for deal in all_deals if deal.get("price_type") == "prime_exclusive_new")
 
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_FILE.write_text(
-        json.dumps(
-            {
-                "updated_at": iso_now(),
-                "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
-                "comparison_window": "Deals qualify when Amazon or New, Prime Exclusive price is at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
-                "deal_ttl_hours": DEAL_TTL_HOURS,
-                "deal_count": len(all_deals),
-                "new_scan_deal_count": len(scan_deals),
-                "new_deals_added": added_count,
-                "existing_deals_updated": updated_count,
-                "expired_deals_removed": expired_count,
-                "skipped_count": skipped,
-                "missing_image_count": missing_images,
-                "prime_exclusive_scan_deal_count": prime_exclusive_scan_deals,
-                "prime_exclusive_active_deal_count": prime_exclusive_active_deals,
-                "creator_campaign_deal_count": 0,
-                "scan_window": {
-                    "total_asins": len(all_asins),
-                    "start_index": start_index,
-                    "start_sheet_row": start_index + 2,
-                    "next_start_index": next_start_index,
-                    "next_start_sheet_row": next_start_index + 2,
-                    "scan_count": len(asins),
-                },
-                "settings": {
-                    "min_drop_percent": MIN_DROP_PERCENT,
-                    "batch_size": BATCH_SIZE,
-                    "request_delay_seconds": REQUEST_DELAY_SECONDS,
-                    "rate_limit_wait_seconds": RATE_LIMIT_WAIT_SECONDS,
-                    "scan_limit": SCAN_LIMIT_RAW,
-                    "scan_runs_per_day": SCAN_RUNS_PER_DAY,
-                    "scan_limit_buffer_percent": SCAN_LIMIT_BUFFER_PERCENT,
-                    "deal_ttl_hours": DEAL_TTL_HOURS,
-                    "keepa_stats_days": 7,
-                    "keepa_price_tracks": [
-                        {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
-                        for track in PRICE_TRACKS
-                    ],
-                    "keepa_prime_exclusive_price_index": PRIME_EXCLUSIVE_PRICE_INDEX,
-                },
-                "deals": all_deals,
-            },
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
+    output_payload = {
+        "updated_at": iso_now(),
+        "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
+        "comparison_window": "Deals qualify when Amazon or New, Prime Exclusive price is at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
+        "deal_ttl_hours": DEAL_TTL_HOURS,
+        "deal_count": len(all_deals),
+        "new_scan_deal_count": len(scan_deals),
+        "new_deals_added": added_count,
+        "existing_deals_updated": updated_count,
+        "expired_deals_removed": expired_count,
+        "skipped_count": skipped,
+        "missing_image_count": missing_images,
+        "prime_exclusive_scan_deal_count": prime_exclusive_scan_deals,
+        "prime_exclusive_active_deal_count": prime_exclusive_active_deals,
+        "creator_campaign_deal_count": 0,
+        "scan_window": {
+            "total_asins": len(all_asins),
+            "start_index": start_index,
+            "start_sheet_row": start_index + 2,
+            "next_start_index": next_start_index,
+            "next_start_sheet_row": next_start_index + 2,
+            "scan_count": len(asins),
+        },
+        "settings": {
+            "min_drop_percent": MIN_DROP_PERCENT,
+            "batch_size": BATCH_SIZE,
+            "request_delay_seconds": REQUEST_DELAY_SECONDS,
+            "rate_limit_wait_seconds": RATE_LIMIT_WAIT_SECONDS,
+            "scan_limit": SCAN_LIMIT_RAW,
+            "scan_runs_per_day": SCAN_RUNS_PER_DAY,
+            "scan_limit_buffer_percent": SCAN_LIMIT_BUFFER_PERCENT,
+            "deal_ttl_hours": DEAL_TTL_HOURS,
+            "keepa_stats_days": 7,
+            "keepa_price_tracks": [
+                {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
+                for track in PRICE_TRACKS
+            ],
+            "keepa_prime_exclusive_price_index": PRIME_EXCLUSIVE_PRICE_INDEX,
+        },
+        "deals": all_deals,
+    }
 
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FILE.write_text(json.dumps(output_payload, indent=2), encoding="utf-8")
     save_deal_memory(memory)
     save_scan_state(new_state)
 
