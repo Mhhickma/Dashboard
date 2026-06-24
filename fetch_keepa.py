@@ -32,12 +32,22 @@ SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", 
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 
 # Keepa stats array price indexes.
-# 0 = Amazon price. 32 is the configurable track for New, Prime Exclusive pricing.
+# Common Keepa indexes used here:
+# 0 = Amazon, 1 = New, 10 = New FBA, 18 = Buy Box shipping.
+# Prime Exclusive has varied in Keepa exports, so scan configured index 32 plus alternate 33.
 PRIME_EXCLUSIVE_PRICE_INDEX = int(os.getenv("KEEPA_PRIME_EXCLUSIVE_PRICE_INDEX", "32"))
-PRICE_TRACKS = [
+PRIME_EXCLUSIVE_ALT_PRICE_INDEX = int(os.getenv("KEEPA_PRIME_EXCLUSIVE_ALT_PRICE_INDEX", "33"))
+PRICE_TRACKS = []
+for track in [
     {"type": "amazon", "label": "Amazon price", "index": 0, "source_suffix": "amazon"},
+    {"type": "new", "label": "New price", "index": 1, "source_suffix": "new"},
+    {"type": "new_fba_prime", "label": "New FBA / Prime price", "index": 10, "source_suffix": "new_fba_prime"},
+    {"type": "buy_box", "label": "Buy Box price", "index": 18, "source_suffix": "buy_box"},
     {"type": "prime_exclusive_new", "label": "New, Prime Exclusive", "index": PRIME_EXCLUSIVE_PRICE_INDEX, "source_suffix": "prime_exclusive_new"},
-]
+    {"type": "prime_exclusive_new_alt", "label": "New, Prime Exclusive", "index": PRIME_EXCLUSIVE_ALT_PRICE_INDEX, "source_suffix": "prime_exclusive_new_alt"},
+]:
+    if track["index"] not in {item["index"] for item in PRICE_TRACKS}:
+        PRICE_TRACKS.append(track)
 
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
@@ -46,6 +56,7 @@ STATE_FILE = Path("data/scan_state.json")
 MEMORY_FILE = Path("data/deals_memory.json")
 ASIN_RE = re.compile(r"\bB[0-9A-Z]{9}\b")
 KEEPA_EPOCH = datetime(2011, 1, 1, tzinfo=timezone.utc)
+NON_AMAZON_PRICE_TYPES = {track["type"] for track in PRICE_TRACKS if track["type"] != "amazon"}
 
 
 def utc_now():
@@ -361,6 +372,38 @@ def best_price_days_for_track(product, track_index, current_price):
     return days, best_price, best_date.date().isoformat()
 
 
+def build_track_presence_summary(products):
+    summary = []
+    for track in PRICE_TRACKS:
+        current_count = 0
+        avg30_count = 0
+        lower_than_amazon_count = 0
+        sample_asins = []
+        for product in products:
+            stats = product.get("stats") or {}
+            current = price_from_stats_array(stats, "current", track["index"])
+            avg30 = price_from_stats_array(stats, "avg30", track["index"])
+            amazon_current = price_from_stats_array(stats, "current", 0)
+            if current:
+                current_count += 1
+                if len(sample_asins) < 5:
+                    sample_asins.append({"asin": product.get("asin"), "current_price": current, "amazon_current_price": amazon_current})
+                if amazon_current and current < amazon_current:
+                    lower_than_amazon_count += 1
+            if avg30:
+                avg30_count += 1
+        summary.append({
+            "price_type": track["type"],
+            "label": track["label"],
+            "keepa_price_index": track["index"],
+            "products_with_current_price": current_count,
+            "products_with_avg30_price": avg30_count,
+            "products_lower_than_amazon_current": lower_than_amazon_count,
+            "sample_current_prices": sample_asins,
+        })
+    return summary
+
+
 def build_deal_candidate(product, track):
     asin = product.get("asin")
     title = product.get("title") or asin
@@ -371,6 +414,7 @@ def build_deal_candidate(product, track):
     avg_7_price = price_from_stats_array(stats, "avg", price_index)
     min_7_price = price_from_stats_array(stats, "minInInterval", price_index)
     avg_30_price = price_from_stats_array(stats, "avg30", price_index)
+    amazon_current_price = price_from_stats_array(stats, "current", 0)
 
     if not current_price or not avg_7_price or not min_7_price or not avg_30_price:
         return None
@@ -412,6 +456,7 @@ def build_deal_candidate(product, track):
         "price_type": track["type"],
         "price_type_label": track["label"],
         "keepa_price_index": price_index,
+        "amazon_current_price": amazon_current_price,
         "best_price_days": best_price_days,
         "best_price_message": f"best price in {best_price_days} days" if best_price_days else "",
         "best_price_previous_price": previous_price,
@@ -421,8 +466,13 @@ def build_deal_candidate(product, track):
 
 
 def deal_rank(deal):
+    price_type = deal.get("price_type")
+    current = float(deal.get("current_price") or 0)
+    amazon_current = float(deal.get("amazon_current_price") or current or 0)
+    savings_vs_amazon = max(0, amazon_current - current)
     return (
-        1 if deal.get("price_type") == "prime_exclusive_new" else 0,
+        1 if price_type in NON_AMAZON_PRICE_TYPES else 0,
+        savings_vs_amazon,
         float(deal.get("drop_30_percent") or 0),
         float(deal.get("drop_percent") or 0),
         int(deal.get("best_price_days") or 0),
@@ -441,8 +491,8 @@ def build_deal(product):
 
 
 def main():
-    print("Starting Keepa price scan with Amazon and New, Prime Exclusive price tracks...")
-    print(f"Prime Exclusive Keepa price index: {PRIME_EXCLUSIVE_PRICE_INDEX}")
+    print("Starting Keepa price scan with Amazon, New, FBA/Prime, Buy Box, and Prime Exclusive price tracks...")
+    print(f"Configured Prime Exclusive Keepa price indexes: {PRIME_EXCLUSIVE_PRICE_INDEX}, {PRIME_EXCLUSIVE_ALT_PRICE_INDEX}")
 
     all_asins = read_all_asins()
     asins, new_state, start_index, next_start_index = select_asins_for_run(all_asins)
@@ -459,10 +509,12 @@ def main():
 
     products = fetch_keepa_products(asins)
     print(f"Fetched {len(products)} products from Keepa")
+    price_track_scan_summary = build_track_presence_summary(products)
 
     scan_deals = []
     skipped = 0
     missing_images = 0
+    non_amazon_scan_deals = 0
     prime_exclusive_scan_deals = 0
 
     for product in products:
@@ -476,19 +528,22 @@ def main():
             if not deal.get("image"):
                 missing_images += 1
                 print(f"No image found for {deal.get('asin')}")
-            if deal.get("price_type") == "prime_exclusive_new":
+            if deal.get("price_type") in NON_AMAZON_PRICE_TYPES:
+                non_amazon_scan_deals += 1
+            if str(deal.get("price_type", "")).startswith("prime_exclusive"):
                 prime_exclusive_scan_deals += 1
             scan_deals.append(deal)
 
     memory, added_count, updated_count = merge_deals_with_memory(memory, scan_deals)
     all_deals = list(memory.values())
     all_deals.sort(key=lambda item: item.get("posted_at") or item.get("checked_at") or "", reverse=True)
-    prime_exclusive_active_deals = sum(1 for deal in all_deals if deal.get("price_type") == "prime_exclusive_new")
+    non_amazon_active_deals = sum(1 for deal in all_deals if deal.get("price_type") in NON_AMAZON_PRICE_TYPES)
+    prime_exclusive_active_deals = sum(1 for deal in all_deals if str(deal.get("price_type", "")).startswith("prime_exclusive"))
 
     output_payload = {
         "updated_at": iso_now(),
         "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
-        "comparison_window": "Deals qualify when Amazon or New, Prime Exclusive price is at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
+        "comparison_window": "Deals qualify when Amazon, New, FBA/Prime, Buy Box, or Prime Exclusive pricing is at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
         "deal_ttl_hours": DEAL_TTL_HOURS,
         "deal_count": len(all_deals),
         "new_scan_deal_count": len(scan_deals),
@@ -497,6 +552,8 @@ def main():
         "expired_deals_removed": expired_count,
         "skipped_count": skipped,
         "missing_image_count": missing_images,
+        "non_amazon_scan_deal_count": non_amazon_scan_deals,
+        "non_amazon_active_deal_count": non_amazon_active_deals,
         "prime_exclusive_scan_deal_count": prime_exclusive_scan_deals,
         "prime_exclusive_active_deal_count": prime_exclusive_active_deals,
         "creator_campaign_deal_count": 0,
@@ -523,7 +580,9 @@ def main():
                 for track in PRICE_TRACKS
             ],
             "keepa_prime_exclusive_price_index": PRIME_EXCLUSIVE_PRICE_INDEX,
+            "keepa_prime_exclusive_alt_price_index": PRIME_EXCLUSIVE_ALT_PRICE_INDEX,
         },
+        "price_track_scan_summary": price_track_scan_summary,
         "deals": all_deals,
     }
 
@@ -533,6 +592,7 @@ def main():
     save_scan_state(new_state)
 
     print(f"Found {len(scan_deals)} price drops in this scan")
+    print(f"Non-Amazon price source deals in this scan: {non_amazon_scan_deals}")
     print(f"Prime Exclusive deals in this scan: {prime_exclusive_scan_deals}")
     print(f"Prime Exclusive active deals: {prime_exclusive_active_deals}")
     print(f"Added {added_count} new deals and updated {updated_count} existing deals")
