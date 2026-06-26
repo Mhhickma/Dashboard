@@ -316,7 +316,6 @@ def fetch_keepa_products(asins):
             "asin": ",".join(batch),
             "stats": 7,
             "history": 1,
-            "offers": 1,
         }
         payload = fetch_keepa_batch(url, params, batch_number)
         all_products.extend(payload.get("products", []))
@@ -730,7 +729,7 @@ def build_deal(product):
 
 
 def main():
-    print("Starting Keepa price scan with offers=1 Prime Exclusive parsing plus stats fallback price tracks...")
+    print("Starting Keepa price scan with stats fallback price tracks...")
 
     all_asins = read_all_asins()
     asins, new_state, start_index, next_start_index = select_asins_for_run(all_asins)
@@ -814,7 +813,7 @@ def main():
             "scan_limit_buffer_percent": SCAN_LIMIT_BUFFER_PERCENT,
             "deal_ttl_hours": DEAL_TTL_HOURS,
             "keepa_stats_days": 7,
-            "keepa_product_params": {"stats": 7, "history": 1, "offers": 1},
+            "keepa_product_params": {"stats": 7, "history": 1},
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
                 for track in PRICE_TRACKS
