@@ -527,6 +527,71 @@ def build_track_presence_summary(products):
     return summary
 
 
+def raw_keepa_diagnostics(products):
+    sample_products = []
+    products_with_stats = 0
+    products_with_csv = 0
+    products_with_offers = 0
+    products_with_prime_exclusive_offer = 0
+
+    for product in products:
+        stats = product.get("stats") or {}
+        csv_tracks = product.get("csv") or []
+        offers = product.get("offers") or []
+        has_stats = isinstance(stats, dict) and bool(stats)
+        has_csv = isinstance(csv_tracks, list) and any(isinstance(track, list) and track for track in csv_tracks)
+        has_offers = isinstance(offers, list) and bool(offers)
+        has_prime_exclusive = has_offers and any(
+            isinstance(offer, dict) and offer.get("isPrimeExcl")
+            for offer in offers
+        )
+
+        products_with_stats += 1 if has_stats else 0
+        products_with_csv += 1 if has_csv else 0
+        products_with_offers += 1 if has_offers else 0
+        products_with_prime_exclusive_offer += 1 if has_prime_exclusive else 0
+
+        if len(sample_products) < 8:
+            current = stats.get("current") if isinstance(stats, dict) else []
+            avg = stats.get("avg") if isinstance(stats, dict) else []
+            avg30 = stats.get("avg30") if isinstance(stats, dict) else []
+            sample_products.append({
+                "asin": product.get("asin"),
+                "has_stats": has_stats,
+                "has_csv": has_csv,
+                "has_offers": has_offers,
+                "has_prime_exclusive_offer": has_prime_exclusive,
+                "raw_current_indexes": {
+                    str(track["index"]): current[track["index"]] if isinstance(current, list) and len(current) > track["index"] else None
+                    for track in PRICE_TRACKS
+                },
+                "raw_avg_indexes": {
+                    str(track["index"]): avg[track["index"]] if isinstance(avg, list) and len(avg) > track["index"] else None
+                    for track in PRICE_TRACKS
+                },
+                "raw_avg30_indexes": {
+                    str(track["index"]): avg30[track["index"]] if isinstance(avg30, list) and len(avg30) > track["index"] else None
+                    for track in PRICE_TRACKS
+                },
+                "csv_track_lengths": [
+                    len(track) if isinstance(track, list) else 0
+                    for track in (csv_tracks[:20] if isinstance(csv_tracks, list) else [])
+                ],
+                "offer_count": len(offers) if isinstance(offers, list) else 0,
+            })
+
+    diagnostics = {
+        "products_returned": len(products),
+        "products_with_stats": products_with_stats,
+        "products_with_csv": products_with_csv,
+        "products_with_offers": products_with_offers,
+        "products_with_prime_exclusive_offer": products_with_prime_exclusive_offer,
+        "sample_products": sample_products,
+    }
+    print(f"Raw Keepa diagnostics: {json.dumps(diagnostics)}")
+    return diagnostics
+
+
 def qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days):
     drop_percent = round(((avg_7_price - current_price) / avg_7_price) * 100, 1)
     drop_30_percent = round(((avg_30_price - current_price) / avg_30_price) * 100, 1)
@@ -683,6 +748,7 @@ def main():
     products = fetch_keepa_products(asins)
     print(f"Fetched {len(products)} products from Keepa")
     price_track_scan_summary = build_track_presence_summary(products)
+    keepa_raw_diagnostics = raw_keepa_diagnostics(products)
 
     scan_deals = []
     skipped = 0
@@ -756,6 +822,7 @@ def main():
             "prime_exclusive_source": "offers[].isPrimeExcl + primeExclCSV",
         },
         "price_track_scan_summary": price_track_scan_summary,
+        "keepa_raw_diagnostics": keepa_raw_diagnostics,
         "deals": all_deals,
     }
 
