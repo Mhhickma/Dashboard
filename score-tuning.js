@@ -47,10 +47,13 @@
     var score = tunedDealScore(deal);
     var days = bestDays(deal);
     var drop = num(deal.drop_percent) || 0;
-    if (score >= 85 || (days >= 90 && drop >= 10)) return "Elite";
-    if (score >= 70 || (days >= 90 && drop >= 6)) return "Strong";
-    if (score >= 50 || days >= 30) return "Good";
-    return "Watch";
+    if (score >= 80 || (days >= 90 && drop >= 10)) return "Post Now";
+    if (score >= 50 || days >= 30 || (days >= 90 && drop >= 6)) return "Review";
+    return "Skip";
+  }
+
+  function qualityClass(label) {
+    return String(label || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   }
 
   function escapeHtml(value) {
@@ -101,7 +104,7 @@
       var scoreBadge = card.querySelector(".score-badge");
 
       if (qualityBadge) {
-        qualityBadge.className = "quality-badge quality-" + label.toLowerCase();
+        qualityBadge.className = "quality-badge quality-" + qualityClass(label);
         qualityBadge.textContent = label;
       }
 

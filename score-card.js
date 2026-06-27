@@ -255,10 +255,13 @@
     const days = bestPriceDays(deal);
     const drop = numericValue(deal.drop_percent) || 0;
 
-    if (score >= 120 || (days >= 90 && drop >= 10)) return "Elite";
-    if (score >= 80 || days >= 45) return "Strong";
-    if (score >= 55 || days >= 14) return "Good";
-    return "Watch";
+    if (score >= 80 || (days >= 90 && drop >= 10)) return "Post Now";
+    if (score >= 50 || days >= 30 || (days >= 90 && drop >= 6)) return "Review";
+    return "Skip";
+  }
+
+  function qualityClass(label) {
+    return String(label || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   }
 
   function dealReason(deal) {
@@ -402,7 +405,7 @@
       if (!card.querySelector(".quality-badge")) {
         const label = qualityLabel(deal);
         const qualityBadge = document.createElement("span");
-        qualityBadge.className = `quality-badge quality-${label.toLowerCase()}`;
+        qualityBadge.className = `quality-badge quality-${qualityClass(label)}`;
         qualityBadge.textContent = label;
         metrics.insertBefore(qualityBadge, metrics.firstChild);
       }

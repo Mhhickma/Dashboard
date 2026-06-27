@@ -321,7 +321,10 @@ async function copySelectedLinks() {
 function visibleDeals() {
   const hidden = hiddenAsins();
   const removeQueue = removeQueueAsins();
-  return allDeals.filter((deal) => !hidden.has(deal.asin) && !removeQueue.has(deal.asin));
+  return allDeals.filter((deal) => {
+    const postingTier = typeof window.dealPostingTier === "function" ? window.dealPostingTier(deal) : "";
+    return !hidden.has(deal.asin) && !removeQueue.has(deal.asin) && postingTier !== "Skip";
+  });
 }
 
 function money(value) {

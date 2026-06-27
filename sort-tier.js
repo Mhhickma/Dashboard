@@ -1,11 +1,9 @@
-// Sort product cards by visible deal tier first: Elite, Strong, Good, Watch.
+// Sort product cards by posting priority first: Post Now, then Review.
 (function () {
   var tierRank = {
-    Elite: 4,
-    Strong: 3,
-    Good: 2,
-    Watch: 1,
-    Pass: 0
+    "Post Now": 3,
+    Review: 2,
+    Skip: 1
   };
 
   function num(value) {
@@ -68,11 +66,12 @@
     var days = bestDays(deal);
     var drop = num(deal.drop_percent) || 0;
 
-    if (dealScore >= 85 || (days >= 90 && drop >= 10)) return "Elite";
-    if (dealScore >= 70 || (days >= 90 && drop >= 6)) return "Strong";
-    if (dealScore >= 50 || days >= 30) return "Good";
-    return "Watch";
+    if (dealScore >= 80 || (days >= 90 && drop >= 10)) return "Post Now";
+    if (dealScore >= 50 || days >= 30 || (days >= 90 && drop >= 6)) return "Review";
+    return "Skip";
   }
+
+  window.dealPostingTier = tierLabel;
 
   function compareNullableNumbers(aValue, bValue, direction) {
     var aNumber = num(aValue);
