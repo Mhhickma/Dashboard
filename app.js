@@ -177,14 +177,14 @@ function hideDeal(asin) {
   applySearch(false);
 }
 
-function removeAsinWithScript(asin) {
+function callAsinScript(action, params = {}) {
   return new Promise((resolve, reject) => {
     if (!REMOVE_ASIN_WEB_APP_URL || REMOVE_ASIN_WEB_APP_URL.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
-      reject(new Error("Remove ASIN is not connected yet."));
+      reject(new Error("ASIN tools script is not connected yet."));
       return;
     }
 
-    const callbackName = `handleAsinRemoval_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const callbackName = `handleAsinTool_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const script = document.createElement("script");
     const url = new URL(REMOVE_ASIN_WEB_APP_URL);
     let timeoutId = null;
@@ -202,20 +202,45 @@ function removeAsinWithScript(asin) {
 
     script.onerror = () => {
       cleanup();
-      reject(new Error("Could not connect to the ASIN removal script."));
+      reject(new Error("Could not connect to the ASIN tools script."));
     };
 
     timeoutId = setTimeout(() => {
       cleanup();
-      reject(new Error("The ASIN removal script did not respond."));
+      reject(new Error("The ASIN tools script did not respond."));
     }, 15000);
 
-    url.searchParams.set("action", "removeAsin");
-    url.searchParams.set("asin", asin);
+    url.searchParams.set("action", action);
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.set(key, value);
+    });
     url.searchParams.set("callback", callbackName);
     script.src = url.toString();
     document.head.appendChild(script);
   });
+}
+
+function removeAsinWithScript(asin) {
+  return callAsinScript("removeAsin", { asin });
+}
+
+async function cleanSourceSheet() {
+  const confirmClean = confirm("Scan the source sheet and remove duplicate ASINs?");
+  if (!confirmClean) return;
+
+  try {
+    const result = await callAsinScript("cleanSheet");
+
+    if (!result || !result.ok) {
+      const message = result && result.error ? result.error : "The source sheet did not confirm cleanup.";
+      alert(`Could not clean sheet: ${message}`);
+      return;
+    }
+
+    alert(`Cleaned ${result.sheet || "the source sheet"}. Removed ${result.duplicateRemovedCount || 0} duplicate ASINs.`);
+  } catch (error) {
+    alert(`${error.message} The sheet was not cleaned.`);
+  }
 }
 
 async function queueRemoveDeal(asin) {
@@ -541,6 +566,8 @@ function updateCounts(renderedCount, selectedCount, totalMatchingCount) {
     dealCountEl.innerHTML += ` <button class="copy-remove" type="button" onclick="copyRemoveQueue()">Copy removals (${removeCount})</button>`;
     dealCountEl.innerHTML += ` <button class="clear-remove" type="button" onclick="clearRemoveQueue()">Clear removals</button>`;
   }
+
+  dealCountEl.innerHTML += ` <button class="clean-sheet" type="button" onclick="cleanSourceSheet()">Clean sheet</button>`;
 }
 
 function buildCard(deal, isSelected, isSelectedSection) {

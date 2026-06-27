@@ -357,6 +357,7 @@ button {
 .reset-hidden,
 .copy-remove,
 .copy-selected,
+.clean-sheet,
 .clear-remove,
 .clear-selected {
   border: 1px solid var(--border);
@@ -374,6 +375,7 @@ button {
 .reset-hidden:hover,
 .copy-remove:hover,
 .copy-selected:hover,
+.clean-sheet:hover,
 .clear-remove:hover,
 .clear-selected:hover {
   background: #f7f9fc;
@@ -415,8 +417,14 @@ button {
   color: var(--accent);
 }
 
-.copy-selected:hover {
+.copy-selected:hover,
+.clean-sheet:hover {
   background: #eff6ff;
+}
+
+.clean-sheet {
+  border-color: #bfdbfe;
+  color: var(--accent);
 }
 
 .clear-remove {
