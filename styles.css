@@ -508,7 +508,8 @@ button {
   margin-top: 1.1rem;
 }
 
-.page-nav a {
+.page-nav a,
+.page-nav button {
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--muted);
@@ -517,10 +518,12 @@ button {
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 700;
+  line-height: 1;
 }
 
 .page-nav a:hover,
-.page-nav a.active {
+.page-nav a.active,
+.page-nav button:hover {
   color: var(--accent);
   border-color: rgba(37, 99, 235, 0.35);
   background: rgba(37, 99, 235, 0.08);

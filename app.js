@@ -567,7 +567,6 @@ function updateCounts(renderedCount, selectedCount, totalMatchingCount) {
     dealCountEl.innerHTML += ` <button class="clear-remove" type="button" onclick="clearRemoveQueue()">Clear removals</button>`;
   }
 
-  dealCountEl.innerHTML += ` <button class="clean-sheet" type="button" onclick="cleanSourceSheet()">Clean sheet</button>`;
 }
 
 function buildCard(deal, isSelected, isSelectedSection) {
