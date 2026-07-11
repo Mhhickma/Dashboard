@@ -1,5 +1,7 @@
 (function () {
   var MAX_LENGTH = 129;
+  var POSTS_TO_SHOW = 4;
+  var USED_KEY_PREFIX = "dashboard-used-engagement-posts-";
   var posts = [
     "What tool in your shop gets used way more than you expected?",
     "What is one woodworking tool you wish you had bought sooner?",
@@ -27,11 +29,46 @@
     return Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / 86400000);
   }
 
+  function todayKey() {
+    var now = new Date();
+    return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+  }
+
+  function usedKey() {
+    return USED_KEY_PREFIX + todayKey();
+  }
+
+  function readUsedPosts() {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(usedKey()) || "[]"));
+    } catch (error) {
+      return new Set();
+    }
+  }
+
+  function writeUsedPosts(used) {
+    localStorage.setItem(usedKey(), JSON.stringify(Array.from(used)));
+  }
+
   function dailyPosts() {
     var start = dayKey(new Date()) % posts.length;
-    return [0, 7, 13].map(function (offset) {
-      return posts[(start + offset) % posts.length].slice(0, MAX_LENGTH);
-    });
+    var used = readUsedPosts();
+    var ordered = [];
+
+    for (var index = 0; index < posts.length; index += 1) {
+      var text = posts[(start + index) % posts.length].slice(0, MAX_LENGTH);
+      if (!used.has(text)) ordered.push(text);
+      if (ordered.length === POSTS_TO_SHOW) break;
+    }
+
+    return ordered;
+  }
+
+  function markUsed(text) {
+    var used = readUsedPosts();
+    used.add(text);
+    writeUsedPosts(used);
+    render();
   }
 
   async function copyText(text, button) {
@@ -56,8 +93,9 @@
       copy.type = "button";
       copy.textContent = "Copy";
       copy.addEventListener("click", function () { copyText(text, copy); });
-      item.innerHTML = '<p></p><span>' + text.length + ' characters</span>';
+      item.innerHTML = '<label class="engagement-used"><input type="checkbox"><span>Used</span></label><p></p><span>' + text.length + ' characters</span>';
       item.querySelector("p").textContent = text;
+      item.querySelector("input").addEventListener("change", function () { markUsed(text); });
       item.appendChild(copy);
       list.appendChild(item);
     });
