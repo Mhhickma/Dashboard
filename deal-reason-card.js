@@ -67,22 +67,22 @@
 
   function facebookPostText(deal) {
     var templates = [
-      ["", " on sale today. ad", ""],
-      ["", ". ", " ad"],
-      ["", ", lower price than usual right now. Linked below, ad", ""],
-      ["", ", lower price than normal right now. ad", ""],
-      ["", ". Worth checking today. ad", ""],
-      ["", ". Linked below, ad", ""],
-      ["", " on sale right now. ad", ""]
+      ["", " on sale today.", ""],
+      ["", ". ", ""],
+      ["", ", lower price than usual right now. Linked below.", ""],
+      ["", ", lower price than normal right now.", ""],
+      ["", ". Worth checking today.", ""],
+      ["", ". Linked below.", ""],
+      ["", " on sale right now.", ""]
     ];
     var template = templates[stableNumber(deal.asin + cleanTitle(deal.title)) % templates.length];
     var suffix = template[1] + (template[2] ? dealFact(deal) + template[2] : "");
     var titleBudget = FACEBOOK_POST_MAX_LENGTH - template[0].length - suffix.length;
     var post = template[0] + shortenText(deal.title, Math.max(24, titleBudget)) + suffix;
     if (post.length <= FACEBOOK_POST_MAX_LENGTH) return post;
-    post = shortenText(deal.title, 70) + " on sale today. ad";
+    post = shortenText(deal.title, 70) + " on sale today.";
     if (post.length <= FACEBOOK_POST_MAX_LENGTH) return post;
-    return post.slice(0, FACEBOOK_POST_MAX_LENGTH - 3).replace(/\s+ad\s*$/i, "").replace(/[,:;\-\s]+$/, "") + " ad";
+    return post.slice(0, FACEBOOK_POST_MAX_LENGTH).replace(/[,:;\-\s]+$/, "");
   }
 
   async function copyFacebookPost(text, button) {
