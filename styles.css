@@ -66,6 +66,65 @@ body {
   margin-bottom: 24px;
 }
 
+.engagement-posts {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.08);
+  margin-bottom: 18px;
+}
+
+.engagement-posts h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.engagement-posts p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.engagement-post-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.engagement-post-option {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #f7f9fc;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.engagement-post-option p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.engagement-post-option span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.engagement-post-option button {
+  align-self: flex-start;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: white;
+  color: var(--accent);
+  padding: 7px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .toolbar p {
   margin: 4px 0 0;
   color: var(--muted);
@@ -534,6 +593,10 @@ button {
   .selected-posting-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .engagement-post-list {
+    grid-template-columns: 1fr;
   }
 
   .toolbar-controls {
