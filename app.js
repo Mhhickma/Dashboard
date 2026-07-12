@@ -17,6 +17,7 @@ const REMOVE_ASIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyXILMe
 const HIDDEN_DEALS_KEY = "keepa-dashboard-hidden-asins";
 const REMOVE_QUEUE_KEY = "keepa-dashboard-remove-queue-asins";
 const SELECTED_FOR_POSTING_KEY = "keepa-dashboard-selected-for-posting-asins";
+const SHOW_ALL_DEALS_KEY = "keepa-dashboard-show-all-deals";
 const HIDE_FOR_HOURS = 24;
 const DEALS_PER_PAGE = 50;
 
@@ -153,6 +154,15 @@ function hiddenAsins() {
 
 function removeQueueAsins() {
   return readSet(REMOVE_QUEUE_KEY);
+}
+
+function showAllDealsEnabled() {
+  return localStorage.getItem(SHOW_ALL_DEALS_KEY) === "true";
+}
+
+function toggleShowAllDeals() {
+  localStorage.setItem(SHOW_ALL_DEALS_KEY, showAllDealsEnabled() ? "false" : "true");
+  applySearch();
 }
 
 function selectedForPostingAsins() {
@@ -408,7 +418,7 @@ function visibleDeals() {
   const removeQueue = removeQueueAsins();
   return allDeals.filter((deal) => {
     const postingTier = typeof window.dealPostingTier === "function" ? window.dealPostingTier(deal) : "";
-    return !hidden.has(deal.asin) && !removeQueue.has(deal.asin) && postingTier !== "Skip";
+    return !hidden.has(deal.asin) && !removeQueue.has(deal.asin) && (showAllDealsEnabled() || postingTier !== "Skip");
   });
 }
 
@@ -641,6 +651,8 @@ function updateCounts(renderedCount, selectedCount, totalMatchingCount) {
   if (totalCount !== totalMatchingCount) {
     dealCountEl.innerHTML += ` <span class="count-note">${totalCount} total active</span>`;
   }
+
+  dealCountEl.innerHTML += ` <button class="reset-hidden" type="button" onclick="toggleShowAllDeals()">${showAllDealsEnabled() ? "Show posting candidates" : "Show all deals"}</button>`;
 
   if (hiddenCount > 0) {
     dealCountEl.innerHTML += ` <button class="reset-hidden" type="button" onclick="resetHiddenDeals()">Show hidden (${hiddenCount})</button>`;
