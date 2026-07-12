@@ -7,6 +7,11 @@ const dealCountEl = document.getElementById("dealCount");
 const updatedAtEl = document.getElementById("updatedAt");
 const searchInput = document.getElementById("searchInput");
 const sortSelect = document.getElementById("sortSelect");
+const creatorCsvUploadForm = document.getElementById("creatorCsvUploadForm");
+const creatorCsvFile = document.getElementById("creatorCsvFile");
+const creatorCsvFileName = document.getElementById("creatorCsvFileName");
+const creatorCsvUploadStatus = document.getElementById("creatorCsvUploadStatus");
+const creatorCsvUploadFrame = document.getElementById("creatorCsvUploadFrame");
 
 const REMOVE_ASIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyXILMe0WvnvjD0PMT4e6W7xvlnGePpN8HT2Dj0gsAXxT0dOh_9-4lXK9NTDw-yL5gTLg/exec";
 const HIDDEN_DEALS_KEY = "keepa-dashboard-hidden-asins";
@@ -22,6 +27,7 @@ let loadMoreSectionEl = null;
 let loadMoreButtonEl = null;
 let loadMoreSummaryEl = null;
 let loadMoreButtonListenerAttached = false;
+let creatorCsvUploadInProgress = false;
 
 function ensureLoadMoreControls() {
   if (loadMoreSectionEl && loadMoreButtonEl && loadMoreSummaryEl) {
@@ -222,6 +228,52 @@ function callAsinScript(action, params = {}) {
 
 function removeAsinWithScript(asin) {
   return callAsinScript("removeAsin", { asin });
+}
+
+function initCreatorCsvUpload() {
+  if (!creatorCsvUploadForm || !creatorCsvFile) return;
+
+  creatorCsvUploadForm.action = REMOVE_ASIN_WEB_APP_URL;
+
+  creatorCsvFile.addEventListener("change", () => {
+    const file = creatorCsvFile.files && creatorCsvFile.files[0];
+    if (!file) {
+      creatorCsvFileName.textContent = "Choose CSV file";
+      creatorCsvUploadStatus.textContent = "No file selected.";
+      return;
+    }
+
+    creatorCsvFileName.textContent = file.name;
+    creatorCsvUploadStatus.textContent = `${file.name} ready to upload.`;
+  });
+
+  creatorCsvUploadForm.addEventListener("submit", (event) => {
+    const file = creatorCsvFile.files && creatorCsvFile.files[0];
+    if (!file) {
+      event.preventDefault();
+      creatorCsvUploadStatus.textContent = "Choose a creator connection CSV first.";
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      event.preventDefault();
+      creatorCsvUploadStatus.textContent = "Please choose a .csv file.";
+      return;
+    }
+
+    creatorCsvUploadInProgress = true;
+    creatorCsvUploadStatus.textContent = `Uploading ${file.name}...`;
+  });
+
+  if (creatorCsvUploadFrame) {
+    creatorCsvUploadFrame.addEventListener("load", () => {
+      if (!creatorCsvUploadInProgress) return;
+      creatorCsvUploadInProgress = false;
+      creatorCsvUploadStatus.textContent = "Upload sent. The next scan will use the newest creator connection CSV once the script saves it.";
+      creatorCsvUploadForm.reset();
+      creatorCsvFileName.textContent = "Choose CSV file";
+    });
+  }
 }
 
 async function cleanSourceSheet() {
@@ -722,5 +774,6 @@ async function loadDeals() {
 
 searchInput.addEventListener("input", () => applySearch());
 if (sortSelect) sortSelect.addEventListener("change", () => applySearch());
+initCreatorCsvUpload();
 loadDeals();
 

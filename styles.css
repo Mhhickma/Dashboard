@@ -142,6 +142,74 @@ body {
   cursor: pointer;
 }
 
+.creator-upload {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.08);
+  margin-bottom: 18px;
+}
+
+.creator-upload h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.creator-upload p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.creator-upload-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.creator-file-box {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  min-width: min(420px, 100%);
+  border: 1px dashed #93c5fd;
+  border-radius: 14px;
+  background: #f8fbff;
+  color: var(--accent);
+  padding: 12px 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.creator-file-box input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.creator-upload-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 18px;
+  background: var(--accent);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.creator-upload-button:hover {
+  background: var(--accent-dark);
+}
+
+.creator-upload-status {
+  font-size: 0.9rem;
+}
+
 .toolbar p {
   margin: 4px 0 0;
   color: var(--muted);
@@ -614,6 +682,12 @@ button {
 
   .engagement-post-list {
     grid-template-columns: 1fr;
+  }
+
+  .creator-upload-form,
+  .creator-upload-button,
+  .creator-file-box {
+    width: 100%;
   }
 
   .toolbar-controls {
