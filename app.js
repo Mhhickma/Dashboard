@@ -29,6 +29,15 @@ let loadMoreSummaryEl = null;
 let loadMoreButtonListenerAttached = false;
 let creatorCsvUploadInProgress = false;
 
+function base64EncodeUtf8(value) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+}
+
 function ensureLoadMoreControls() {
   if (loadMoreSectionEl && loadMoreButtonEl && loadMoreSummaryEl) {
     return;
@@ -233,8 +242,6 @@ function removeAsinWithScript(asin) {
 function initCreatorCsvUpload() {
   if (!creatorCsvUploadForm || !creatorCsvFile) return;
 
-  creatorCsvUploadForm.action = REMOVE_ASIN_WEB_APP_URL;
-
   creatorCsvFile.addEventListener("change", () => {
     const file = creatorCsvFile.files && creatorCsvFile.files[0];
     if (!file) {
@@ -247,29 +254,55 @@ function initCreatorCsvUpload() {
     creatorCsvUploadStatus.textContent = `${file.name} ready to upload.`;
   });
 
-  creatorCsvUploadForm.addEventListener("submit", (event) => {
+  creatorCsvUploadForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
     const file = creatorCsvFile.files && creatorCsvFile.files[0];
     if (!file) {
-      event.preventDefault();
       creatorCsvUploadStatus.textContent = "Choose a creator connection CSV first.";
       return;
     }
 
     if (!file.name.toLowerCase().endsWith(".csv")) {
-      event.preventDefault();
       creatorCsvUploadStatus.textContent = "Please choose a .csv file.";
       return;
     }
 
-    creatorCsvUploadInProgress = true;
-    creatorCsvUploadStatus.textContent = `Uploading ${file.name}...`;
+    try {
+      creatorCsvUploadInProgress = true;
+      creatorCsvUploadStatus.textContent = `Uploading ${file.name}...`;
+
+      const csvText = await file.text();
+      const postForm = document.createElement("form");
+      postForm.method = "post";
+      postForm.action = REMOVE_ASIN_WEB_APP_URL;
+      postForm.target = "creatorCsvUploadFrame";
+      postForm.hidden = true;
+
+      [
+        ["action", "uploadCreatorCsv"],
+        ["filename", file.name],
+        ["csvBase64", base64EncodeUtf8(csvText)],
+      ].forEach(([name, value]) => {
+        const input = document.createElement("textarea");
+        input.name = name;
+        input.value = value;
+        postForm.appendChild(input);
+      });
+
+      document.body.appendChild(postForm);
+      postForm.submit();
+      postForm.remove();
+    } catch (error) {
+      creatorCsvUploadInProgress = false;
+      creatorCsvUploadStatus.textContent = `Could not read ${file.name}: ${error.message}`;
+    }
   });
 
   if (creatorCsvUploadFrame) {
     creatorCsvUploadFrame.addEventListener("load", () => {
       if (!creatorCsvUploadInProgress) return;
       creatorCsvUploadInProgress = false;
-      creatorCsvUploadStatus.textContent = "Upload sent. The next scan will use the newest creator connection CSV once the script saves it.";
+      creatorCsvUploadStatus.textContent = "Upload sent. Future scans will use it after the repository commit finishes.";
       creatorCsvUploadForm.reset();
       creatorCsvFileName.textContent = "Choose CSV file";
     });

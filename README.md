@@ -86,6 +86,10 @@ The `Remove ASIN` button calls the connected Google Apps Script web app to remov
 
 If the Google Apps Script request fails, the ASIN is queued locally instead. Once at least one ASIN is queued, use the `Copy removals` button at the top of the dashboard, then remove those ASINs from the source Google Sheet manually.
 
+## Uploading Creator Connections CSV
+
+The dashboard upload box sends the selected CSV to the connected Google Apps Script web app as `action=uploadCreatorCsv`. Add the handler in `apps-script-creator-upload.js` to that script and set its `GITHUB_TOKEN` Script Property. The handler replaces `Mhhickma/influencer-prospects/creator-connections/latest.csv`, and future Keepa scans read that repository folder when applying Creator campaign data.
+
 ## Local Testing
 
 ```bash

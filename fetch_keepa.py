@@ -31,6 +31,12 @@ SCAN_RUNS_PER_DAY = max(1, int(os.getenv("SCAN_RUNS_PER_DAY", "48")))
 SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", "10")))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 
+CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/influencer-prospects")
+CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "creator-connections")
+CREATOR_CONNECTIONS_REF = os.getenv("CREATOR_CONNECTIONS_REF", "main")
+CREATOR_CONNECTIONS_MAX_FILES = int(os.getenv("CREATOR_CONNECTIONS_MAX_FILES", "40"))
+CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS = int(os.getenv("CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS", "45"))
+
 # Keepa stats array price indexes. These are fallback tracks only.
 # Prime Exclusive is parsed from offers[].isPrimeExcl + offers[].primeExclCSV.
 PRICE_TRACKS = [
@@ -61,6 +67,21 @@ def iso_now():
 
 def parse_iso_datetime(value):
     if not value:
+        return None
+
+
+def parse_campaign_date(value):
+    value = str(value or "").strip()
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            pass
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+    except Exception:
         return None
     try:
         return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
@@ -729,6 +750,171 @@ def build_deal(product):
     return max(candidates, key=deal_rank)
 
 
+def normalize_commission(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    number = raw[:-1].strip() if raw.endswith("%") else raw
+    try:
+        numeric = float(number)
+        return f"{int(numeric)}%" if numeric.is_integer() else f"{numeric:g}%"
+    except ValueError:
+        return raw
+
+
+def commission_number(value):
+    try:
+        return float(normalize_commission(value).replace("%", ""))
+    except ValueError:
+        return 0.0
+
+
+def campaign_from_row(row, today):
+    start_date = parse_campaign_date(row.get("Campaign Start Date"))
+    end_date = parse_campaign_date(row.get("Campaign End Date"))
+    return {
+        "campaign_id": str(row.get("Campaign Id", "")).strip(),
+        "campaign_name": str(row.get("Campaign Name", "")).strip(),
+        "campaign_brand": str(row.get("Brand Name", "")).strip(),
+        "commission_rate": normalize_commission(row.get("Commission Rate", "")),
+        "campaign_start_date": str(row.get("Campaign Start Date", "")).strip(),
+        "campaign_end_date": str(row.get("Campaign End Date", "")).strip(),
+        "recommended": str(row.get("Recommended", "")).strip().lower() == "true",
+        "active": (start_date is None or start_date <= today) and (end_date is None or end_date >= today),
+    }
+
+
+def campaign_rank(campaign):
+    return (
+        1 if campaign.get("recommended") else 0,
+        commission_number(campaign.get("commission_rate")),
+        campaign.get("campaign_end_date") or "",
+    )
+
+
+def github_api_get(url, timeout=45):
+    headers = {"Accept": "application/vnd.github+json"}
+    token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    response = requests.get(url, headers=headers, timeout=timeout)
+    response.raise_for_status()
+    return response
+
+
+def creator_connection_file_commit_date(path):
+    api_url = (
+        f"https://api.github.com/repos/{CREATOR_CONNECTIONS_REPO}/commits"
+        f"?path={path}&sha={CREATOR_CONNECTIONS_REF}&per_page=1"
+    )
+    try:
+        commits = github_api_get(api_url).json()
+        commit = commits[0].get("commit", {}) if commits else {}
+        author = commit.get("author", {})
+        return parse_iso_datetime(author.get("date"))
+    except Exception as exc:
+        print(f"Could not read Creator Connections commit date for {path}: {exc}")
+        return None
+
+
+def creator_connection_file_urls():
+    api_url = (
+        f"https://api.github.com/repos/{CREATOR_CONNECTIONS_REPO}/contents/"
+        f"{CREATOR_CONNECTIONS_PATH}?ref={CREATOR_CONNECTIONS_REF}"
+    )
+    files = github_api_get(api_url).json()
+    csv_files = []
+    for item in files:
+        if item.get("type") == "file" and item.get("name", "").lower().endswith(".csv"):
+            if item.get("download_url") and item.get("path"):
+                csv_files.append({
+                    "name": item.get("name", ""),
+                    "path": item["path"],
+                    "download_url": item["download_url"],
+                    "updated_at": creator_connection_file_commit_date(item["path"]),
+                })
+
+    csv_files.sort(key=lambda item: item.get("updated_at") or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    latest_updated_at = csv_files[0].get("updated_at") if csv_files else None
+    cutoff = utc_now() - timedelta(days=CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS)
+    selected = [
+        item for item in csv_files
+        if item.get("updated_at") is None or item.get("updated_at") >= cutoff
+    ][:CREATOR_CONNECTIONS_MAX_FILES]
+    return selected, {
+        "files_available": len(csv_files),
+        "files_selected": len(selected),
+        "latest_csv_file": csv_files[0].get("name") if csv_files else "",
+        "latest_csv_updated_at": latest_updated_at.isoformat() if latest_updated_at else "",
+        "max_files": CREATOR_CONNECTIONS_MAX_FILES,
+        "max_file_age_days": CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS,
+    }
+
+
+def find_creator_campaigns_for_asins(target_asins):
+    target_asins = {str(asin).strip().upper() for asin in target_asins if asin}
+    if not target_asins:
+        return {}, {"files_scanned": 0, "rows_scanned": 0, "asins_matched": 0}
+
+    try:
+        files, file_stats = creator_connection_file_urls()
+    except Exception as exc:
+        print(f"Could not list Creator Connections files: {exc}")
+        return {}, {"files_scanned": 0, "rows_scanned": 0, "asins_matched": 0}
+
+    today = utc_now().date()
+    matches = {}
+    files_scanned = 0
+    rows_scanned = 0
+    print(f"Checking Creator campaign status for {len(target_asins)} dashboard ASINs...")
+
+    for item in files:
+        files_scanned += 1
+        try:
+            with requests.get(item["download_url"], stream=True, timeout=180) as response:
+                response.raise_for_status()
+                reader = csv.DictReader(response.iter_lines(decode_unicode=True))
+                for row in reader:
+                    rows_scanned += 1
+                    row_asins = set(ASIN_RE.findall(str(row.get("ASIN List", "")).upper()))
+                    relevant_asins = target_asins.intersection(row_asins)
+                    if not relevant_asins:
+                        continue
+                    campaign = campaign_from_row(row, today)
+                    if not campaign.get("active"):
+                        continue
+                    for asin in relevant_asins:
+                        existing = matches.get(asin)
+                        if not existing or campaign_rank(campaign) > campaign_rank(existing):
+                            matches[asin] = campaign
+        except Exception as exc:
+            print(f"Could not scan Creator Connections file {item.get('name', '')}: {exc}")
+
+    print(f"Creator Connections: matched {len(matches)} ASINs from {files_scanned} files and {rows_scanned} rows")
+    return matches, {
+        "files_scanned": files_scanned,
+        "rows_scanned": rows_scanned,
+        "asins_matched": len(matches),
+        **file_stats,
+    }
+
+
+def apply_creator_campaigns(memory, campaign_by_asin):
+    matched = 0
+    for asin, deal in memory.items():
+        campaign = campaign_by_asin.get(str(asin).upper())
+        if campaign:
+            deal["has_creator_campaign"] = True
+            deal["creator_campaign"] = campaign
+            deal["creator_commission_rate"] = campaign.get("commission_rate", "")
+            matched += 1
+        else:
+            deal.pop("has_creator_campaign", None)
+            deal.pop("creator_campaign", None)
+            deal.pop("creator_commission_rate", None)
+    return matched
+
+
 def main():
     print("Starting Keepa price scan with stats fallback price tracks...")
 
@@ -744,6 +930,8 @@ def main():
 
     memory = load_deal_memory()
     memory, expired_count = purge_expired_deals(memory)
+    campaign_target_asins = set(asins) | set(memory.keys())
+    campaign_by_asin, campaign_stats = find_creator_campaigns_for_asins(campaign_target_asins)
 
     products = fetch_keepa_products(asins)
     print(f"Fetched {len(products)} products from Keepa")
@@ -774,6 +962,7 @@ def main():
             scan_deals.append(deal)
 
     memory, added_count, updated_count = merge_deals_with_memory(memory, scan_deals)
+    creator_campaign_deal_count = apply_creator_campaigns(memory, campaign_by_asin)
     all_deals = list(memory.values())
     all_deals.sort(key=lambda item: item.get("posted_at") or item.get("checked_at") or "", reverse=True)
     non_amazon_active_deals = sum(1 for deal in all_deals if deal.get("price_type") in NON_AMAZON_PRICE_TYPES)
@@ -795,7 +984,13 @@ def main():
         "non_amazon_active_deal_count": non_amazon_active_deals,
         "prime_exclusive_scan_deal_count": prime_exclusive_scan_deals,
         "prime_exclusive_active_deal_count": prime_exclusive_active_deals,
-        "creator_campaign_deal_count": 0,
+        "creator_campaign_deal_count": creator_campaign_deal_count,
+        "creator_connections": {
+            "repo": CREATOR_CONNECTIONS_REPO,
+            "path": CREATOR_CONNECTIONS_PATH,
+            "ref": CREATOR_CONNECTIONS_REF,
+            **campaign_stats,
+        },
         "scan_window": {
             "total_asins": len(all_asins),
             "start_index": start_index,
@@ -836,6 +1031,7 @@ def main():
     print(f"Prime Exclusive offer deals in this scan: {prime_exclusive_scan_deals}")
     print(f"Prime Exclusive active deals: {prime_exclusive_active_deals}")
     print(f"Added {added_count} new deals and updated {updated_count} existing deals")
+    print(f"Marked {creator_campaign_deal_count} active deals with Creator campaign commission data")
     print(f"Saved {len(all_deals)} active 24-hour deals to {OUTPUT_FILE}")
     print(f"Saved deal memory to {MEMORY_FILE}")
     print(f"Saved next scan start index {new_state['next_start_index']} to {STATE_FILE}")
