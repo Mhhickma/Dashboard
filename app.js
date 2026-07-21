@@ -13,7 +13,7 @@ const creatorCsvFileName = document.getElementById("creatorCsvFileName");
 const creatorCsvUploadStatus = document.getElementById("creatorCsvUploadStatus");
 const creatorCsvUploadFrame = document.getElementById("creatorCsvUploadFrame");
 
-const REMOVE_ASIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyXILMe0WvnvjD0PMT4e6W7xvlnGePpN8HT2Dj0gsAXxT0dOh_9-4lXK9NTDw-yL5gTLg/exec";
+const REMOVE_ASIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxU4HTktR6zH5Wfbk58V24X-HAE9kZYlzdlm1gqMp1NL_ZGzF7p-0VAL5VeGNfnAyxESA/exec";
 const HIDDEN_DEALS_KEY = "keepa-dashboard-hidden-asins";
 const REMOVE_QUEUE_KEY = "keepa-dashboard-remove-queue-asins";
 const SELECTED_FOR_POSTING_KEY = "keepa-dashboard-selected-for-posting-asins";
@@ -821,4 +821,3 @@ searchInput.addEventListener("input", () => applySearch());
 if (sortSelect) sortSelect.addEventListener("change", () => applySearch());
 initCreatorCsvUpload();
 loadDeals();
-
