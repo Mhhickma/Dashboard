@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import io
 import json
 import os
@@ -112,11 +112,7 @@ def price_from_stats_array(stats, key, price_index):
 def amazon_image_fallback(asin):
     if not asin:
         return None
-    return (
-        "https://ws-na.amazon-adsystem.com/widgets/q?"
-        f"_encoding=UTF8&ASIN={asin}&Format=_SL500_&ID=AsinImage"
-        "&MarketPlace=US&ServiceVersion=20070822"
-    )
+    return f"https://m.media-amazon.com/images/P/{asin}.01._SL500_.jpg"
 
 
 def get_product_image(product, asin):

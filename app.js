@@ -590,14 +590,17 @@ function sortDeals(deals) {
 function imageCandidatesForDeal(deal) {
   const asin = deal.asin;
   const candidates = [];
+  const adWidgetImage = asin ? `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=US&ASIN=${asin}&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL500_` : "";
 
-  if (deal.image) candidates.push(deal.image);
+  if (deal.image && !deal.image.includes("amazon-adsystem.com")) candidates.push(deal.image);
 
   if (asin) {
-    candidates.push(`https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SL500_.jpg`);
     candidates.push(`https://m.media-amazon.com/images/P/${asin}.01._SL500_.jpg`);
+    candidates.push(`https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SL500_.jpg`);
+    candidates.push(`https://images.amazon.com/images/P/${asin}.01._SL500_.jpg`);
     candidates.push(`https://images-na.ssl-images-amazon.com/images/P/${asin}.01.LZZZZZZZ.jpg`);
-    candidates.push(`https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=US&ASIN=${asin}&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL500_`);
+    if (deal.image && deal.image.includes("amazon-adsystem.com")) candidates.push(deal.image);
+    if (adWidgetImage) candidates.push(adWidgetImage);
   }
 
   return [...new Set(candidates.filter(Boolean))];
