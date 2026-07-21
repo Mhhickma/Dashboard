@@ -592,6 +592,12 @@ function imageCandidatesForDeal(deal) {
   const candidates = [];
   const adWidgetImage = asin ? `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=US&ASIN=${asin}&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL500_` : "";
 
+  if (Array.isArray(deal.image_candidates)) {
+    deal.image_candidates.forEach((image) => {
+      if (image && !String(image).includes("amazon-adsystem.com")) candidates.push(String(image));
+    });
+  }
+
   if (deal.image && !deal.image.includes("amazon-adsystem.com")) candidates.push(deal.image);
 
   if (asin) {

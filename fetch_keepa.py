@@ -115,15 +115,30 @@ def amazon_image_fallback(asin):
     return f"https://m.media-amazon.com/images/P/{asin}.01._SL500_.jpg"
 
 
-def get_product_image(product, asin):
+def get_product_image_candidates(product, asin):
+    candidates = []
     images_csv = product.get("imagesCSV") or ""
     if images_csv:
-        first_image = images_csv.split(",")[0].strip()
-        if first_image:
-            if first_image.startswith("http"):
-                return first_image
-            return f"https://images-na.ssl-images-amazon.com/images/I/{first_image}"
-    return amazon_image_fallback(asin)
+        for image_name in images_csv.split(","):
+            image_name = image_name.strip()
+            if not image_name:
+                continue
+            if image_name.startswith("http"):
+                candidates.append(image_name)
+            else:
+                candidates.append(f"https://images-na.ssl-images-amazon.com/images/I/{image_name}")
+                candidates.append(f"https://m.media-amazon.com/images/I/{image_name}")
+
+    fallback = amazon_image_fallback(asin)
+    if fallback:
+        candidates.append(fallback)
+
+    return list(dict.fromkeys(candidates))
+
+
+def get_product_image(product, asin):
+    candidates = get_product_image_candidates(product, asin)
+    return candidates[0] if candidates else None
 
 
 def asins_from_csv_text(csv_text, source_name):
@@ -476,6 +491,7 @@ def best_price_days_for_track(product, track_index, current_price):
 def prime_exclusive_offer_points(product):
     points = []
     offers = product.get("offers") or []
+        images_csv = product.get("imagesCSV") or ""
     if not isinstance(offers, list):
         return points
     for offer in offers:
@@ -550,14 +566,17 @@ def raw_keepa_diagnostics(products):
     products_with_csv = 0
     products_with_offers = 0
     products_with_prime_exclusive_offer = 0
+    products_with_images_csv = 0
 
     for product in products:
         stats = product.get("stats") or {}
         csv_tracks = product.get("csv") or []
         offers = product.get("offers") or []
+        images_csv = product.get("imagesCSV") or ""
         has_stats = isinstance(stats, dict) and bool(stats)
         has_csv = isinstance(csv_tracks, list) and any(isinstance(track, list) and track for track in csv_tracks)
         has_offers = isinstance(offers, list) and bool(offers)
+        has_images_csv = bool(str(images_csv).strip())
         has_prime_exclusive = has_offers and any(
             isinstance(offer, dict) and offer.get("isPrimeExcl")
             for offer in offers
@@ -566,6 +585,7 @@ def raw_keepa_diagnostics(products):
         products_with_stats += 1 if has_stats else 0
         products_with_csv += 1 if has_csv else 0
         products_with_offers += 1 if has_offers else 0
+        products_with_images_csv += 1 if has_images_csv else 0
         products_with_prime_exclusive_offer += 1 if has_prime_exclusive else 0
 
         if len(sample_products) < 8:
@@ -577,6 +597,7 @@ def raw_keepa_diagnostics(products):
                 "has_stats": has_stats,
                 "has_csv": has_csv,
                 "has_offers": has_offers,
+                "has_images_csv": has_images_csv,
                 "has_prime_exclusive_offer": has_prime_exclusive,
                 "raw_current_indexes": {
                     str(track["index"]): current[track["index"]] if isinstance(current, list) and len(current) > track["index"] else None
@@ -602,6 +623,7 @@ def raw_keepa_diagnostics(products):
         "products_with_stats": products_with_stats,
         "products_with_csv": products_with_csv,
         "products_with_offers": products_with_offers,
+        "products_with_images_csv": products_with_images_csv,
         "products_with_prime_exclusive_offer": products_with_prime_exclusive_offer,
         "sample_products": sample_products,
     }
@@ -640,6 +662,7 @@ def base_deal(product, asin, title, current_price, avg_7_price, min_7_price, avg
         "drop_30_percent": drop_30_percent,
         "price_stats_source": source,
         "image": get_product_image(product, asin),
+        "image_candidates": get_product_image_candidates(product, asin),
         "amazon_url": f"https://www.amazon.com/dp/{asin}?tag={AMAZON_TAG}",
         "checked_at": checked_at,
         "last_checked_at": checked_at,
