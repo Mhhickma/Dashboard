@@ -491,7 +491,6 @@ def best_price_days_for_track(product, track_index, current_price):
 def prime_exclusive_offer_points(product):
     points = []
     offers = product.get("offers") or []
-        images_csv = product.get("imagesCSV") or ""
     if not isinstance(offers, list):
         return points
     for offer in offers:
@@ -572,7 +571,6 @@ def raw_keepa_diagnostics(products):
         stats = product.get("stats") or {}
         csv_tracks = product.get("csv") or []
         offers = product.get("offers") or []
-        images_csv = product.get("imagesCSV") or ""
         has_stats = isinstance(stats, dict) and bool(stats)
         has_csv = isinstance(csv_tracks, list) and any(isinstance(track, list) and track for track in csv_tracks)
         has_offers = isinstance(offers, list) and bool(offers)
