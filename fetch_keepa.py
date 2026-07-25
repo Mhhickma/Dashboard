@@ -835,6 +835,16 @@ def creator_connection_file_commit_date(path):
 
 
 def creator_connection_file_urls():
+    if CREATOR_CONNECTIONS_MAX_FILES <= 0:
+        return [], {
+            "files_available": 0,
+            "files_selected": 0,
+            "latest_csv_file": "",
+            "latest_csv_updated_at": "",
+            "max_files": CREATOR_CONNECTIONS_MAX_FILES,
+            "max_file_age_days": CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS,
+        }
+
     api_url = (
         f"https://api.github.com/repos/{CREATOR_CONNECTIONS_REPO}/contents/"
         f"{CREATOR_CONNECTIONS_PATH}?ref={CREATOR_CONNECTIONS_REF}"
