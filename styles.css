@@ -551,6 +551,40 @@ button {
   background: #2f3b52;
 }
 
+.publish-tool-row {
+  display: grid;
+  grid-template-columns: minmax(78px, 1fr) repeat(4, minmax(42px, auto));
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.publish-tool-row span {
+  color: #166534;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.publish-tool-row button {
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  background: white;
+  color: #14532d;
+  padding: 8px 7px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.publish-tool-row button:hover {
+  background: #dcfce7;
+}
+
+.publish-tool-row button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .copy-remove {
   border-color: #fed7aa;
   color: var(--warning);

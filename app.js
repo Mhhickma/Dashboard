@@ -17,6 +17,7 @@ const REMOVE_ASIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxU4HTk
 const HIDDEN_DEALS_KEY = "keepa-dashboard-hidden-asins";
 const REMOVE_QUEUE_KEY = "keepa-dashboard-remove-queue-asins";
 const SELECTED_FOR_POSTING_KEY = "keepa-dashboard-selected-for-posting-asins";
+const PUBLISH_STATUS_KEY = "keepa-dashboard-publish-status";
 const SHOW_ALL_DEALS_KEY = "keepa-dashboard-show-all-deals";
 const HIDE_FOR_HOURS = 24;
 const DEALS_PER_PAGE = 50;
@@ -128,6 +129,23 @@ function readSet(key) {
 
 function writeSet(key, values) {
   localStorage.setItem(key, JSON.stringify([...values]));
+}
+
+function readPublishStatusMap() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PUBLISH_STATUS_KEY) || "{}");
+    if (raw && typeof raw === "object") return raw;
+  } catch {}
+  return {};
+}
+
+function writePublishStatus(asin, payload) {
+  const values = readPublishStatusMap();
+  values[asin] = {
+    ...payload,
+    updated_at: new Date().toISOString(),
+  };
+  localStorage.setItem(PUBLISH_STATUS_KEY, JSON.stringify(values));
 }
 
 function activeHiddenMap() {
@@ -413,6 +431,61 @@ async function copySelectedLinks() {
   }
 }
 
+function publishDelayLabel(delayMinutes) {
+  return delayMinutes === 0 ? "now" : `+${delayMinutes} min`;
+}
+
+function bestImageForPublish(deal) {
+  return imageCandidatesForDeal(deal)[0] || "";
+}
+
+async function publishDeal(deal, target, delayMinutes, button) {
+  const targetLabel = target === "groupCsv" ? "Group CSV" : "Page";
+  const originalText = button ? button.textContent : "";
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = target === "groupCsv" ? "Adding..." : "Publishing...";
+  }
+
+  try {
+    const result = await callAsinScript("publishDeal", {
+      target,
+      delayMinutes,
+      asin: deal.asin,
+      title: deal.title,
+      currentPrice: deal.current_price || "",
+      avg30Price: deal.avg_30_price || "",
+      drop30Percent: deal.drop_30_percent || "",
+      amazonUrl: deal.amazon_url || "",
+      imageUrl: bestImageForPublish(deal),
+    });
+
+    if (!result || !result.ok) {
+      const message = result && result.error ? result.error : "Publishing did not return a success response.";
+      throw new Error(message);
+    }
+
+    writePublishStatus(deal.asin, {
+      target,
+      delay_minutes: delayMinutes,
+      status: result.status || (target === "groupCsv" ? "queued" : "sent"),
+      scheduled_for: result.scheduled_for || "",
+      publer_job_id: result.publer_job_id || "",
+    });
+
+    alert(`${targetLabel} ${publishDelayLabel(delayMinutes)}: ${result.message || "sent successfully."}`);
+    hideDeal(deal.asin);
+  } catch (error) {
+    alert(`${targetLabel} ${publishDelayLabel(delayMinutes)} failed for ${deal.asin}: ${error.message}`);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  }
+}
+
 function visibleDeals() {
   const hidden = hiddenAsins();
   const removeQueue = removeQueueAsins();
@@ -685,10 +758,25 @@ function buildCard(deal, isSelected, isSelectedSection) {
   const expiresAt = deal.expires_at;
   const hoursLeft = hoursUntil(expiresAt);
   const expiresText = hoursLeft === null ? "N/A" : `${hoursLeft.toFixed(1)} hrs left`;
+  const dealJson = JSON.stringify(deal).replace(/</g, "\\u003c").replace(/'/g, "\\u0027");
 
   const selectedPostingTools = isSelectedSection ? `
     <div class="posting-helper-box">
-      <p>Make the link, post it, then hide this card.</p>
+      <p>Publish to your Page or add a scheduled row to the Publer Group CSV.</p>
+      <div class="publish-tool-row">
+        <span>Page</span>
+        <button type="button" onclick='publishDeal(${dealJson}, "page", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "page", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "page", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "page", 120, this)'>120</button>
+      </div>
+      <div class="publish-tool-row">
+        <span>Group CSV</span>
+        <button type="button" onclick='publishDeal(${dealJson}, "groupCsv", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "groupCsv", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "groupCsv", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "groupCsv", 120, this)'>120</button>
+      </div>
       <button class="posted-hide-card" type="button" onclick="hideDeal('${deal.asin}')">Posted â€” Hide Card</button>
     </div>
   ` : "";

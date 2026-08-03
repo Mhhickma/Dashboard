@@ -18,6 +18,7 @@ A personal Amazon deal dashboard that scans ASINs with Keepa, keeps recent price
 - `fetch_keepa_history_probe.py` - Scanner wrapper that adds best-price-age details from Keepa history
 - `index.html` - Static dashboard page
 - `app.js` - Dashboard filtering, sorting, posting helpers, hide/remove actions, and image fallbacks
+- `apps-script-publer-publisher.js` - Google Apps Script helper for Publer Page publishing and Publer Group CSV queueing
 - `styles.css` - Dashboard styling
 - `asins.csv` - Local fallback ASIN list
 - `data/deals.json` - Current dashboard data
@@ -89,6 +90,34 @@ If the Google Apps Script request fails, the ASIN is queued locally instead. Onc
 ## Uploading Creator Connections CSV
 
 The dashboard upload box sends the selected CSV to the connected Google Apps Script web app as `action=uploadCreatorCsv`. Add the handler in `apps-script-creator-upload.js` to that script and set its `GITHUB_TOKEN` Script Property. The handler replaces `Mhhickma/influencer-prospects/creator-connections/latest.csv`, and future Keepa scans read that repository folder when applying Creator campaign data.
+
+## Publishing Deals To Publer
+
+Selected deal cards include buttons for:
+
+- Page: `Now`, `60`, `90`, and `120`
+- Group CSV: `Now`, `60`, `90`, and `120`
+
+The dashboard calls the connected Google Apps Script web app with `action=publishDeal`. Add the helpers in `apps-script-publer-publisher.js` to that Apps Script project. If the live Apps Script already has a `doGet(e)` function, merge the `publishDeal` action branch into the existing dispatcher instead of adding a second `doGet(e)`.
+
+Store these values as Apps Script Script Properties. Do not commit real keys to GitHub.
+
+- `PUBLER_API_KEY` - Publer API key with `posts`, `media`, and `accounts` scopes
+- `PUBLER_WORKSPACE_ID` - Publer workspace ID
+- `PUBLER_PAGE_ACCOUNT_ID` - connected Facebook Page account ID in Publer
+- `AMAZON_ASSOCIATE_TAG` - Amazon Associates tag, such as `simplewoodsho-20`
+- `GITHUB_TOKEN` - GitHub token with Contents read/write on `Mhhickma/Dashboard`
+
+Optional Script Properties:
+
+- `PUBLISH_MODE` - defaults to `draft`; set to `live` only after testing
+- `JOTURL_API_URL` - JotURL API endpoint for creating a deep link
+- `JOTURL_API_KEY` - JotURL API key
+- `GROUP_CSV_PATH` - defaults to `data/publer_group_queue.csv`
+
+Page buttons create a Publer draft by default. Set `PUBLISH_MODE=live` when you want `Now` to publish immediately and the delay buttons to schedule future posts.
+
+Group CSV buttons append rows to `data/publer_group_queue.csv` using Publer's CSV template columns. Upload that CSV to Publer for Facebook Group scheduling.
 
 ## Local Testing
 
