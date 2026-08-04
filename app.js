@@ -441,7 +441,7 @@ function bestImageForPublish(deal) {
 
 async function publishDeal(deal, target, delayMinutes, button) {
   const targetLabels = {
-    woodworkingGroup: "Woodworking Group CSV",
+    woodworkingGroup: "Woodworking Page + Group",
     dadDealsGroup: "Dad Deals Group CSV",
     woodworkingPage: "Woodworking Page",
     blackLabPage: "Black Lab Page",
@@ -770,9 +770,9 @@ function buildCard(deal, isSelected, isSelectedSection) {
 
   const selectedPostingTools = isSelectedSection ? `
     <div class="posting-helper-box">
-      <p>Publish to a Page or add a scheduled row to a Publer Group CSV.</p>
+      <p>Publish direct to Publer.</p>
       <div class="publish-tool-row">
-        <span>Wood Group</span>
+        <span>Wood Page + Group</span>
         <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 0, this)'>Now</button>
         <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 60, this)'>60</button>
         <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 90, this)'>90</button>
@@ -784,13 +784,6 @@ function buildCard(deal, isSelected, isSelectedSection) {
         <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 60, this)'>60</button>
         <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 90, this)'>90</button>
         <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 120, this)'>120</button>
-      </div>
-      <div class="publish-tool-row">
-        <span>Wood Page</span>
-        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 0, this)'>Now</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 60, this)'>60</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 90, this)'>90</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 120, this)'>120</button>
       </div>
       <div class="publish-tool-row">
         <span>Black Lab</span>

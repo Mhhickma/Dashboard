@@ -18,9 +18,13 @@ const DASHBOARD_REPO = "Mhhickma/Dashboard";
 const DASHBOARD_BRANCH = "main";
 const PUBLER_TARGETS = {
   woodworkingGroup: {
-    type: "groupCsv",
-    label: "Woodworking Group",
-    csvPath: "data/publer_group_queue_woodworking.csv",
+    type: "publer",
+    label: "Woodworking Page + Group",
+    workspaceIdProperty: "PUBLER_WOODWORKING_GROUP_WORKSPACE_ID",
+    accountIdProperty: "PUBLER_WOODWORKING_GROUP_ACCOUNT_ID",
+    extraAccountIdProperties: ["PUBLER_WOODWORKING_PAGE_ACCOUNT_ID"],
+    fallbackWorkspaceId: "6a2593fa88252f00b49d50b1",
+    fallbackAccountId: "6a25940388252f00b49d51b1",
   },
   dadDealsGroup: {
     type: "groupCsv",
@@ -63,8 +67,8 @@ function publishDeal_(params) {
   const postText = buildFacebookDealText_(deal);
   const commentText = buildFirstComment_(dealUrl);
 
-  if (target.type === "page") {
-    return publishPublerPage_(target, deal, postText, commentText, scheduledFor, Number(params.delayMinutes || 0));
+  if (target.type === "page" || target.type === "publer") {
+    return publishPublerPost_(target, deal, postText, commentText, scheduledFor, Number(params.delayMinutes || 0));
   }
 
   if (target.type === "groupCsv") {
@@ -147,53 +151,60 @@ function buildJotUrlDeepLink_(affiliateUrl, deal) {
 }
 
 function buildFacebookDealText_(deal) {
-  const parts = [
-    "Deal alert",
-    cleanText_(deal.title),
-  ];
-
-  if (deal.current_price > 0) {
-    parts.push(`Now: ${formatUsd_(deal.current_price)}`);
-  }
-  if (deal.avg_30_price > 0) {
-    parts.push(`30-day avg: ${formatUsd_(deal.avg_30_price)}`);
-  }
-  if (deal.drop_30_percent > 0) {
-    parts.push(`${Math.round(deal.drop_30_percent)}% below 30-day average`);
-  }
-
-  parts.push("Price can change fast.");
-  return parts.join("\n");
+  const title = shortenProductTitle_(deal.title, 125);
+  const linkedBelow = "Worth a look for the shop. Linked below.";
+  const casualFallback = "Worth a look for the shop.";
+  const text = `${title}\n${linkedBelow}`;
+  return text.length <= 180 ? text : `${title}\n${casualFallback}`;
 }
 
 function buildFirstComment_(dealUrl) {
-  return `Deal link: ${dealUrl}\n\nAs an Amazon Associate, I may earn from qualifying purchases.`;
+  return `#ad ${dealUrl}`;
 }
 
-function publishPublerPage_(target, deal, postText, commentText, scheduledFor, delayMinutes) {
+function publishPublerPost_(target, deal, postText, commentText, scheduledFor, delayMinutes) {
   const apiKey = scriptProp_("PUBLER_API_KEY", true);
   const workspaceId = scriptProp_(target.workspaceIdProperty, false) || target.fallbackWorkspaceId;
-  const accountId = scriptProp_(target.accountIdProperty, true);
+  const accountId = scriptProp_(target.accountIdProperty, false) || target.fallbackAccountId;
+  const accountIds = [accountId]
+    .concat((target.extraAccountIdProperties || []).map((name) => scriptProp_(name, false)).filter(Boolean))
+    .filter((id, index, ids) => id && ids.indexOf(id) === index);
   const publishMode = scriptProp_("PUBLISH_MODE", false) || "draft";
   if (!workspaceId) throw new Error(`Missing ${target.workspaceIdProperty} script property.`);
+  if (!accountId) throw new Error(`Missing ${target.accountIdProperty} script property.`);
+  preventDirectPublerDuplicate_(target, deal.asin);
+  const adjustedScheduledFor = adjustedDirectPublerSchedule_(target, scheduledFor);
   const isImmediateLive = publishMode === "live" && delayMinutes === 0;
   const state = publishMode === "draft" ? "draft_private" : "scheduled";
   const endpoint = isImmediateLive
     ? "https://app.publer.com/api/v1/posts/schedule/publish"
     : "https://app.publer.com/api/v1/posts/schedule";
 
-  const account = {
-    id: accountId,
-    comments: [
-      {
-        text: commentText,
-      },
-    ],
-  };
+  const accounts = accountIds.map((id) => {
+    const account = {
+      id,
+      comments: [
+        {
+          text: commentText,
+          conditions: {
+            relation: "AND",
+            clauses: {
+              age: {
+                duration: 0,
+                unit: "Minute",
+              },
+            },
+          },
+        },
+      ],
+    };
 
-  if (publishMode === "live" && delayMinutes > 0) {
-    account.scheduled_at = scheduledFor.toISOString();
-  }
+    if (publishMode === "live" && delayMinutes > 0) {
+      account.scheduled_at = adjustedScheduledFor.toISOString();
+    }
+
+    return account;
+  });
 
   const facebook = {
     type: "status",
@@ -208,7 +219,7 @@ function publishPublerPage_(target, deal, postText, commentText, scheduledFor, d
           networks: {
             facebook,
           },
-          accounts: [account],
+          accounts,
         },
       ],
     },
@@ -229,15 +240,61 @@ function publishPublerPage_(target, deal, postText, commentText, scheduledFor, d
   }
 
   const body = JSON.parse(bodyText);
+  recordDirectPublerPost_(target, deal.asin, adjustedScheduledFor);
   return {
     ok: true,
     status: publishMode === "draft" ? "draft" : (delayMinutes > 0 ? "scheduled" : "published"),
     target: target.key,
     label: target.label,
-    scheduled_for: delayMinutes > 0 ? scheduledFor.toISOString() : "",
+    account_count: accounts.length,
+    scheduled_for: delayMinutes > 0 ? adjustedScheduledFor.toISOString() : "",
     publer_job_id: body.data?.job_id || body.job_id || "",
     message: `${target.label} ${publishMode === "draft" ? "created as a Publer draft." : "sent to Publer."}`,
   };
+}
+
+function directPublerState_() {
+  const raw = scriptProp_("PUBLER_DIRECT_POST_STATE", false) || "{}";
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeDirectPublerState_(state) {
+  PropertiesService.getScriptProperties().setProperty("PUBLER_DIRECT_POST_STATE", JSON.stringify(state));
+}
+
+function preventDirectPublerDuplicate_(target, asin) {
+  const state = directPublerState_();
+  const targetState = state[target.key] || {};
+  const postedAsins = targetState.asins || {};
+  if (postedAsins[String(asin || "").toUpperCase()]) {
+    throw new Error(`${asin} was already sent to ${target.label}.`);
+  }
+}
+
+function adjustedDirectPublerSchedule_(target, requestedDate) {
+  const state = directPublerState_();
+  const targetState = state[target.key] || {};
+  const latestTime = Number(targetState.latestScheduledAt || 0);
+  const minGapMs = 45 * 60 * 1000;
+  const requestedTime = requestedDate.getTime();
+  if (!latestTime || requestedTime >= latestTime + minGapMs) return requestedDate;
+  return new Date(latestTime + minGapMs);
+}
+
+function recordDirectPublerPost_(target, asin, scheduledFor) {
+  const state = directPublerState_();
+  const targetState = state[target.key] || {};
+  const postedAsins = targetState.asins || {};
+  postedAsins[String(asin || "").toUpperCase()] = new Date().toISOString();
+  targetState.asins = postedAsins;
+  targetState.latestScheduledAt = Math.max(Number(targetState.latestScheduledAt || 0), scheduledFor.getTime());
+  state[target.key] = targetState;
+  writeDirectPublerState_(state);
 }
 
 function appendPublerGroupCsv_(target, deal, postText, commentText, scheduledFor) {
@@ -257,11 +314,17 @@ function appendPublerGroupCsv_(target, deal, postText, commentText, scheduledFor
     "Reminder - For stories, reels, shorts, and TikToks",
   ];
 
+  const existing = readGithubTextFile_(DASHBOARD_REPO, path);
+  if (csvAlreadyHasDeal_(existing.content, deal.asin)) {
+    throw new Error(`${deal.asin} is already in ${path}.`);
+  }
+
+  const adjustedScheduledFor = adjustedGroupSchedule_(existing.content, scheduledFor);
   const row = [
-    formatPublerCsvDate_(scheduledFor),
+    formatPublerCsvDate_(adjustedScheduledFor),
     postText,
     "",
-    deal.image_url,
+    "",
     "",
     "Amazon Deals",
     deal.title,
@@ -272,7 +335,6 @@ function appendPublerGroupCsv_(target, deal, postText, commentText, scheduledFor
     "",
   ];
 
-  const existing = readGithubTextFile_(DASHBOARD_REPO, path);
   const csv = existing && existing.content
     ? `${existing.content.replace(/\s*$/, "\n")}${csvRow_(row)}\n`
     : `${csvRow_(headers)}\n${csvRow_(row)}\n`;
@@ -284,9 +346,36 @@ function appendPublerGroupCsv_(target, deal, postText, commentText, scheduledFor
     status: "queued",
     target: target.key,
     label: target.label,
-    scheduled_for: scheduledFor.toISOString(),
+    scheduled_for: adjustedScheduledFor.toISOString(),
     message: `${target.label} added to ${path}.`,
   };
+}
+
+function csvAlreadyHasDeal_(content, asin) {
+  if (!content) return false;
+  return String(content).toUpperCase().indexOf(String(asin || "").toUpperCase()) !== -1;
+}
+
+function adjustedGroupSchedule_(content, requestedDate) {
+  const minGapMs = 45 * 60 * 1000;
+  let latestTime = 0;
+
+  if (content) {
+    try {
+      const rows = Utilities.parseCsv(content);
+      rows.slice(1).forEach((row) => {
+        const dateText = row && row[0] ? String(row[0]).trim() : "";
+        const time = dateText ? new Date(dateText.replace(" ", "T")).getTime() : 0;
+        if (Number.isFinite(time)) latestTime = Math.max(latestTime, time);
+      });
+    } catch (error) {
+      latestTime = 0;
+    }
+  }
+
+  const requestedTime = requestedDate.getTime();
+  if (!latestTime || requestedTime >= latestTime + minGapMs) return requestedDate;
+  return new Date(latestTime + minGapMs);
 }
 
 function readGithubTextFile_(repo, path) {
@@ -365,6 +454,20 @@ function formatPublerCsvDate_(date) {
 
 function cleanText_(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function shortenProductTitle_(value, maxLength) {
+  const text = cleanText_(value)
+    .replace(/\bAmazon(?:\.com)?\b/gi, "")
+    .replace(/\b\d+(?:\.\d+)?\s*%\s*(?:off|discount|below)?\b/gi, "")
+    .replace(/\$\s*\d+(?:\.\d{2})?\b/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/[,:;\-\s]+$/, "")
+    .trim();
+
+  if (text.length <= maxLength) return text || "Shop find worth checking";
+  const shortened = text.slice(0, maxLength + 1).replace(/\s+\S*$/, "").replace(/[,:;\-\s]+$/, "");
+  return shortened || text.slice(0, maxLength).trim();
 }
 
 function csvRow_(values) {
