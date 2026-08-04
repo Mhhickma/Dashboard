@@ -290,7 +290,7 @@ function appendPublerGroupCsv_(target, deal, postText, commentText, scheduledFor
 }
 
 function readGithubTextFile_(repo, path) {
-  const token = scriptProp_("GITHUB_TOKEN", true);
+  const token = dashboardGithubToken_();
   const response = UrlFetchApp.fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${DASHBOARD_BRANCH}`, {
     method: "get",
     headers: githubHeaders_(token),
@@ -308,7 +308,7 @@ function readGithubTextFile_(repo, path) {
 }
 
 function writeGithubTextFile_(repo, path, content, sha, message) {
-  const token = scriptProp_("GITHUB_TOKEN", true);
+  const token = dashboardGithubToken_();
   const payload = {
     message,
     content: Utilities.base64Encode(content, Utilities.Charset.UTF_8),
@@ -341,6 +341,10 @@ function githubHeaders_(token) {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
   };
+}
+
+function dashboardGithubToken_() {
+  return scriptProp_("DASHBOARD_GITHUB_TOKEN", false) || scriptProp_("GITHUB_TOKEN", true);
 }
 
 function scriptProp_(name, required) {
