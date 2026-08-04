@@ -8,7 +8,7 @@
 // GITHUB_TOKEN
 //
 // Optional:
-// JOTURL_API_URL, JOTURL_API_KEY, PUBLISH_MODE=draft|live
+// LINKTWIN_API_KEY, PUBLISH_MODE=draft|live
 //
 // Page targets use these optional properties:
 // PUBLER_WOODWORKING_WORKSPACE_ID, PUBLER_WOODWORKING_PAGE_ACCOUNT_ID
@@ -63,7 +63,7 @@ function publishDeal_(params) {
   const deal = normalizePublishDeal_(params);
   const scheduledFor = scheduledDate_(params.delayMinutes);
   const affiliateUrl = buildAmazonAffiliateUrl_(deal.asin);
-  const dealUrl = buildJotUrlDeepLink_(affiliateUrl, deal);
+  const dealUrl = buildDeepLink_(affiliateUrl, deal);
   const postText = buildFacebookDealText_(deal);
   const commentText = buildFirstComment_(dealUrl);
 
@@ -115,49 +115,63 @@ function buildAmazonAffiliateUrl_(asin) {
   return `https://www.amazon.com/dp/${encodeURIComponent(asin)}/?tag=${encodeURIComponent(tag)}`;
 }
 
-function buildJotUrlDeepLink_(affiliateUrl, deal) {
-  const apiUrl = scriptProp_("JOTURL_API_URL", false) || "https://joturl.com/a/i1/urls/shorten";
-  const apiKey = scriptProp_("JOTURL_API_KEY", false);
+function buildDeepLink_(affiliateUrl, deal) {
+  const provider = String(scriptProp_("DEEPLINK_PROVIDER", false) || "linktwin").toLowerCase();
+  if (provider !== "linktwin") return affiliateUrl;
+  return buildLinkTwinDeepLink_(affiliateUrl, deal);
+}
+
+function buildLinkTwinDeepLink_(affiliateUrl, deal) {
+  const apiUrl = scriptProp_("LINKTWIN_API_URL", false) || "https://linktw.in/api/url/add";
+  const apiKey = scriptProp_("LINKTWIN_API_KEY", false) || scriptProp_("JOTURL_API_KEY", false);
   if (!apiKey) return affiliateUrl;
-  const required = String(scriptProp_("JOTURL_REQUIRED", false) || "").toLowerCase() === "true";
-  const cacheKey = `JOTURL_LINK_${String(deal.asin || "").toUpperCase()}`;
+  const required = String(scriptProp_("DEEPLINK_REQUIRED", false) || scriptProp_("JOTURL_REQUIRED", false) || "").toLowerCase() === "true";
+  const cacheKey = `DEEPLINK_LINK_${String(deal.asin || "").toUpperCase()}`;
   const cached = scriptProp_(cacheKey, false);
   if (cached) return cached;
 
   try {
     const payload = {
-      long_url: affiliateUrl,
-      alias: jotUrlAlias_(deal.asin),
-      notes: `Amazon affiliate link for ${deal.asin}`,
-      format: "json",
+      url: affiliateUrl,
+      custom: linkAlias_(deal.asin),
+      note: `Amazon affiliate link for ${deal.asin}`,
+      display_title: cleanText_(deal.title).slice(0, 120),
+      bridge_override: 1,
+      bridge_page: 0,
+      bridge_auto_redirect: 1,
+      bridge_redirect_delay: 1,
+      escape_inapp_browser: 1,
     };
 
-    const domainId = scriptProp_("JOTURL_DOMAIN_ID", false);
-    const projectId = scriptProp_("JOTURL_PROJECT_ID", false);
-    if (domainId) payload.domain_id = domainId;
-    if (projectId) payload.project_id = projectId;
+    const domain = scriptProp_("LINKTWIN_DOMAIN", false);
+    const collections = scriptProp_("LINKTWIN_COLLECTIONS", false);
+    const pixels = scriptProp_("LINKTWIN_PIXELS", false);
+    if (domain) payload.domain = domain;
+    if (collections) payload.collections = splitCsvSetting_(collections);
+    if (pixels) payload.pixels = splitCsvSetting_(pixels);
 
     const response = UrlFetchApp.fetch(apiUrl, {
       method: "post",
+      contentType: "application/json",
       headers: {
         Authorization: `Bearer ${apiKey}`,
       },
-      payload,
+      payload: JSON.stringify(payload),
       muteHttpExceptions: true,
     });
 
     const code = response.getResponseCode();
     const bodyText = response.getContentText();
     if (code < 200 || code >= 300) {
-      throw new Error(`JotURL failed: ${code} ${bodyText}`);
+      throw new Error(`LinkTw.in failed: ${code} ${bodyText}`);
     }
 
     const body = JSON.parse(bodyText);
-    if (body.status && Number(body.status.code) !== 200) {
-      throw new Error(`JotURL failed: ${body.status.code} ${body.status.text} ${body.status.error || ""}`);
+    if (Number(body.error || 0) !== 0) {
+      throw new Error(`LinkTw.in failed: ${body.message || body.error}`);
     }
-    const url = extractJotUrl_(body);
-    if (!url) throw new Error(`JotURL did not return a link: ${bodyText}`);
+    const url = extractDeepLinkUrl_(body);
+    if (!url) throw new Error(`LinkTw.in did not return a link: ${bodyText}`);
     const normalizedUrl = normalizeReturnedUrl_(url);
     PropertiesService.getScriptProperties().setProperty(cacheKey, normalizedUrl);
     return normalizedUrl;
@@ -167,11 +181,18 @@ function buildJotUrlDeepLink_(affiliateUrl, deal) {
   }
 }
 
-function jotUrlAlias_(asin) {
+function linkAlias_(asin) {
   return String(asin || "")
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, "")
     .slice(0, 60);
+}
+
+function splitCsvSetting_(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function normalizeReturnedUrl_(url) {
@@ -180,11 +201,11 @@ function normalizeReturnedUrl_(url) {
   return text;
 }
 
-function extractJotUrl_(body) {
+function extractDeepLinkUrl_(body) {
   return body.url ||
-    body.short_url ||
-    body.shortUrl ||
     body.shorturl ||
+    body.shortUrl ||
+    body.short_url ||
     body.short ||
     body.deep_link ||
     body.deepLink ||
@@ -192,10 +213,10 @@ function extractJotUrl_(body) {
     body.result?.shortUrl ||
     body.result?.shorturl ||
     body.result?.short ||
+    body.data?.shorturl ||
     body.data?.url ||
     body.data?.short_url ||
     body.data?.shortUrl ||
-    body.data?.shorturl ||
     body.data?.short ||
     body.data?.deep_link ||
     body.data?.deepLink ||
