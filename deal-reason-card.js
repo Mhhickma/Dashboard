@@ -140,12 +140,63 @@
     else card.querySelector(".card-body").appendChild(box);
   }
 
+  function publishButton(deal, target, delayMinutes, label) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("click", function () {
+      if (typeof window.publishDeal !== "function") {
+        window.alert("Publishing tools are still loading. Refresh the dashboard and try again.");
+        return;
+      }
+      window.publishDeal(deal, target, delayMinutes, button);
+    });
+    return button;
+  }
+
+  function addPublishControls(card, deal) {
+    if (card.querySelector(".posting-helper-box")) return;
+    var amazonButton = card.querySelector("a.button");
+    var body = card.querySelector(".card-body");
+    if (!body) return;
+
+    var box = document.createElement("section");
+    box.className = "posting-helper-box";
+    box.setAttribute("aria-label", "Publish or schedule deal");
+
+    var note = document.createElement("p");
+    note.textContent = "Publish to a Page or add a scheduled row to a Publer Group CSV.";
+    box.appendChild(note);
+
+    [
+      ["Wood Group", "woodworkingGroup"],
+      ["Dad Group", "dadDealsGroup"],
+      ["Wood Page", "woodworkingPage"],
+      ["Black Lab", "blackLabPage"],
+    ].forEach(function (target) {
+      var row = document.createElement("div");
+      row.className = "publish-tool-row";
+      var label = document.createElement("span");
+      label.textContent = target[0];
+      row.appendChild(label);
+      row.appendChild(publishButton(deal, target[1], 0, "Now"));
+      row.appendChild(publishButton(deal, target[1], 60, "60"));
+      row.appendChild(publishButton(deal, target[1], 90, "90"));
+      row.appendChild(publishButton(deal, target[1], 120, "120"));
+      box.appendChild(row);
+    });
+
+    if (amazonButton) amazonButton.insertAdjacentElement("beforebegin", box);
+    else body.appendChild(box);
+  }
+
   var originalBuildCard = window.buildCard;
   if (typeof originalBuildCard !== "function") return;
   window.buildCard = function (deal, isSelected, isSelectedSection) {
     var card = originalBuildCard(deal, isSelected, isSelectedSection);
     addDealReason(card, deal);
     addFacebookPost(card, deal);
+    addPublishControls(card, deal);
     return card;
   };
 }());
