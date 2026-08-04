@@ -166,9 +166,10 @@ function publishPublerPost_(target, deal, postText, commentText, scheduledFor, d
   const apiKey = scriptProp_("PUBLER_API_KEY", true);
   const workspaceId = scriptProp_(target.workspaceIdProperty, false) || target.fallbackWorkspaceId;
   const accountId = scriptProp_(target.accountIdProperty, false) || target.fallbackAccountId;
-  const accountIds = [accountId]
-    .concat((target.extraAccountIdProperties || []).map((name) => scriptProp_(name, false)).filter(Boolean))
-    .filter((id, index, ids) => id && ids.indexOf(id) === index);
+  const extraAccountIds = (target.extraAccountIdProperties || [])
+    .map((name) => scriptProp_(name, false))
+    .filter(Boolean)
+    .filter((id, index, ids) => ids.indexOf(id) === index && id !== accountId);
   const publishMode = scriptProp_("PUBLISH_MODE", false) || "draft";
   if (!workspaceId) throw new Error(`Missing ${target.workspaceIdProperty} script property.`);
   if (!accountId) throw new Error(`Missing ${target.accountIdProperty} script property.`);
@@ -180,11 +181,13 @@ function publishPublerPost_(target, deal, postText, commentText, scheduledFor, d
     ? "https://app.publer.com/api/v1/posts/schedule/publish"
     : "https://app.publer.com/api/v1/posts/schedule";
 
-  const accounts = accountIds.map((id) => {
+  const makeAccount = (id, includeComment) => {
     const account = {
       id,
-      comments: [
-        {
+    };
+
+    if (includeComment) {
+      account.comments = [{
           text: commentText,
           conditions: {
             relation: "AND",
@@ -195,33 +198,55 @@ function publishPublerPost_(target, deal, postText, commentText, scheduledFor, d
               },
             },
           },
-        },
-      ],
-    };
+        }];
+    }
 
     if (publishMode === "live" && delayMinutes > 0) {
       account.scheduled_at = adjustedScheduledFor.toISOString();
     }
 
     return account;
-  });
-
-  const facebook = {
-    type: "status",
-    text: postText,
   };
+
+  const posts = [];
+  if (target.type === "publer") {
+    posts.push({
+      networks: {
+        facebook: {
+          type: "status",
+          text: `${postText}\n\n${commentText}`,
+        },
+      },
+      accounts: [makeAccount(accountId, false)],
+    });
+
+    if (extraAccountIds.length) {
+      posts.push({
+        networks: {
+          facebook: {
+            type: "status",
+            text: postText,
+          },
+        },
+        accounts: extraAccountIds.map((id) => makeAccount(id, true)),
+      });
+    }
+  } else {
+    posts.push({
+      networks: {
+        facebook: {
+          type: "status",
+          text: postText,
+        },
+      },
+      accounts: [makeAccount(accountId, true)],
+    });
+  }
 
   const payload = {
     bulk: {
       state,
-      posts: [
-        {
-          networks: {
-            facebook,
-          },
-          accounts,
-        },
-      ],
+      posts,
     },
   };
 
@@ -246,7 +271,7 @@ function publishPublerPost_(target, deal, postText, commentText, scheduledFor, d
     status: publishMode === "draft" ? "draft" : (delayMinutes > 0 ? "scheduled" : "published"),
     target: target.key,
     label: target.label,
-    account_count: accounts.length,
+    account_count: 1 + extraAccountIds.length,
     scheduled_for: delayMinutes > 0 ? adjustedScheduledFor.toISOString() : "",
     publer_job_id: body.data?.job_id || body.job_id || "",
     message: `${target.label} ${publishMode === "draft" ? "created as a Publer draft." : "sent to Publer."}`,
