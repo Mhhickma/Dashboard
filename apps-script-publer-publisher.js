@@ -2,20 +2,60 @@
 // Keep secrets in Apps Script Project Settings > Script Properties.
 //
 // Required for Page publishing:
-// PUBLER_API_KEY, PUBLER_WORKSPACE_ID, PUBLER_PAGE_ACCOUNT_ID, AMAZON_ASSOCIATE_TAG
+// PUBLER_API_KEY, AMAZON_ASSOCIATE_TAG
 //
 // Required for Group CSV queue:
 // GITHUB_TOKEN
 //
 // Optional:
-// JOTURL_API_URL, JOTURL_API_KEY, PUBLISH_MODE=draft|live, GROUP_CSV_PATH
+// JOTURL_API_URL, JOTURL_API_KEY, PUBLISH_MODE=draft|live
+//
+// Page targets use these optional properties:
+// PUBLER_WOODWORKING_WORKSPACE_ID, PUBLER_WOODWORKING_PAGE_ACCOUNT_ID
+// PUBLER_BLACK_LAB_WORKSPACE_ID, PUBLER_BLACK_LAB_PAGE_ACCOUNT_ID
 
 const DASHBOARD_REPO = "Mhhickma/Dashboard";
 const DASHBOARD_BRANCH = "main";
-const DEFAULT_GROUP_CSV_PATH = "data/publer_group_queue.csv";
+const PUBLER_TARGETS = {
+  woodworkingGroup: {
+    type: "groupCsv",
+    label: "Woodworking Group",
+    csvPath: "data/publer_group_queue_woodworking.csv",
+  },
+  dadDealsGroup: {
+    type: "groupCsv",
+    label: "Dad Deals Group",
+    csvPath: "data/publer_group_queue_dad_deals.csv",
+  },
+  woodworkingPage: {
+    type: "page",
+    label: "Woodworking Page",
+    workspaceIdProperty: "PUBLER_WOODWORKING_WORKSPACE_ID",
+    accountIdProperty: "PUBLER_WOODWORKING_PAGE_ACCOUNT_ID",
+    fallbackWorkspaceId: "69ff46121fa916e7b4abad77",
+  },
+  blackLabPage: {
+    type: "page",
+    label: "Black Lab Page",
+    workspaceIdProperty: "PUBLER_BLACK_LAB_WORKSPACE_ID",
+    accountIdProperty: "PUBLER_BLACK_LAB_PAGE_ACCOUNT_ID",
+    fallbackWorkspaceId: "69fa2708b5031ee6cc0cb0a8",
+  },
+  groupCsv: {
+    type: "groupCsv",
+    label: "Group CSV",
+    csvPath: "data/publer_group_queue.csv",
+  },
+  page: {
+    type: "page",
+    label: "Page",
+    workspaceIdProperty: "PUBLER_WORKSPACE_ID",
+    accountIdProperty: "PUBLER_PAGE_ACCOUNT_ID",
+  },
+};
 
 function publishDeal_(params) {
-  const target = String(params.target || "").trim();
+  const target = publerTarget_(params.target);
   const deal = normalizePublishDeal_(params);
   const scheduledFor = scheduledDate_(params.delayMinutes);
   const affiliateUrl = buildAmazonAffiliateUrl_(deal.asin);
@@ -23,15 +63,25 @@ function publishDeal_(params) {
   const postText = buildFacebookDealText_(deal);
   const commentText = buildFirstComment_(dealUrl);
 
-  if (target === "page") {
-    return publishPublerPage_(deal, postText, commentText, scheduledFor, Number(params.delayMinutes || 0));
+  if (target.type === "page") {
+    return publishPublerPage_(target, deal, postText, commentText, scheduledFor, Number(params.delayMinutes || 0));
   }
 
-  if (target === "groupCsv") {
-    return appendPublerGroupCsv_(deal, postText, commentText, scheduledFor);
+  if (target.type === "groupCsv") {
+    return appendPublerGroupCsv_(target, deal, postText, commentText, scheduledFor);
   }
 
   throw new Error("Unknown publish target.");
+}
+
+function publerTarget_(targetKey) {
+  const key = String(targetKey || "").trim();
+  const target = PUBLER_TARGETS[key];
+  if (!target) throw new Error(`Unknown publish target: ${key || "(blank)"}.`);
+  return {
+    key,
+    ...target,
+  };
 }
 
 function normalizePublishDeal_(params) {
@@ -120,11 +170,12 @@ function buildFirstComment_(dealUrl) {
   return `Deal link: ${dealUrl}\n\nAs an Amazon Associate, I may earn from qualifying purchases.`;
 }
 
-function publishPublerPage_(deal, postText, commentText, scheduledFor, delayMinutes) {
+function publishPublerPage_(target, deal, postText, commentText, scheduledFor, delayMinutes) {
   const apiKey = scriptProp_("PUBLER_API_KEY", true);
-  const workspaceId = scriptProp_("PUBLER_WORKSPACE_ID", true);
-  const accountId = scriptProp_("PUBLER_PAGE_ACCOUNT_ID", true);
+  const workspaceId = scriptProp_(target.workspaceIdProperty, false) || target.fallbackWorkspaceId;
+  const accountId = scriptProp_(target.accountIdProperty, true);
   const publishMode = scriptProp_("PUBLISH_MODE", false) || "draft";
+  if (!workspaceId) throw new Error(`Missing ${target.workspaceIdProperty} script property.`);
   const isImmediateLive = publishMode === "live" && delayMinutes === 0;
   const state = publishMode === "draft" ? "draft_private" : "scheduled";
   const endpoint = isImmediateLive
@@ -181,14 +232,16 @@ function publishPublerPage_(deal, postText, commentText, scheduledFor, delayMinu
   return {
     ok: true,
     status: publishMode === "draft" ? "draft" : (delayMinutes > 0 ? "scheduled" : "published"),
+    target: target.key,
+    label: target.label,
     scheduled_for: delayMinutes > 0 ? scheduledFor.toISOString() : "",
     publer_job_id: body.data?.job_id || body.job_id || "",
-    message: publishMode === "draft" ? "created as a Publer draft." : "sent to Publer.",
+    message: `${target.label} ${publishMode === "draft" ? "created as a Publer draft." : "sent to Publer."}`,
   };
 }
 
-function appendPublerGroupCsv_(deal, postText, commentText, scheduledFor) {
-  const path = scriptProp_("GROUP_CSV_PATH", false) || DEFAULT_GROUP_CSV_PATH;
+function appendPublerGroupCsv_(target, deal, postText, commentText, scheduledFor) {
+  const path = target.csvPath;
   const headers = [
     "Date - Intl. format or prompt",
     "Text",
@@ -229,8 +282,10 @@ function appendPublerGroupCsv_(deal, postText, commentText, scheduledFor) {
   return {
     ok: true,
     status: "queued",
+    target: target.key,
+    label: target.label,
     scheduled_for: scheduledFor.toISOString(),
-    message: `added to ${path}.`,
+    message: `${target.label} added to ${path}.`,
   };
 }
 

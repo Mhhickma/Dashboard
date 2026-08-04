@@ -440,7 +440,15 @@ function bestImageForPublish(deal) {
 }
 
 async function publishDeal(deal, target, delayMinutes, button) {
-  const targetLabel = target === "groupCsv" ? "Group CSV" : "Page";
+  const targetLabels = {
+    woodworkingGroup: "Woodworking Group CSV",
+    dadDealsGroup: "Dad Deals Group CSV",
+    woodworkingPage: "Woodworking Page",
+    blackLabPage: "Black Lab Page",
+    groupCsv: "Group CSV",
+    page: "Page",
+  };
+  const targetLabel = targetLabels[target] || target;
   const originalText = button ? button.textContent : "";
 
   if (button) {
@@ -469,7 +477,7 @@ async function publishDeal(deal, target, delayMinutes, button) {
     writePublishStatus(deal.asin, {
       target,
       delay_minutes: delayMinutes,
-      status: result.status || (target === "groupCsv" ? "queued" : "sent"),
+      status: result.status || (String(target).includes("Group") || target === "groupCsv" ? "queued" : "sent"),
       scheduled_for: result.scheduled_for || "",
       publer_job_id: result.publer_job_id || "",
     });
@@ -762,20 +770,34 @@ function buildCard(deal, isSelected, isSelectedSection) {
 
   const selectedPostingTools = isSelectedSection ? `
     <div class="posting-helper-box">
-      <p>Publish to your Page or add a scheduled row to the Publer Group CSV.</p>
+      <p>Publish to a Page or add a scheduled row to a Publer Group CSV.</p>
       <div class="publish-tool-row">
-        <span>Page</span>
-        <button type="button" onclick='publishDeal(${dealJson}, "page", 0, this)'>Now</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "page", 60, this)'>60</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "page", 90, this)'>90</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "page", 120, this)'>120</button>
+        <span>Wood Group</span>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 120, this)'>120</button>
       </div>
       <div class="publish-tool-row">
-        <span>Group CSV</span>
-        <button type="button" onclick='publishDeal(${dealJson}, "groupCsv", 0, this)'>Now</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "groupCsv", 60, this)'>60</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "groupCsv", 90, this)'>90</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "groupCsv", 120, this)'>120</button>
+        <span>Dad Group</span>
+        <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 120, this)'>120</button>
+      </div>
+      <div class="publish-tool-row">
+        <span>Wood Page</span>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 120, this)'>120</button>
+      </div>
+      <div class="publish-tool-row">
+        <span>Black Lab</span>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 120, this)'>120</button>
       </div>
       <button class="posted-hide-card" type="button" onclick="hideDeal('${deal.asin}')">Posted â€” Hide Card</button>
     </div>

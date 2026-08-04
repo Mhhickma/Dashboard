@@ -95,29 +95,37 @@ The dashboard upload box sends the selected CSV to the connected Google Apps Scr
 
 Selected deal cards include buttons for:
 
-- Page: `Now`, `60`, `90`, and `120`
-- Group CSV: `Now`, `60`, `90`, and `120`
+- Woodworking Group CSV: `Now`, `60`, `90`, and `120`
+- Dad Deals Group CSV: `Now`, `60`, `90`, and `120`
+- Woodworking Page: `Now`, `60`, `90`, and `120`
+- Black Lab Page: `Now`, `60`, `90`, and `120`
 
 The dashboard calls the connected Google Apps Script web app with `action=publishDeal`. Add the helpers in `apps-script-publer-publisher.js` to that Apps Script project. If the live Apps Script already has a `doGet(e)` function, merge the `publishDeal` action branch into the existing dispatcher instead of adding a second `doGet(e)`.
 
 Store these values as Apps Script Script Properties. Do not commit real keys to GitHub.
 
 - `PUBLER_API_KEY` - Publer API key with `posts`, `media`, and `accounts` scopes
-- `PUBLER_WORKSPACE_ID` - Publer workspace ID
-- `PUBLER_PAGE_ACCOUNT_ID` - connected Facebook Page account ID in Publer
 - `AMAZON_ASSOCIATE_TAG` - Amazon Associates tag, such as `simplewoodsho-20`
 - `GITHUB_TOKEN` - GitHub token with Contents read/write on `Mhhickma/Dashboard`
 
 Optional Script Properties:
 
 - `PUBLISH_MODE` - defaults to `draft`; set to `live` only after testing
+- `PUBLER_WOODWORKING_WORKSPACE_ID` - defaults to `69ff46121fa916e7b4abad77`
+- `PUBLER_WOODWORKING_PAGE_ACCOUNT_ID` - connected Woodworking Facebook Page account ID in Publer
+- `PUBLER_BLACK_LAB_WORKSPACE_ID` - defaults to `69fa2708b5031ee6cc0cb0a8`
+- `PUBLER_BLACK_LAB_PAGE_ACCOUNT_ID` - connected Black Lab Facebook Page account ID in Publer
 - `JOTURL_API_URL` - JotURL API endpoint for creating a deep link
 - `JOTURL_API_KEY` - JotURL API key
-- `GROUP_CSV_PATH` - defaults to `data/publer_group_queue.csv`
 
 Page buttons create a Publer draft by default. Set `PUBLISH_MODE=live` when you want `Now` to publish immediately and the delay buttons to schedule future posts.
 
-Group CSV buttons append rows to `data/publer_group_queue.csv` using Publer's CSV template columns. Upload that CSV to Publer for Facebook Group scheduling.
+Group CSV buttons append rows using Publer's CSV template columns. The current files are:
+
+- `data/publer_group_queue_woodworking.csv`
+- `data/publer_group_queue_dad_deals.csv`
+
+Upload the matching CSV to Publer for Facebook Group scheduling.
 
 ## Local Testing
 
