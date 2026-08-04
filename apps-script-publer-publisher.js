@@ -116,42 +116,33 @@ function buildAmazonAffiliateUrl_(asin) {
 }
 
 function buildJotUrlDeepLink_(affiliateUrl, deal) {
-  const apiUrl = scriptProp_("JOTURL_API_URL", false);
+  const apiUrl = scriptProp_("JOTURL_API_URL", false) || "https://joturl.com/a/i1/urls/shorten";
   const apiKey = scriptProp_("JOTURL_API_KEY", false);
-  if (!apiUrl || !apiKey) return affiliateUrl;
+  if (!apiKey) return affiliateUrl;
   const required = String(scriptProp_("JOTURL_REQUIRED", false) || "").toLowerCase() === "true";
   const cacheKey = `JOTURL_LINK_${String(deal.asin || "").toUpperCase()}`;
   const cached = scriptProp_(cacheKey, false);
   if (cached) return cached;
 
   try {
-    const authHeader = scriptProp_("JOTURL_AUTH_HEADER", false) || "Authorization";
-    const authPrefix = scriptProp_("JOTURL_AUTH_PREFIX", false) || "Bearer";
-    const headers = {};
-    headers[authHeader] = authPrefix ? `${authPrefix} ${apiKey}` : apiKey;
-
     const payload = {
-      url: affiliateUrl,
-      title: deal.title,
-      alias: deal.asin.toLowerCase(),
-      description: `Amazon affiliate link for ${deal.asin}`,
-      deeplink: {
-        auto: true,
-      },
+      long_url: affiliateUrl,
+      alias: jotUrlAlias_(deal.asin),
+      notes: `Amazon affiliate link for ${deal.asin}`,
+      format: "json",
     };
 
-    const domain = scriptProp_("JOTURL_DOMAIN", false);
-    const campaign = scriptProp_("JOTURL_CAMPAIGN_ID", false);
-    const channel = scriptProp_("JOTURL_CHANNEL_ID", false);
-    if (domain) payload.domain = domain;
-    if (campaign) payload.campaign = campaign;
-    if (channel) payload.channel = channel;
+    const domainId = scriptProp_("JOTURL_DOMAIN_ID", false);
+    const projectId = scriptProp_("JOTURL_PROJECT_ID", false);
+    if (domainId) payload.domain_id = domainId;
+    if (projectId) payload.project_id = projectId;
 
     const response = UrlFetchApp.fetch(apiUrl, {
       method: "post",
-      contentType: "application/json",
-      headers,
-      payload: JSON.stringify(payload),
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      payload,
       muteHttpExceptions: true,
     });
 
@@ -162,14 +153,31 @@ function buildJotUrlDeepLink_(affiliateUrl, deal) {
     }
 
     const body = JSON.parse(bodyText);
+    if (body.status && Number(body.status.code) !== 200) {
+      throw new Error(`JotURL failed: ${body.status.code} ${body.status.text} ${body.status.error || ""}`);
+    }
     const url = extractJotUrl_(body);
     if (!url) throw new Error(`JotURL did not return a link: ${bodyText}`);
-    PropertiesService.getScriptProperties().setProperty(cacheKey, url);
-    return url;
+    const normalizedUrl = normalizeReturnedUrl_(url);
+    PropertiesService.getScriptProperties().setProperty(cacheKey, normalizedUrl);
+    return normalizedUrl;
   } catch (error) {
     if (required) throw error;
     return affiliateUrl;
   }
+}
+
+function jotUrlAlias_(asin) {
+  return String(asin || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 60);
+}
+
+function normalizeReturnedUrl_(url) {
+  const text = String(url || "").trim();
+  if (text.indexOf("//") === 0) return `https:${text}`;
+  return text;
 }
 
 function extractJotUrl_(body) {
@@ -180,6 +188,10 @@ function extractJotUrl_(body) {
     body.short ||
     body.deep_link ||
     body.deepLink ||
+    body.result?.short_url ||
+    body.result?.shortUrl ||
+    body.result?.shorturl ||
+    body.result?.short ||
     body.data?.url ||
     body.data?.short_url ||
     body.data?.shortUrl ||
