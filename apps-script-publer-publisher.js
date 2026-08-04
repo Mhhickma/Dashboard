@@ -119,35 +119,75 @@ function buildJotUrlDeepLink_(affiliateUrl, deal) {
   const apiUrl = scriptProp_("JOTURL_API_URL", false);
   const apiKey = scriptProp_("JOTURL_API_KEY", false);
   if (!apiUrl || !apiKey) return affiliateUrl;
+  const required = String(scriptProp_("JOTURL_REQUIRED", false) || "").toLowerCase() === "true";
+  const cacheKey = `JOTURL_LINK_${String(deal.asin || "").toUpperCase()}`;
+  const cached = scriptProp_(cacheKey, false);
+  if (cached) return cached;
 
-  const response = UrlFetchApp.fetch(apiUrl, {
-    method: "post",
-    contentType: "application/json",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-    },
-    payload: JSON.stringify({
+  try {
+    const authHeader = scriptProp_("JOTURL_AUTH_HEADER", false) || "Authorization";
+    const authPrefix = scriptProp_("JOTURL_AUTH_PREFIX", false) || "Bearer";
+    const headers = {};
+    headers[authHeader] = authPrefix ? `${authPrefix} ${apiKey}` : apiKey;
+
+    const payload = {
       url: affiliateUrl,
       title: deal.title,
       alias: deal.asin.toLowerCase(),
-      app: "amazon",
-      deep_link: true,
-    }),
-    muteHttpExceptions: true,
-  });
+      description: `Amazon affiliate link for ${deal.asin}`,
+      deeplink: {
+        auto: true,
+      },
+    };
 
-  const code = response.getResponseCode();
-  const bodyText = response.getContentText();
-  if (code < 200 || code >= 300) {
-    throw new Error(`JotURL failed: ${code} ${bodyText}`);
-  }
+    const domain = scriptProp_("JOTURL_DOMAIN", false);
+    const campaign = scriptProp_("JOTURL_CAMPAIGN_ID", false);
+    const channel = scriptProp_("JOTURL_CHANNEL_ID", false);
+    if (domain) payload.domain = domain;
+    if (campaign) payload.campaign = campaign;
+    if (channel) payload.channel = channel;
 
-  const body = JSON.parse(bodyText);
-  const url = body.url || body.short_url || body.shortUrl || body.deep_link || body.deepLink || body.data?.url || body.data?.short_url;
-  if (!url) {
-    throw new Error("JotURL did not return a link.");
+    const response = UrlFetchApp.fetch(apiUrl, {
+      method: "post",
+      contentType: "application/json",
+      headers,
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+
+    const code = response.getResponseCode();
+    const bodyText = response.getContentText();
+    if (code < 200 || code >= 300) {
+      throw new Error(`JotURL failed: ${code} ${bodyText}`);
+    }
+
+    const body = JSON.parse(bodyText);
+    const url = extractJotUrl_(body);
+    if (!url) throw new Error(`JotURL did not return a link: ${bodyText}`);
+    PropertiesService.getScriptProperties().setProperty(cacheKey, url);
+    return url;
+  } catch (error) {
+    if (required) throw error;
+    return affiliateUrl;
   }
-  return url;
+}
+
+function extractJotUrl_(body) {
+  return body.url ||
+    body.short_url ||
+    body.shortUrl ||
+    body.shorturl ||
+    body.short ||
+    body.deep_link ||
+    body.deepLink ||
+    body.data?.url ||
+    body.data?.short_url ||
+    body.data?.shortUrl ||
+    body.data?.shorturl ||
+    body.data?.short ||
+    body.data?.deep_link ||
+    body.data?.deepLink ||
+    "";
 }
 
 function buildFacebookDealText_(deal) {
