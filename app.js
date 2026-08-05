@@ -770,20 +770,13 @@ function buildCard(deal, isSelected, isSelectedSection) {
 
   const selectedPostingTools = isSelectedSection ? `
     <div class="posting-helper-box">
-      <p>Publish direct to Publer.</p>
+      <p>Publish direct to Publer pages.</p>
       <div class="publish-tool-row">
-        <span>Wood Page + Group</span>
-        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 0, this)'>Now</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 60, this)'>60</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 90, this)'>90</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingGroup", 120, this)'>120</button>
-      </div>
-      <div class="publish-tool-row">
-        <span>Dad Group</span>
-        <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 0, this)'>Now</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 60, this)'>60</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 90, this)'>90</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "dadDealsGroup", 120, this)'>120</button>
+        <span>Wood Page</span>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 120, this)'>120</button>
       </div>
       <div class="publish-tool-row">
         <span>Black Lab</span>
