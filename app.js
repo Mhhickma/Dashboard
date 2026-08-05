@@ -248,10 +248,11 @@ function callAsinScript(action, params = {}) {
       reject(new Error("Could not connect to the ASIN tools script."));
     };
 
+    const timeoutMs = action === "publishDeal" ? 60000 : 15000;
     timeoutId = setTimeout(() => {
       cleanup();
       reject(new Error("The ASIN tools script did not respond."));
-    }, 15000);
+    }, timeoutMs);
 
     url.searchParams.set("action", action);
     Object.entries(params).forEach(([key, value]) => {
