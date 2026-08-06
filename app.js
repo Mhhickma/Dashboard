@@ -12,6 +12,8 @@ const creatorCsvFile = document.getElementById("creatorCsvFile");
 const creatorCsvFileName = document.getElementById("creatorCsvFileName");
 const creatorCsvUploadStatus = document.getElementById("creatorCsvUploadStatus");
 const creatorCsvUploadFrame = document.getElementById("creatorCsvUploadFrame");
+const dashboardMode = document.body.dataset.dashboardMode || "price";
+const dashboardDataUrl = document.body.dataset.dealsUrl || "data/deals.json";
 
 const REMOVE_ASIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxU4HTktR6zH5Wfbk58V24X-HAE9kZYlzdlm1gqMp1NL_ZGzF7p-0VAL5VeGNfnAyxESA/exec";
 const HIDDEN_DEALS_KEY = "keepa-dashboard-hidden-asins";
@@ -769,9 +771,15 @@ function buildCard(deal, isSelected, isSelectedSection) {
   const expiresText = hoursLeft === null ? "N/A" : `${hoursLeft.toFixed(1)} hrs left`;
   const dealJson = JSON.stringify(deal).replace(/</g, "\\u003c").replace(/'/g, "\\u0027");
 
-  const selectedPostingTools = isSelectedSection ? `
-    <div class="posting-helper-box">
-      <p>Publish direct to Publer pages.</p>
+  const publishRows = dashboardMode === "best-sellers" ? `
+      <div class="publish-tool-row">
+        <span>Black Lab</span>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 120, this)'>120</button>
+      </div>
+  ` : `
       <div class="publish-tool-row">
         <span>Wood Page</span>
         <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 0, this)'>Now</button>
@@ -786,7 +794,13 @@ function buildCard(deal, isSelected, isSelectedSection) {
         <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 90, this)'>90</button>
         <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 120, this)'>120</button>
       </div>
-      <button class="posted-hide-card" type="button" onclick="hideDeal('${deal.asin}')">Posted â€” Hide Card</button>
+  `;
+
+  const selectedPostingTools = isSelectedSection ? `
+    <div class="posting-helper-box">
+      <p>Publish direct to Publer pages.</p>
+      ${publishRows}
+      <button class="posted-hide-card" type="button" onclick="hideDeal('${deal.asin}')">Posted - Hide Card</button>
     </div>
   ` : "";
 
@@ -905,8 +919,8 @@ function applySearch(resetLimit = true) {
 
 async function loadDeals() {
   try {
-    const response = await fetch("data/deals.json", { cache: "no-store" });
-    if (!response.ok) throw new Error("Could not load deals.json");
+    const response = await fetch(dashboardDataUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Could not load ${dashboardDataUrl}`);
 
     const data = await response.json();
     const creatorConnections = data.creator_connections || {};
