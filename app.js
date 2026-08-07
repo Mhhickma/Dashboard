@@ -322,14 +322,14 @@ async function creatorCsvFileBase64(file) {
   return base64EncodeBytes(new Uint8Array(await file.arrayBuffer()));
 }
 
-function postCreatorCsvUpload(fields) {
+function postCreatorCsvUpload(fields, label) {
   return new Promise((resolve, reject) => {
     const postForm = document.createElement("form");
     const timeoutId = setTimeout(() => {
       creatorCsvUploadFrameResolver = null;
       postForm.remove();
-      reject(new Error("The creator CSV upload did not respond."));
-    }, 60000);
+      reject(new Error(`${label || "The creator CSV upload"} did not respond after 4 minutes.`));
+    }, 240000);
 
     creatorCsvUploadFrameResolver = () => {
       clearTimeout(timeoutId);
@@ -396,7 +396,7 @@ function initCreatorCsvUpload() {
           ["sourceFileCount", String(files.length)],
           ["fileIndex", String(index)],
           ["mergeMode", index === 0 ? "replace" : "append"],
-        ]);
+        ], `CSV ${index + 1} of ${files.length} (${file.name})`);
       }
 
       creatorCsvUploadStatus.textContent = `Uploaded and merged ${files.length} CSV file${files.length === 1 ? "" : "s"}. Future scans will use it after the repository commit finishes.`;
