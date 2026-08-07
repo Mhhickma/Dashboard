@@ -275,39 +275,84 @@ function removeAsinWithScript(asin) {
   return callAsinScript("removeAsin", { asin });
 }
 
+function selectedCreatorCsvFiles() {
+  return [...(creatorCsvFile.files || [])];
+}
+
+function creatorCsvSelectionLabel(files) {
+  if (files.length === 0) return "Choose CSV files";
+  if (files.length === 1) return files[0].name;
+  return `${files.length} CSV files selected`;
+}
+
+async function mergeCreatorCsvFiles(files) {
+  const rows = [];
+  const seenRows = new Set();
+  let header = "";
+
+  for (const file of files) {
+    const text = await file.text();
+    const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (lines.length === 0) continue;
+
+    if (!header) {
+      header = lines[0];
+      rows.push(header);
+    }
+
+    lines.slice(1).forEach((line) => {
+      if (!line || line === header || seenRows.has(line)) return;
+      seenRows.add(line);
+      rows.push(line);
+    });
+  }
+
+  if (!header || rows.length <= 1) {
+    throw new Error("No creator connection rows were found in the selected CSV files.");
+  }
+
+  return {
+    text: `${rows.join("\n")}\n`,
+    dataRowCount: rows.length - 1,
+  };
+}
+
 function initCreatorCsvUpload() {
   if (!creatorCsvUploadForm || !creatorCsvFile) return;
 
   creatorCsvFile.addEventListener("change", () => {
-    const file = creatorCsvFile.files && creatorCsvFile.files[0];
-    if (!file) {
-      creatorCsvFileName.textContent = "Choose CSV file";
+    const files = selectedCreatorCsvFiles();
+    if (files.length === 0) {
+      creatorCsvFileName.textContent = "Choose CSV files";
       creatorCsvUploadStatus.textContent = "No file selected.";
       return;
     }
 
-    creatorCsvFileName.textContent = file.name;
-    creatorCsvUploadStatus.textContent = `${file.name} ready to upload.`;
+    creatorCsvFileName.textContent = creatorCsvSelectionLabel(files);
+    creatorCsvUploadStatus.textContent = `${files.length} file${files.length === 1 ? "" : "s"} ready to merge and upload.`;
   });
 
   creatorCsvUploadForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const file = creatorCsvFile.files && creatorCsvFile.files[0];
-    if (!file) {
-      creatorCsvUploadStatus.textContent = "Choose a creator connection CSV first.";
+    const files = selectedCreatorCsvFiles();
+    if (files.length === 0) {
+      creatorCsvUploadStatus.textContent = "Choose one or more creator connection CSV files first.";
       return;
     }
 
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      creatorCsvUploadStatus.textContent = "Please choose a .csv file.";
+    const invalidFile = files.find((file) => !file.name.toLowerCase().endsWith(".csv"));
+    if (invalidFile) {
+      creatorCsvUploadStatus.textContent = `${invalidFile.name} is not a .csv file.`;
       return;
     }
 
     try {
       creatorCsvUploadInProgress = true;
-      creatorCsvUploadStatus.textContent = `Uploading ${file.name}...`;
+      creatorCsvUploadStatus.textContent = `Merging ${files.length} CSV file${files.length === 1 ? "" : "s"}...`;
 
-      const csvText = await file.text();
+      const mergedCsv = await mergeCreatorCsvFiles(files);
+      const uploadName = files.length === 1 ? files[0].name : `creator-connections-${files.length}-files.csv`;
+      creatorCsvUploadStatus.textContent = `Uploading ${mergedCsv.dataRowCount} merged creator rows...`;
       const postForm = document.createElement("form");
       postForm.method = "post";
       postForm.action = REMOVE_ASIN_WEB_APP_URL;
@@ -316,8 +361,10 @@ function initCreatorCsvUpload() {
 
       [
         ["action", "uploadCreatorCsv"],
-        ["filename", file.name],
-        ["csvBase64", base64EncodeUtf8(csvText)],
+        ["filename", uploadName],
+        ["csvBase64", base64EncodeUtf8(mergedCsv.text)],
+        ["sourceFileCount", String(files.length)],
+        ["mergedRowCount", String(mergedCsv.dataRowCount)],
       ].forEach(([name, value]) => {
         const input = document.createElement("textarea");
         input.name = name;
@@ -330,7 +377,7 @@ function initCreatorCsvUpload() {
       postForm.remove();
     } catch (error) {
       creatorCsvUploadInProgress = false;
-      creatorCsvUploadStatus.textContent = `Could not read ${file.name}: ${error.message}`;
+      creatorCsvUploadStatus.textContent = `Could not merge creator CSV files: ${error.message}`;
     }
   });
 
@@ -338,9 +385,9 @@ function initCreatorCsvUpload() {
     creatorCsvUploadFrame.addEventListener("load", () => {
       if (!creatorCsvUploadInProgress) return;
       creatorCsvUploadInProgress = false;
-      creatorCsvUploadStatus.textContent = "Upload sent. Future scans will use it after the repository commit finishes.";
+      creatorCsvUploadStatus.textContent = "Merged upload sent. Future scans will use it after the repository commit finishes.";
       creatorCsvUploadForm.reset();
-      creatorCsvFileName.textContent = "Choose CSV file";
+      creatorCsvFileName.textContent = "Choose CSV files";
     });
   }
 }
