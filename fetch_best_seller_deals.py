@@ -119,6 +119,14 @@ def parse_time(value):
         return None
 
 
+def float_or_none(value):
+    try:
+        number = float(value)
+        return number if number == number else None
+    except Exception:
+        return None
+
+
 def is_bad_title(title):
     if not title or len(title.strip()) < 3:
         return True
@@ -341,6 +349,12 @@ def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_
         if pct_from_avg30 >= min_drop_percent:
             drops.append("keepa_30_day_avg_drop")
 
+    pct_from_avg7 = 0
+    if avg7 and avg7 > price_amount:
+        pct_from_avg7 = round(((avg7 - price_amount) / avg7) * 100)
+        if pct_from_avg7 >= min_drop_percent:
+            drops.append("keepa_7_day_avg_drop")
+
     savings_pct = 0
     was_display = None
     try:
@@ -348,13 +362,13 @@ def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_
         if savings:
             savings_pct = int(round(savings.percentage or 0))
             was_display = f"${round(price_amount + float(savings.money.amount), 2)}"
-            if savings_pct >= min_drop_percent:
+            if savings_pct >= min_drop_percent and drops:
                 drops.append("amazon_savings_drop")
     except Exception:
         pass
 
     qualifies = bool(drops)
-    pct_off = max(pct_from_previous, pct_from_avg30, savings_pct)
+    pct_off = max(pct_from_previous, pct_from_avg30, pct_from_avg7)
     now_iso = iso_now()
     expires_at = (utc_now() + timedelta(hours=23)).isoformat()
 
@@ -386,8 +400,8 @@ def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_
         "min_7_price": min7 or price_amount,
         "avg_30_price": avg30 or previous_price or price_amount,
         "min_30_price": None,
-        "drop_percent": pct_from_previous or pct_from_avg30 or savings_pct,
-        "drop_30_percent": pct_from_avg30 or savings_pct or pct_from_previous,
+        "drop_percent": pct_from_avg7 or pct_from_previous or pct_from_avg30,
+        "drop_30_percent": pct_from_avg30,
         "price": price_display,
         "price_amount": price_amount,
         "currency": currency,
@@ -413,7 +427,16 @@ def purge_old_deals(deals, ttl_hours):
     kept = []
     for deal in deals:
         updated = parse_time(deal.get("updated_at") or deal.get("seen_at"))
-        if updated and updated >= cutoff:
+        current = float_or_none(deal.get("current_price"))
+        avg7 = float_or_none(deal.get("avg_7_price"))
+        avg30 = float_or_none(deal.get("avg_30_price"))
+        has_history_drop = (
+            current is not None and (
+                (avg7 is not None and avg7 > current) or
+                (avg30 is not None and avg30 > current)
+            )
+        )
+        if updated and updated >= cutoff and has_history_drop:
             kept.append(deal)
     return kept
 
