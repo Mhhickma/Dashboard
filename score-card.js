@@ -1,7 +1,17 @@
 (() => {
   const POSTED_DEALS_KEY = "keepa-dashboard-posted-asins";
   const POSTED_HIDE_FOR_HOURS = 72;
-  const AMAZON_AFFILIATE_TAG = "simplewoodsho-20";
+  const AMAZON_AFFILIATE_TAGS = {
+    woodworkingPage: "page_page_page-20",
+    blackLabPage: "blacklabdealsprime-20",
+    default: "page_page_page-20",
+  };
+
+  function defaultAffiliateTag() {
+    return document.body.dataset.dashboardMode === "best-sellers"
+      ? AMAZON_AFFILIATE_TAGS.blackLabPage
+      : AMAZON_AFFILIATE_TAGS.default;
+  }
 
   function numericValue(value) {
     const number = Number(value);
@@ -21,10 +31,10 @@
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(number);
   }
 
-  function affiliateUrlForAsin(asin) {
+  function affiliateUrlForAsin(asin, tag = defaultAffiliateTag()) {
     const cleanAsin = String(asin || "").trim();
     if (!cleanAsin) return "#";
-    return `https://www.amazon.com/dp/${encodeURIComponent(cleanAsin)}?tag=${encodeURIComponent(AMAZON_AFFILIATE_TAG)}`;
+    return `https://www.amazon.com/dp/${encodeURIComponent(cleanAsin)}?tag=${encodeURIComponent(tag)}`;
   }
 
   function affiliateUrlForDeal(deal) {
@@ -38,7 +48,7 @@
       const asinMatch = url.pathname.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
       if (asinMatch) return affiliateUrlForAsin(asinMatch[1].toUpperCase());
       if (url.hostname.includes("amazon.")) {
-        url.searchParams.set("tag", AMAZON_AFFILIATE_TAG);
+        url.searchParams.set("tag", defaultAffiliateTag());
         return url.toString();
       }
     } catch {}

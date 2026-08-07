@@ -23,6 +23,11 @@ const PUBLISH_STATUS_KEY = "keepa-dashboard-publish-status";
 const SHOW_ALL_DEALS_KEY = "keepa-dashboard-show-all-deals";
 const HIDE_FOR_HOURS = 24;
 const DEALS_PER_PAGE = 50;
+const AFFILIATE_TAGS = {
+  woodworkingPage: "page_page_page-20",
+  blackLabPage: "blacklabdealsprime-20",
+  default: "page_page_page-20",
+};
 
 let allDeals = [];
 let shownRegularDealLimit = DEALS_PER_PAGE;
@@ -442,6 +447,26 @@ function bestImageForPublish(deal) {
   return imageCandidatesForDeal(deal)[0] || "";
 }
 
+function affiliateTagForTarget(target) {
+  return AFFILIATE_TAGS[target] || AFFILIATE_TAGS.default;
+}
+
+function affiliateUrlForTarget(deal, target) {
+  const asin = String((deal && deal.asin) || "").trim();
+  const tag = affiliateTagForTarget(target);
+  if (asin) return `https://www.amazon.com/dp/${encodeURIComponent(asin)}?tag=${encodeURIComponent(tag)}`;
+
+  const rawUrl = String((deal && deal.amazon_url) || "").trim();
+  if (!rawUrl) return "";
+  try {
+    const url = new URL(rawUrl, window.location.href);
+    if (url.hostname.includes("amazon.")) url.searchParams.set("tag", tag);
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
 async function publishDeal(deal, target, delayMinutes, button) {
   const targetLabels = {
     woodworkingGroup: "Woodworking Page + Group",
@@ -468,7 +493,8 @@ async function publishDeal(deal, target, delayMinutes, button) {
       currentPrice: deal.current_price || "",
       avg30Price: deal.avg_30_price || "",
       drop30Percent: deal.drop_30_percent || "",
-      amazonUrl: deal.amazon_url || "",
+      amazonUrl: affiliateUrlForTarget(deal, target),
+      affiliateTag: affiliateTagForTarget(target),
       imageUrl: bestImageForPublish(deal),
     });
 
