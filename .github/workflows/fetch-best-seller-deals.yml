@@ -2,7 +2,7 @@ name: Update Best Seller Deals
 
 on:
   schedule:
-    - cron: "5 * * * *"
+    - cron: "5,35 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -39,6 +39,8 @@ jobs:
           AFFILIATE_TAG: ${{ secrets.AMAZON_TAG }}
           CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
+          # 48 runs/day x 125 ASINs = 6,000 checks/day, enough to cover the
+          # roughly 2,800-ASIN best-seller watchlist twice per day.
           BEST_SELLER_ASINS_PER_RUN: 125
           BEST_SELLER_REFRESH_WATCHLIST: false
         run: python fetch_best_seller_deals.py
