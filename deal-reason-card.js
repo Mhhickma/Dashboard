@@ -168,12 +168,11 @@
     note.textContent = "Publish to a Page or add a scheduled row to a Publer Group CSV.";
     box.appendChild(note);
 
-    [
-      ["Wood Group", "woodworkingGroup"],
-      ["Dad Group", "dadDealsGroup"],
-      ["Wood Page", "woodworkingPage"],
-      ["Black Lab", "blackLabPage"],
-    ].forEach(function (target) {
+    var targets = document.body.dataset.dashboardMode === "best-sellers"
+      ? [["Black Lab", "blackLabPage"]]
+      : [["Wood Page", "woodworkingPage"]];
+
+    targets.forEach(function (target) {
       var row = document.createElement("div");
       row.className = "publish-tool-row";
       var label = document.createElement("span");

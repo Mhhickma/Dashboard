@@ -860,13 +860,6 @@ function buildCard(deal, isSelected, isSelectedSection) {
         <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 90, this)'>90</button>
         <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 120, this)'>120</button>
       </div>
-      <div class="publish-tool-row">
-        <span>Black Lab</span>
-        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 0, this)'>Now</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 60, this)'>60</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 90, this)'>90</button>
-        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 120, this)'>120</button>
-      </div>
   `;
 
   const selectedPostingTools = isSelectedSection ? `
