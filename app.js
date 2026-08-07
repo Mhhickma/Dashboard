@@ -37,13 +37,14 @@ let loadMoreButtonEl = null;
 let loadMoreSummaryEl = null;
 let loadMoreButtonListenerAttached = false;
 let creatorCsvUploadInProgress = false;
+let creatorCsvUploadFrameResolver = null;
 
-function base64EncodeUtf8(value) {
-  const bytes = new TextEncoder().encode(value);
+function base64EncodeBytes(bytes) {
+  const chunkSize = 0x8000;
   let binary = "";
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
   return btoa(binary);
 }
 
@@ -317,6 +318,43 @@ async function mergeCreatorCsvFiles(files) {
   };
 }
 
+async function creatorCsvFileBase64(file) {
+  return base64EncodeBytes(new Uint8Array(await file.arrayBuffer()));
+}
+
+function postCreatorCsvUpload(fields) {
+  return new Promise((resolve, reject) => {
+    const postForm = document.createElement("form");
+    const timeoutId = setTimeout(() => {
+      creatorCsvUploadFrameResolver = null;
+      postForm.remove();
+      reject(new Error("The creator CSV upload did not respond."));
+    }, 60000);
+
+    creatorCsvUploadFrameResolver = () => {
+      clearTimeout(timeoutId);
+      creatorCsvUploadFrameResolver = null;
+      postForm.remove();
+      resolve();
+    };
+
+    postForm.method = "post";
+    postForm.action = REMOVE_ASIN_WEB_APP_URL;
+    postForm.target = "creatorCsvUploadFrame";
+    postForm.hidden = true;
+
+    fields.forEach(([name, value]) => {
+      const input = document.createElement("textarea");
+      input.name = name;
+      input.value = value;
+      postForm.appendChild(input);
+    });
+
+    document.body.appendChild(postForm);
+    postForm.submit();
+  });
+}
+
 function initCreatorCsvUpload() {
   if (!creatorCsvUploadForm || !creatorCsvFile) return;
 
@@ -348,46 +386,34 @@ function initCreatorCsvUpload() {
 
     try {
       creatorCsvUploadInProgress = true;
-      creatorCsvUploadStatus.textContent = `Merging ${files.length} CSV file${files.length === 1 ? "" : "s"}...`;
+      for (let index = 0; index < files.length; index += 1) {
+        const file = files[index];
+        creatorCsvUploadStatus.textContent = `Uploading CSV ${index + 1} of ${files.length}: ${file.name}`;
+        await postCreatorCsvUpload([
+          ["action", "uploadCreatorCsv"],
+          ["filename", file.name],
+          ["csvBase64", await creatorCsvFileBase64(file)],
+          ["sourceFileCount", String(files.length)],
+          ["fileIndex", String(index)],
+          ["mergeMode", index === 0 ? "replace" : "append"],
+        ]);
+      }
 
-      const mergedCsv = await mergeCreatorCsvFiles(files);
-      const uploadName = files.length === 1 ? files[0].name : `creator-connections-${files.length}-files.csv`;
-      creatorCsvUploadStatus.textContent = `Uploading ${mergedCsv.dataRowCount} merged creator rows...`;
-      const postForm = document.createElement("form");
-      postForm.method = "post";
-      postForm.action = REMOVE_ASIN_WEB_APP_URL;
-      postForm.target = "creatorCsvUploadFrame";
-      postForm.hidden = true;
-
-      [
-        ["action", "uploadCreatorCsv"],
-        ["filename", uploadName],
-        ["csvBase64", base64EncodeUtf8(mergedCsv.text)],
-        ["sourceFileCount", String(files.length)],
-        ["mergedRowCount", String(mergedCsv.dataRowCount)],
-      ].forEach(([name, value]) => {
-        const input = document.createElement("textarea");
-        input.name = name;
-        input.value = value;
-        postForm.appendChild(input);
-      });
-
-      document.body.appendChild(postForm);
-      postForm.submit();
-      postForm.remove();
+      creatorCsvUploadStatus.textContent = `Uploaded and merged ${files.length} CSV file${files.length === 1 ? "" : "s"}. Future scans will use it after the repository commit finishes.`;
+      creatorCsvUploadForm.reset();
+      creatorCsvFileName.textContent = "Choose CSV files";
+      creatorCsvUploadInProgress = false;
     } catch (error) {
       creatorCsvUploadInProgress = false;
-      creatorCsvUploadStatus.textContent = `Could not merge creator CSV files: ${error.message}`;
+      creatorCsvUploadStatus.textContent = `Could not upload creator CSV files: ${error.message}`;
     }
   });
 
   if (creatorCsvUploadFrame) {
     creatorCsvUploadFrame.addEventListener("load", () => {
-      if (!creatorCsvUploadInProgress) return;
-      creatorCsvUploadInProgress = false;
-      creatorCsvUploadStatus.textContent = "Merged upload sent. Future scans will use it after the repository commit finishes.";
-      creatorCsvUploadForm.reset();
-      creatorCsvFileName.textContent = "Choose CSV files";
+      if (creatorCsvUploadFrameResolver) {
+        creatorCsvUploadFrameResolver();
+      }
     });
   }
 }

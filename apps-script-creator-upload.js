@@ -6,8 +6,41 @@ const CREATOR_CONNECTIONS_REPO = "Mhhickma/influencer-prospects";
 const CREATOR_CONNECTIONS_BRANCH = "main";
 const CREATOR_CONNECTIONS_UPLOAD_PATH = "creator-connections/latest.csv";
 
+function normalizeCreatorCsv_(csvText) {
+  return String(csvText || "")
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function mergeCreatorCsvText_(existingText, incomingText) {
+  const existingLines = normalizeCreatorCsv_(existingText);
+  const incomingLines = normalizeCreatorCsv_(incomingText);
+  if (incomingLines.length === 0) {
+    throw new Error("The uploaded CSV is empty.");
+  }
+
+  const header = existingLines[0] || incomingLines[0];
+  const rows = [header];
+  const seenRows = {};
+
+  existingLines.slice(1).concat(incomingLines.slice(1)).forEach((line) => {
+    if (!line || line === header || seenRows[line]) return;
+    seenRows[line] = true;
+    rows.push(line);
+  });
+
+  if (rows.length <= 1) {
+    throw new Error("No creator connection rows were found in the uploaded CSV files.");
+  }
+
+  return `${rows.join("\n")}\n`;
+}
+
 function uploadCreatorCsv_(params) {
   const filename = String(params.filename || "creator-connections.csv").trim();
+  const mergeMode = String(params.mergeMode || "replace").trim().toLowerCase();
   const csvBase64 = String(params.csvBase64 || "").trim();
   if (!csvBase64) {
     throw new Error("Missing CSV content.");
@@ -31,18 +64,27 @@ function uploadCreatorCsv_(params) {
   };
 
   let sha = "";
+  let existingText = "";
   const existing = UrlFetchApp.fetch(`${apiBase}?ref=${CREATOR_CONNECTIONS_BRANCH}`, {
     method: "get",
     headers,
     muteHttpExceptions: true,
   });
   if (existing.getResponseCode() === 200) {
-    sha = JSON.parse(existing.getContentText()).sha || "";
+    const existingPayload = JSON.parse(existing.getContentText());
+    sha = existingPayload.sha || "";
+    if (mergeMode === "append" && existingPayload.content) {
+      existingText = Utilities.newBlob(
+        Utilities.base64Decode(String(existingPayload.content).replace(/\s/g, ""))
+      ).getDataAsString("UTF-8");
+    }
   }
 
+  const uploadText = mergeMode === "append" ? mergeCreatorCsvText_(existingText, decoded) : `${normalizeCreatorCsv_(decoded).join("\n")}\n`;
+
   const payload = {
-    message: `Replace Creator Connections CSV from dashboard upload: ${filename}`,
-    content: Utilities.base64Encode(decoded, Utilities.Charset.UTF_8),
+    message: `${mergeMode === "append" ? "Merge" : "Replace"} Creator Connections CSV from dashboard upload: ${filename}`,
+    content: Utilities.base64Encode(uploadText, Utilities.Charset.UTF_8),
     branch: CREATOR_CONNECTIONS_BRANCH,
   };
   if (sha) {
@@ -66,6 +108,7 @@ function uploadCreatorCsv_(params) {
     ok: true,
     file: CREATOR_CONNECTIONS_UPLOAD_PATH,
     source_filename: filename,
+    merge_mode: mergeMode,
   };
 }
 
