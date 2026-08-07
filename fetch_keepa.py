@@ -1,4 +1,4 @@
-﻿import csv
+import csv
 import io
 import json
 import os
@@ -11,12 +11,22 @@ from pathlib import Path
 import requests
 
 try:
+    from amazon_creatorsapi import AmazonCreatorsApi, Country
+    from amazon_creatorsapi.models import GetItemsResource
+except Exception:
+    AmazonCreatorsApi = None
+    Country = None
+    GetItemsResource = None
+
+try:
     csv.field_size_limit(sys.maxsize)
 except OverflowError:
     csv.field_size_limit(1024 * 1024 * 1024)
 
 KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
 AMAZON_TAG = os.getenv("AMAZON_TAG") or "simplewoodsho-20"
+CREATORS_CREDENTIAL_ID = os.getenv("CREATORS_CREDENTIAL_ID")
+CREATORS_CREDENTIAL_SECRET = os.getenv("CREATORS_CREDENTIAL_SECRET")
 DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))
 MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "0"))
 
@@ -115,6 +125,12 @@ def amazon_image_fallback(asin):
     return f"https://m.media-amazon.com/images/P/{asin}.01._SL500_.jpg"
 
 
+def compact_image_url(url, size=500):
+    if not url:
+        return None
+    return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url))
+
+
 def get_product_image_candidates(product, asin):
     candidates = []
     images_csv = product.get("imagesCSV") or ""
@@ -139,6 +155,90 @@ def get_product_image_candidates(product, asin):
 def get_product_image(product, asin):
     candidates = get_product_image_candidates(product, asin)
     return candidates[0] if candidates else None
+
+
+def is_weak_image_url(url):
+    return not url or "/images/P/" in str(url)
+
+
+def creator_image_resources():
+    return [
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_HIGH_RES,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_LARGE,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_MEDIUM,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_SMALL,
+    ]
+
+
+def creator_image_from_item(item):
+    try:
+        primary = item.images.primary
+        for size in ("large", "medium", "small", "hi_res"):
+            image_size = getattr(primary, size, None)
+            url = getattr(image_size, "url", None)
+            if url:
+                return compact_image_url(url, 500)
+    except Exception:
+        pass
+    return None
+
+
+def fetch_creator_images(asins):
+    if not asins:
+        return {}
+    if not (AmazonCreatorsApi and Country and GetItemsResource):
+        print("Amazon Creators API image fallback skipped: package is not installed")
+        return {}
+    if not (CREATORS_CREDENTIAL_ID and CREATORS_CREDENTIAL_SECRET):
+        print("Amazon Creators API image fallback skipped: missing creator credentials")
+        return {}
+
+    images = {}
+    for index in range(0, len(asins), 10):
+        batch = asins[index:index + 10]
+        try:
+            amazon = AmazonCreatorsApi(
+                credential_id=CREATORS_CREDENTIAL_ID,
+                credential_secret=CREATORS_CREDENTIAL_SECRET,
+                version="3.1",
+                tag=AMAZON_TAG,
+                country=Country.US,
+            )
+            for item in amazon.get_items(batch, resources=creator_image_resources()):
+                image = creator_image_from_item(item)
+                if image:
+                    images[str(item.asin).upper()] = image
+        except Exception as exc:
+            print(f"Warning: creator image batch failed for {batch[0]}-{batch[-1]}: {exc}")
+        time.sleep(0.2)
+    return images
+
+
+def enrich_deal_images_with_creator_api(deals):
+    needs_image = [
+        str(deal.get("asin") or "").upper()
+        for deal in deals
+        if deal.get("asin") and is_weak_image_url(deal.get("image"))
+    ]
+    needs_image = list(dict.fromkeys(needs_image))
+    if not needs_image:
+        return 0
+
+    creator_images = fetch_creator_images(needs_image)
+    updated = 0
+    for deal in deals:
+        asin = str(deal.get("asin") or "").upper()
+        image = creator_images.get(asin)
+        if not image:
+            continue
+        existing_candidates = deal.get("image_candidates") or []
+        deal["image"] = image
+        deal["image_candidates"] = list(dict.fromkeys([image, *existing_candidates]))
+        updated += 1
+
+    if updated:
+        print(f"Updated {updated} regular dashboard deal images from Amazon Creators API")
+    return updated
 
 
 def asins_from_csv_text(csv_text, source_name):
@@ -992,6 +1092,7 @@ def main():
     memory, added_count, updated_count = merge_deals_with_memory(memory, scan_deals)
     creator_campaign_deal_count = apply_creator_campaigns(memory, campaign_by_asin)
     all_deals = list(memory.values())
+    creator_image_update_count = enrich_deal_images_with_creator_api(all_deals)
     all_deals.sort(key=lambda item: item.get("posted_at") or item.get("checked_at") or "", reverse=True)
     non_amazon_active_deals = sum(1 for deal in all_deals if deal.get("price_type") in NON_AMAZON_PRICE_TYPES)
     prime_exclusive_active_deals = sum(1 for deal in all_deals if deal.get("price_type") == "prime_exclusive_offer")
@@ -1013,6 +1114,7 @@ def main():
         "prime_exclusive_scan_deal_count": prime_exclusive_scan_deals,
         "prime_exclusive_active_deal_count": prime_exclusive_active_deals,
         "creator_campaign_deal_count": creator_campaign_deal_count,
+        "creator_image_update_count": creator_image_update_count,
         "creator_connections": {
             "repo": CREATOR_CONNECTIONS_REPO,
             "path": CREATOR_CONNECTIONS_PATH,
