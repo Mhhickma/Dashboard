@@ -26,7 +26,7 @@ const DEALS_PER_PAGE = 50;
 const AFFILIATE_TAGS = {
   woodworkingPage: "page_page_page-20",
   blackLabPage: "blacklabdealsprime-20",
-  default: "page_page_page-20",
+  default: "simplewoodsho-20",
 };
 
 let allDeals = [];

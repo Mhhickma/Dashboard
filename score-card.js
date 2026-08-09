@@ -4,7 +4,7 @@
   const AMAZON_AFFILIATE_TAGS = {
     woodworkingPage: "page_page_page-20",
     blackLabPage: "blacklabdealsprime-20",
-    default: "page_page_page-20",
+    default: "simplewoodsho-20",
   };
 
   function defaultAffiliateTag() {
