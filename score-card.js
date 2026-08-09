@@ -56,6 +56,28 @@
     return rawUrl;
   }
 
+  function copyLinkTarget() {
+    return document.body.dataset.dashboardMode === "best-sellers" ? "blackLabPage" : "";
+  }
+
+  async function deepLinkForDeal(deal) {
+    const fallbackUrl = affiliateUrlForDeal(deal);
+    if (!deal || !deal.asin || typeof window.callAsinScript !== "function") return fallbackUrl;
+
+    const result = await window.callAsinScript("buildDealLink", {
+      target: copyLinkTarget(),
+      asin: deal.asin,
+      title: deal.title || deal.asin,
+      amazonUrl: fallbackUrl,
+    });
+
+    if (!result || !result.ok || !result.url) {
+      throw new Error(result && result.error ? result.error : "Deep link was not returned.");
+    }
+
+    return result.url;
+  }
+
   function parseCampaignDate(value) {
     const text = String(value || "").trim();
     if (!text) return null;
@@ -182,22 +204,24 @@
     document.head.appendChild(style);
   }
 
-  window.copyAmazonAffiliateLink = async function copyAmazonAffiliateLink(asin, button) {
-    const affiliateUrl = affiliateUrlForAsin(asin);
+  window.copyAmazonAffiliateLink = async function copyAmazonAffiliateLink(asin, button, deal) {
+    const fallbackUrl = affiliateUrlForAsin(asin);
 
     try {
-      await navigator.clipboard.writeText(affiliateUrl);
+      if (button) button.textContent = "Linking...";
+      const linkUrl = deal ? await deepLinkForDeal(deal) : fallbackUrl;
+      await navigator.clipboard.writeText(linkUrl);
       if (button) {
-        const originalText = button.textContent;
         button.textContent = "Copied";
         button.classList.add("copied");
         setTimeout(() => {
-          button.textContent = originalText;
+          button.textContent = "Copy Link";
           button.classList.remove("copied");
         }, 1600);
       }
     } catch {
-      prompt("Copy this affiliate link:", affiliateUrl);
+      if (button) button.textContent = "Copy Link";
+      prompt("Copy this affiliate link:", fallbackUrl);
     }
   };
 
@@ -381,7 +405,7 @@
         copyButton.className = "copy-link-card";
         copyButton.type = "button";
         copyButton.textContent = "Copy Link";
-        copyButton.addEventListener("click", () => window.copyAmazonAffiliateLink(deal.asin, copyButton));
+        copyButton.addEventListener("click", () => window.copyAmazonAffiliateLink(deal.asin, copyButton, deal));
 
         openButton.insertAdjacentElement("beforebegin", actionWrap);
         actionWrap.appendChild(copyButton);
