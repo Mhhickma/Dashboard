@@ -10,6 +10,7 @@ import json
 import os
 import re
 import time
+import csv
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -27,6 +28,8 @@ CONFIG_FILE = "best_seller_categories.json"
 WATCHLIST_FILE = "data/best_seller_watchlist.json"
 STATE_FILE = "data/best_seller_state.json"
 DEALS_FILE = "data/best_seller_deals.json"
+CREATOR_CONNECTIONS_PATH = Path(os.getenv("CREATOR_CONNECTIONS_PATH", "data/creator-connections"))
+ASIN_RE = re.compile(r"\bB[0-9A-Z]{9}\b")
 
 AMAZON_BATCH_SIZE = 10
 AMAZON_CONCURRENT_BATCHES = int(os.getenv("BEST_SELLER_AMAZON_CONCURRENT_BATCHES", "3"))
@@ -84,6 +87,7 @@ PUBLIC_PRODUCT_FIELDS = (
     "price_amount", "currency", "availability", "amazon_url", "link",
     "desc", "posted_at", "first_seen_at", "checked_at", "last_checked_at",
     "expires_at", "seen_at", "updated_at", "qualification_reasons",
+    "has_creator_campaign", "creator_campaign", "creator_commission_rate",
 )
 
 
@@ -126,6 +130,118 @@ def float_or_none(value):
         return number if number == number else None
     except Exception:
         return None
+
+
+def parse_campaign_date(value):
+    text = str(value or "").strip()
+    if not text:
+        return None
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y"):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            pass
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+    except ValueError:
+        return None
+
+
+def normalize_commission(value):
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if text.endswith("%"):
+        return text
+    try:
+        return f"{float(text):g}%"
+    except ValueError:
+        return text
+
+
+def commission_number(value):
+    try:
+        return float(normalize_commission(value).replace("%", ""))
+    except ValueError:
+        return 0.0
+
+
+def campaign_from_row(row, today):
+    start_date = parse_campaign_date(row.get("Campaign Start Date"))
+    end_date = parse_campaign_date(row.get("Campaign End Date"))
+    return {
+        "campaign_id": str(row.get("Campaign Id", "")).strip(),
+        "campaign_name": str(row.get("Campaign Name", "")).strip(),
+        "campaign_brand": str(row.get("Brand Name", "")).strip(),
+        "commission_rate": normalize_commission(row.get("Commission Rate", "")),
+        "campaign_start_date": str(row.get("Campaign Start Date", "")).strip(),
+        "campaign_end_date": str(row.get("Campaign End Date", "")).strip(),
+        "recommended": str(row.get("Recommended", "")).strip().lower() == "true",
+        "active": (start_date is None or start_date <= today) and (end_date is None or end_date >= today),
+    }
+
+
+def campaign_rank(campaign):
+    return (
+        1 if campaign.get("recommended") else 0,
+        commission_number(campaign.get("commission_rate")),
+        campaign.get("campaign_end_date") or "",
+    )
+
+
+def find_creator_campaigns_for_asins(target_asins):
+    target_asins = {str(asin).strip().upper() for asin in target_asins if asin}
+    if not target_asins:
+        return {}, {"files_scanned": 0, "rows_scanned": 0, "asins_matched": 0}
+
+    csv_files = sorted(CREATOR_CONNECTIONS_PATH.glob("*.csv")) if CREATOR_CONNECTIONS_PATH.exists() else []
+    today = utc_now().date()
+    matches = {}
+    rows_scanned = 0
+
+    for path in csv_files:
+        try:
+            with path.open("r", encoding="utf-8-sig", newline="") as handle:
+                reader = csv.DictReader(handle)
+                for row in reader:
+                    rows_scanned += 1
+                    row_asins = set(ASIN_RE.findall(str(row.get("ASIN List", "")).upper()))
+                    relevant_asins = target_asins.intersection(row_asins)
+                    if not relevant_asins:
+                        continue
+                    campaign = campaign_from_row(row, today)
+                    if not campaign.get("active"):
+                        continue
+                    for asin in relevant_asins:
+                        existing = matches.get(asin)
+                        if not existing or campaign_rank(campaign) > campaign_rank(existing):
+                            matches[asin] = campaign
+        except Exception as exc:
+            print(f"Could not scan Creator Connections file {path.name}: {exc}")
+
+    print(f"Creator Connections: matched {len(matches)} ASINs from {len(csv_files)} files and {rows_scanned} rows")
+    return matches, {
+        "files_scanned": len(csv_files),
+        "rows_scanned": rows_scanned,
+        "asins_matched": len(matches),
+        "path": str(CREATOR_CONNECTIONS_PATH),
+    }
+
+
+def apply_creator_campaigns(deals_by_asin, campaign_by_asin):
+    matched = 0
+    for asin, deal in deals_by_asin.items():
+        campaign = campaign_by_asin.get(str(asin).upper())
+        if campaign:
+            deal["has_creator_campaign"] = True
+            deal["creator_campaign"] = campaign
+            deal["creator_commission_rate"] = campaign.get("commission_rate", "")
+            matched += 1
+        else:
+            deal.pop("has_creator_campaign", None)
+            deal.pop("creator_campaign", None)
+            deal.pop("creator_commission_rate", None)
+    return matched
 
 
 def is_bad_title(title):
@@ -498,6 +614,8 @@ def main():
 
     existing_output = load_json(DEALS_FILE, {"deals": []})
     deals_by_asin = {d.get("asin"): d for d in purge_old_deals(existing_output.get("deals", []), deal_ttl_hours)}
+    campaign_target_asins = {item.get("asin") for item in items} | set(deals_by_asin.keys())
+    campaign_by_asin, campaign_stats = find_creator_campaigns_for_asins(campaign_target_asins)
 
     state_asins = state.setdefault("asins", {})
 
@@ -525,6 +643,8 @@ def main():
     state["watchlistCount"] = len(items)
     save_json(STATE_FILE, state)
 
+    creator_campaign_deal_count = apply_creator_campaigns(deals_by_asin, campaign_by_asin)
+
     all_deals = [
         public_product(deal)
         for deal in sorted(deals_by_asin.values(), key=lambda d: d.get("updated_at", ""), reverse=True)
@@ -539,10 +659,13 @@ def main():
         "updatedAt": iso_now(),
         "updated_at": iso_now(),
         "deal_ttl_hours": deal_ttl_hours,
+        "creator_campaign_deal_count": creator_campaign_deal_count,
+        "creator_connections": campaign_stats,
         "deals": all_deals,
     }
     save_json(DEALS_FILE, output)
     print(f"Saved {len(all_deals)} best-seller deals to {DEALS_FILE}")
+    print(f"Marked {creator_campaign_deal_count} best-seller deals with Creator campaign data")
 
 
 if __name__ == "__main__":
