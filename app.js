@@ -7,6 +7,9 @@ const dealCountEl = document.getElementById("dealCount");
 const updatedAtEl = document.getElementById("updatedAt");
 const searchInput = document.getElementById("searchInput");
 const sortSelect = document.getElementById("sortSelect");
+const asinAddForm = document.getElementById("asinAddForm");
+const asinAddInput = document.getElementById("asinAddInput");
+const asinAddStatus = document.getElementById("asinAddStatus");
 const creatorCsvUploadForm = document.getElementById("creatorCsvUploadForm");
 const creatorCsvFile = document.getElementById("creatorCsvFile");
 const creatorCsvFileName = document.getElementById("creatorCsvFileName");
@@ -274,6 +277,47 @@ function callAsinScript(action, params = {}) {
 
 function removeAsinWithScript(asin) {
   return callAsinScript("removeAsin", { asin });
+}
+
+function parseAsinsFromText(value) {
+  return [...new Set((String(value || "").toUpperCase().match(/\bB[0-9A-Z]{9}\b/g) || []))];
+}
+
+function setAsinAddStatus(message) {
+  if (asinAddStatus) asinAddStatus.textContent = message;
+}
+
+function initAsinAddForm() {
+  if (!asinAddForm || !asinAddInput) return;
+
+  asinAddForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const asins = parseAsinsFromText(asinAddInput.value);
+    const button = asinAddForm.querySelector("button[type='submit']");
+
+    if (!asins.length) {
+      setAsinAddStatus("Paste one or more valid ASINs first.");
+      return;
+    }
+
+    try {
+      if (button) button.disabled = true;
+      setAsinAddStatus(`Adding ${asins.length} ASIN${asins.length === 1 ? "" : "s"} to the scan sheet...`);
+      const result = await callAsinScript("addAsins", { asins: asins.join("\n") });
+      if (!result || result.ok === false) {
+        throw new Error(result && result.error ? result.error : "Unknown add ASIN error.");
+      }
+
+      const addedCount = Number(result.addedCount || 0);
+      const duplicateCount = Number(result.duplicateCount || 0);
+      asinAddInput.value = "";
+      setAsinAddStatus(`Added ${addedCount} new ASIN${addedCount === 1 ? "" : "s"} to ASIN_List. Skipped ${duplicateCount} duplicate${duplicateCount === 1 ? "" : "s"}.`);
+    } catch (error) {
+      setAsinAddStatus(`Could not add ASINs: ${error.message}`);
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
 }
 
 function selectedCreatorCsvFiles() {
@@ -1034,5 +1078,6 @@ async function loadDeals() {
 
 searchInput.addEventListener("input", () => applySearch());
 if (sortSelect) sortSelect.addEventListener("change", () => applySearch());
+initAsinAddForm();
 initCreatorCsvUpload();
 loadDeals();
