@@ -31,6 +31,7 @@ DEALS_FILE = "data/best_seller_deals.json"
 AMAZON_BATCH_SIZE = 10
 AMAZON_CONCURRENT_BATCHES = int(os.getenv("BEST_SELLER_AMAZON_CONCURRENT_BATCHES", "3"))
 AMAZON_REQUEST_DELAY_SECONDS = float(os.getenv("BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS", "1"))
+KEEPA_BUY_BOX_PRICE_INDEX = 18
 
 BAD_KEYWORDS = [
     "sex", "doll", "erotic", "fetish", "penis", "vagina", "dildo", "vibrator",
@@ -331,9 +332,9 @@ def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_
         return None, state_entry
 
     previous_price = state_entry.get("lastPrice")
-    avg30 = stat_price(keepa_product, "avg30") if keepa_product else None
-    avg7 = stat_price(keepa_product, "avg") if keepa_product else None
-    min7 = stat_price(keepa_product, "minInInterval") if keepa_product else None
+    avg30 = stat_price(keepa_product, "avg30", KEEPA_BUY_BOX_PRICE_INDEX) if keepa_product else None
+    avg7 = stat_price(keepa_product, "avg", KEEPA_BUY_BOX_PRICE_INDEX) if keepa_product else None
+    min7 = stat_price(keepa_product, "minInInterval", KEEPA_BUY_BOX_PRICE_INDEX) if keepa_product else None
 
     drops = []
     pct_from_previous = 0
@@ -347,13 +348,13 @@ def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_
     if avg30 and avg30 > price_amount:
         pct_from_avg30 = round(((avg30 - price_amount) / avg30) * 100)
         if pct_from_avg30 >= min_drop_percent:
-            drops.append("keepa_30_day_avg_drop")
+            drops.append("keepa_buy_box_30_day_avg_drop")
 
     pct_from_avg7 = 0
     if avg7 and avg7 > price_amount:
         pct_from_avg7 = round(((avg7 - price_amount) / avg7) * 100)
         if pct_from_avg7 >= min_drop_percent:
-            drops.append("keepa_7_day_avg_drop")
+            drops.append("keepa_buy_box_7_day_avg_drop")
 
     savings_pct = 0
     was_display = None
@@ -409,6 +410,10 @@ def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_
         "amazon_url": url,
         "link": url,
         "desc": brand or "Best seller product pick",
+        "price_type": "buy_box",
+        "price_type_label": "Buy Box price",
+        "price_stats_source": "keepa_buy_box_stats",
+        "keepa_price_index": KEEPA_BUY_BOX_PRICE_INDEX,
         "posted_at": new_state.get("dealSeenAt", now_iso),
         "first_seen_at": new_state.get("dealSeenAt", now_iso),
         "checked_at": now_iso,
@@ -512,6 +517,8 @@ def main():
         state_asins[asin] = new_state
         if deal:
             deals_by_asin[asin] = deal
+        else:
+            deals_by_asin.pop(asin, None)
 
     state["cursor"] = next_cursor
     state["lastRunAt"] = iso_now()
