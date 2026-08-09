@@ -587,6 +587,9 @@ async function publishDeal(deal, target, delayMinutes, button) {
     alert(`${targetLabel} ${publishDelayLabel(delayMinutes)}: ${result.message || "sent successfully."}`);
     hideDeal(deal.asin);
   } catch (error) {
+    if (/already sent/i.test(error.message || "")) {
+      hideDeal(deal.asin);
+    }
     alert(`${targetLabel} ${publishDelayLabel(delayMinutes)} failed for ${deal.asin}: ${error.message}`);
   } finally {
     if (button) {
