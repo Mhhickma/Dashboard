@@ -170,6 +170,15 @@ def creator_image_resources():
     ]
 
 
+def creator_live_offer_resources():
+    return [
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_PRICE,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_AVAILABILITY,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_CONDITION,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_IS_BUY_BOX_WINNER,
+    ]
+
+
 def creator_image_from_item(item):
     try:
         primary = item.images.primary
@@ -212,6 +221,93 @@ def fetch_creator_images(asins):
             print(f"Warning: creator image batch failed for {batch[0]}-{batch[-1]}: {exc}")
         time.sleep(0.2)
     return images
+
+
+def creator_live_offer_from_item(item):
+    try:
+        listings = item.offers_v2.listings or []
+    except Exception:
+        return None
+
+    selected = None
+    for listing in listings:
+        try:
+            if listing.is_buy_box_winner:
+                selected = listing
+                break
+        except Exception:
+            pass
+    if selected is None and listings:
+        selected = listings[0]
+    if selected is None:
+        return None
+
+    try:
+        condition = selected.condition.value
+        if condition and str(condition).lower() != "new":
+            return None
+    except Exception:
+        pass
+
+    try:
+        availability = selected.availability.type
+        if str(availability or "").upper() == "UNAVAILABLE":
+            return None
+    except Exception:
+        pass
+
+    try:
+        price = round(float(selected.price.money.amount), 2)
+    except Exception:
+        return None
+
+    try:
+        display = selected.price.money.display_amount
+    except Exception:
+        display = f"${price:,.2f}"
+
+    try:
+        currency = selected.price.money.currency
+    except Exception:
+        currency = "USD"
+
+    return {
+        "current_price": price,
+        "price": display,
+        "currency": currency,
+        "availability": str(availability or ""),
+    }
+
+
+def fetch_creator_live_offers(asins):
+    if not asins:
+        return {}
+    if not (AmazonCreatorsApi and Country and GetItemsResource):
+        print("Amazon Creators API live price skipped: package is not installed")
+        return {}
+    if not (CREATORS_CREDENTIAL_ID and CREATORS_CREDENTIAL_SECRET):
+        print("Amazon Creators API live price skipped: missing creator credentials")
+        return {}
+
+    offers = {}
+    for index in range(0, len(asins), 10):
+        batch = asins[index:index + 10]
+        try:
+            amazon = AmazonCreatorsApi(
+                credential_id=CREATORS_CREDENTIAL_ID,
+                credential_secret=CREATORS_CREDENTIAL_SECRET,
+                version="3.1",
+                tag=AMAZON_TAG,
+                country=Country.US,
+            )
+            for item in amazon.get_items(batch, resources=creator_live_offer_resources()):
+                offer = creator_live_offer_from_item(item)
+                if offer:
+                    offers[str(item.asin).upper()] = offer
+        except Exception as exc:
+            print(f"Warning: creator live price batch failed for {batch[0]}-{batch[-1]}: {exc}")
+        time.sleep(0.2)
+    return offers
 
 
 def enrich_deal_images_with_creator_api(deals):
@@ -840,12 +936,67 @@ def build_prime_exclusive_offer_candidate(product):
     )
 
 
+def build_live_buy_box_candidate(product, live_offer):
+    if not live_offer:
+        return None
+
+    asin = product.get("asin")
+    title = product.get("title") or asin
+    stats = product.get("stats") or {}
+    current_price = live_offer.get("current_price")
+    if not current_price:
+        return None
+
+    comparison_tracks = [
+        {"type": "live_buy_box", "label": "Live Buy Box price", "index": 18, "source_suffix": "buy_box"},
+        {"type": "live_buy_box_new", "label": "Live Buy Box price vs New history", "index": 1, "source_suffix": "new"},
+        {"type": "live_buy_box_amazon", "label": "Live Buy Box price vs Amazon history", "index": 0, "source_suffix": "amazon"},
+    ]
+
+    candidates = []
+    for track in comparison_tracks:
+        price_index = track["index"]
+        avg_7_price = price_from_stats_array(stats, "avg", price_index)
+        min_7_price = price_from_stats_array(stats, "minInInterval", price_index)
+        avg_30_price = price_from_stats_array(stats, "avg30", price_index)
+        amazon_current_price = price_from_stats_array(stats, "current", 0) or current_price
+
+        if not avg_7_price or not min_7_price or not avg_30_price:
+            continue
+        if current_price >= avg_7_price and current_price >= avg_30_price:
+            continue
+        if current_price >= avg_30_price:
+            continue
+
+        best_price_days, previous_price, previous_date = best_price_days_for_track(product, price_index, current_price)
+        qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+        if not qualified:
+            continue
+        drop_percent, drop_30_percent, qualification_reasons = qualified
+        qualification_reasons = ["live Buy Box price"] + qualification_reasons
+
+        candidate = base_deal(
+            product, asin, title, current_price, avg_7_price, min_7_price, avg_30_price,
+            drop_percent, drop_30_percent, qualification_reasons,
+            f"creator_live_buy_box_vs_keepa_{track['source_suffix']}",
+            track["type"], track["label"], amazon_current_price, best_price_days,
+            previous_price, previous_date, price_index,
+        )
+        candidate["price"] = live_offer.get("price") or f"${current_price:,.2f}"
+        candidate["currency"] = live_offer.get("currency") or "USD"
+        candidate["availability"] = live_offer.get("availability") or ""
+        candidates.append(candidate)
+
+    return max(candidates, key=deal_rank) if candidates else None
+
+
 def deal_rank(deal):
     price_type = deal.get("price_type")
     current = float(deal.get("current_price") or 0)
     amazon_current = float(deal.get("amazon_current_price") or current or 0)
     savings_vs_amazon = max(0, amazon_current - current)
     return (
+        3 if str(price_type or "").startswith("live_buy_box") else
         2 if price_type == "prime_exclusive_offer" else 1 if price_type in NON_AMAZON_PRICE_TYPES else 0,
         savings_vs_amazon,
         float(deal.get("drop_30_percent") or 0),
@@ -854,8 +1005,11 @@ def deal_rank(deal):
     )
 
 
-def build_deal(product):
+def build_deal(product, live_offer=None):
     candidates = []
+    live_candidate = build_live_buy_box_candidate(product, live_offer)
+    if live_candidate:
+        candidates.append(live_candidate)
     prime_offer_candidate = build_prime_exclusive_offer_candidate(product)
     if prime_offer_candidate:
         candidates.append(prime_offer_candidate)
@@ -1065,6 +1219,8 @@ def main():
     print(f"Fetched {len(products)} products from Keepa")
     price_track_scan_summary = build_track_presence_summary(products)
     keepa_raw_diagnostics = raw_keepa_diagnostics(products)
+    live_offer_by_asin = fetch_creator_live_offers([str(product.get("asin") or "").upper() for product in products if product.get("asin")])
+    print(f"Fetched {len(live_offer_by_asin)} live Buy Box prices from Amazon Creators API")
 
     scan_deals = []
     skipped = 0
@@ -1074,7 +1230,8 @@ def main():
 
     for product in products:
         try:
-            deal = build_deal(product)
+            asin = str(product.get("asin") or "").upper()
+            deal = build_deal(product, live_offer_by_asin.get(asin))
         except Exception as exc:
             skipped += 1
             print(f"Skipped {product.get('asin', 'unknown ASIN')}: {exc}")
@@ -1140,6 +1297,7 @@ def main():
             "deal_ttl_hours": DEAL_TTL_HOURS,
             "keepa_stats_days": 7,
             "keepa_product_params": {"stats": 7, "history": 1},
+            "live_buy_box_source": "Amazon Creators API offers_v2 listings",
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
                 for track in PRICE_TRACKS
@@ -1147,6 +1305,10 @@ def main():
             "prime_exclusive_source": "offers[].isPrimeExcl + primeExclCSV",
         },
         "price_track_scan_summary": price_track_scan_summary,
+        "live_buy_box_scan_summary": {
+            "products_with_live_buy_box_price": len(live_offer_by_asin),
+            "live_buy_box_qualifies_against_keepa_history": sum(1 for deal in scan_deals if str(deal.get("price_type") or "").startswith("live_buy_box")),
+        },
         "keepa_raw_diagnostics": keepa_raw_diagnostics,
         "deals": all_deals,
     }
