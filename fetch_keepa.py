@@ -270,8 +270,6 @@ def creator_live_offer_from_item(item):
         pass
 
     shipping_status = creator_shipping_status(selected)
-    if shipping_status.get("has_shipping_evidence") and not shipping_status.get("prime_or_free_shipping"):
-        return {"shipping_rejected": True, "shipping_status": shipping_status}
 
     try:
         price = round(float(selected.price.money.amount), 2)
@@ -1070,8 +1068,6 @@ def deal_rank(deal):
 def build_deal(product, live_offer=None, require_live_offer=False):
     if require_live_offer and not live_offer:
         return None
-    if live_offer and live_offer.get("shipping_rejected"):
-        return None
 
     candidates = []
     live_candidate = build_live_buy_box_candidate(product, live_offer)
@@ -1288,9 +1284,8 @@ def main():
     keepa_raw_diagnostics = raw_keepa_diagnostics(products)
     live_offer_by_asin = fetch_creator_live_offers([str(product.get("asin") or "").upper() for product in products if product.get("asin")])
     live_prime_offer_count = sum(1 for offer in live_offer_by_asin.values() if offer and not offer.get("shipping_rejected"))
-    shipping_rejected_count = sum(1 for offer in live_offer_by_asin.values() if offer and offer.get("shipping_rejected"))
     print(f"Fetched {live_prime_offer_count} live Prime/free-shipping Buy Box prices from Amazon Creators API")
-    print(f"Rejected {shipping_rejected_count} live offers without Prime/free-shipping evidence")
+    print("Shipping evidence is tracked but not used as a hard filter")
     require_live_offer = bool(AmazonCreatorsApi and Country and GetItemsResource and CREATORS_CREDENTIAL_ID and CREATORS_CREDENTIAL_SECRET)
     print(f"Require live offer before showing regular dashboard deals: {require_live_offer}")
 
@@ -1371,7 +1366,7 @@ def main():
             "keepa_product_params": {"stats": 7, "history": 1},
             "live_buy_box_source": "Amazon Creators API offers_v2 listings",
             "requires_live_offer": require_live_offer,
-            "rejects_only_explicit_non_prime_or_paid_shipping": True,
+            "shipping_filter_mode": "informational_only",
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
                 for track in PRICE_TRACKS
@@ -1382,7 +1377,7 @@ def main():
         "live_buy_box_scan_summary": {
             "products_with_live_prime_or_free_shipping_buy_box_price": live_prime_offer_count,
             "products_with_missing_shipping_evidence": sum(1 for offer in live_offer_by_asin.values() if offer and not offer.get("shipping_rejected") and not (offer.get("shipping_status") or {}).get("has_shipping_evidence")),
-            "products_rejected_for_shipping": shipping_rejected_count,
+            "products_rejected_for_shipping": 0,
             "live_buy_box_qualifies_against_keepa_history": sum(1 for deal in scan_deals if str(deal.get("price_type") or "").startswith("live_buy_box")),
         },
         "keepa_raw_diagnostics": keepa_raw_diagnostics,
