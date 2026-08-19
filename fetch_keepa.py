@@ -171,12 +171,25 @@ def creator_image_resources():
 
 
 def creator_live_offer_resources():
-    return [
+    resources = [
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_PRICE,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_AVAILABILITY,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_CONDITION,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_IS_BUY_BOX_WINNER,
     ]
+    optional_names = [
+        "OFFERS_V2_DOT_LISTINGS_DOT_DELIVERY_INFO",
+        "OFFERS_V2_DOT_LISTINGS_DOT_DELIVERY_INFO_DOT_IS_PRIME_ELIGIBLE",
+        "OFFERS_V2_DOT_LISTINGS_DOT_DELIVERY_INFO_DOT_IS_FREE_SHIPPING_ELIGIBLE",
+        "OFFERS_DOT_LISTINGS_DOT_DELIVERY_INFO",
+        "OFFERS_DOT_LISTINGS_DOT_DELIVERY_INFO_DOT_IS_PRIME_ELIGIBLE",
+        "OFFERS_DOT_LISTINGS_DOT_DELIVERY_INFO_DOT_IS_FREE_SHIPPING_ELIGIBLE",
+    ]
+    for name in optional_names:
+        resource = getattr(GetItemsResource, name, None)
+        if resource and resource not in resources:
+            resources.append(resource)
+    return resources
 
 
 def creator_image_from_item(item):
@@ -256,6 +269,10 @@ def creator_live_offer_from_item(item):
     except Exception:
         pass
 
+    shipping_status = creator_shipping_status(selected)
+    if not shipping_status.get("prime_or_free_shipping"):
+        return {"shipping_rejected": True, "shipping_status": shipping_status}
+
     try:
         price = round(float(selected.price.money.amount), 2)
     except Exception:
@@ -276,6 +293,49 @@ def creator_live_offer_from_item(item):
         "price": display,
         "currency": currency,
         "availability": str(availability or ""),
+        "shipping_status": shipping_status,
+    }
+
+
+def bool_attr(obj, *names):
+    for name in names:
+        try:
+            value = getattr(obj, name)
+        except Exception:
+            continue
+        if isinstance(value, bool):
+            return value
+        if value is not None:
+            text = str(value).strip().lower()
+            if text in {"true", "yes", "1"}:
+                return True
+            if text in {"false", "no", "0"}:
+                return False
+    return None
+
+
+def creator_shipping_status(listing):
+    delivery_info = None
+    for attr in ("delivery_info", "deliveryInfo", "delivery"):
+        try:
+            delivery_info = getattr(listing, attr)
+            if delivery_info:
+                break
+        except Exception:
+            pass
+
+    prime = bool_attr(listing, "is_prime_eligible", "isPrimeEligible", "prime")
+    free_shipping = bool_attr(listing, "is_free_shipping_eligible", "isFreeShippingEligible", "free_shipping")
+    if delivery_info:
+        delivery_prime = bool_attr(delivery_info, "is_prime_eligible", "isPrimeEligible", "prime")
+        delivery_free = bool_attr(delivery_info, "is_free_shipping_eligible", "isFreeShippingEligible", "free_shipping")
+        prime = prime if prime is not None else delivery_prime
+        free_shipping = free_shipping if free_shipping is not None else delivery_free
+
+    return {
+        "prime_or_free_shipping": bool(prime or free_shipping),
+        "is_prime_eligible": bool(prime),
+        "is_free_shipping_eligible": bool(free_shipping),
     }
 
 
@@ -985,6 +1045,7 @@ def build_live_buy_box_candidate(product, live_offer):
         candidate["price"] = live_offer.get("price") or f"${current_price:,.2f}"
         candidate["currency"] = live_offer.get("currency") or "USD"
         candidate["availability"] = live_offer.get("availability") or ""
+        candidate["shipping_status"] = live_offer.get("shipping_status") or {}
         candidates.append(candidate)
 
     return max(candidates, key=deal_rank) if candidates else None
@@ -1005,7 +1066,12 @@ def deal_rank(deal):
     )
 
 
-def build_deal(product, live_offer=None):
+def build_deal(product, live_offer=None, require_live_prime_offer=False):
+    if require_live_prime_offer and not live_offer:
+        return None
+    if live_offer and live_offer.get("shipping_rejected"):
+        return None
+
     candidates = []
     live_candidate = build_live_buy_box_candidate(product, live_offer)
     if live_candidate:
@@ -1220,7 +1286,12 @@ def main():
     price_track_scan_summary = build_track_presence_summary(products)
     keepa_raw_diagnostics = raw_keepa_diagnostics(products)
     live_offer_by_asin = fetch_creator_live_offers([str(product.get("asin") or "").upper() for product in products if product.get("asin")])
-    print(f"Fetched {len(live_offer_by_asin)} live Buy Box prices from Amazon Creators API")
+    live_prime_offer_count = sum(1 for offer in live_offer_by_asin.values() if offer and not offer.get("shipping_rejected"))
+    shipping_rejected_count = sum(1 for offer in live_offer_by_asin.values() if offer and offer.get("shipping_rejected"))
+    print(f"Fetched {live_prime_offer_count} live Prime/free-shipping Buy Box prices from Amazon Creators API")
+    print(f"Rejected {shipping_rejected_count} live offers without Prime/free-shipping evidence")
+    require_live_prime_offer = bool(AmazonCreatorsApi and Country and GetItemsResource and CREATORS_CREDENTIAL_ID and CREATORS_CREDENTIAL_SECRET)
+    print(f"Require live Prime/free-shipping offer: {require_live_prime_offer}")
 
     scan_deals = []
     skipped = 0
@@ -1231,7 +1302,7 @@ def main():
     for product in products:
         try:
             asin = str(product.get("asin") or "").upper()
-            deal = build_deal(product, live_offer_by_asin.get(asin))
+            deal = build_deal(product, live_offer_by_asin.get(asin), require_live_prime_offer=require_live_prime_offer)
         except Exception as exc:
             skipped += 1
             print(f"Skipped {product.get('asin', 'unknown ASIN')}: {exc}")
@@ -1298,6 +1369,7 @@ def main():
             "keepa_stats_days": 7,
             "keepa_product_params": {"stats": 7, "history": 1},
             "live_buy_box_source": "Amazon Creators API offers_v2 listings",
+            "requires_live_prime_or_free_shipping": require_live_prime_offer,
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
                 for track in PRICE_TRACKS
@@ -1306,7 +1378,8 @@ def main():
         },
         "price_track_scan_summary": price_track_scan_summary,
         "live_buy_box_scan_summary": {
-            "products_with_live_buy_box_price": len(live_offer_by_asin),
+            "products_with_live_prime_or_free_shipping_buy_box_price": live_prime_offer_count,
+            "products_rejected_for_shipping": shipping_rejected_count,
             "live_buy_box_qualifies_against_keepa_history": sum(1 for deal in scan_deals if str(deal.get("price_type") or "").startswith("live_buy_box")),
         },
         "keepa_raw_diagnostics": keepa_raw_diagnostics,
