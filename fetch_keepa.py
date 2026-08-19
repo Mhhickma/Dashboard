@@ -270,7 +270,7 @@ def creator_live_offer_from_item(item):
         pass
 
     shipping_status = creator_shipping_status(selected)
-    if not shipping_status.get("prime_or_free_shipping"):
+    if shipping_status.get("has_shipping_evidence") and not shipping_status.get("prime_or_free_shipping"):
         return {"shipping_rejected": True, "shipping_status": shipping_status}
 
     try:
@@ -333,6 +333,7 @@ def creator_shipping_status(listing):
         free_shipping = free_shipping if free_shipping is not None else delivery_free
 
     return {
+        "has_shipping_evidence": prime is not None or free_shipping is not None,
         "prime_or_free_shipping": bool(prime or free_shipping),
         "is_prime_eligible": bool(prime),
         "is_free_shipping_eligible": bool(free_shipping),
@@ -1066,8 +1067,8 @@ def deal_rank(deal):
     )
 
 
-def build_deal(product, live_offer=None, require_live_prime_offer=False):
-    if require_live_prime_offer and not live_offer:
+def build_deal(product, live_offer=None, require_live_offer=False):
+    if require_live_offer and not live_offer:
         return None
     if live_offer and live_offer.get("shipping_rejected"):
         return None
@@ -1290,8 +1291,8 @@ def main():
     shipping_rejected_count = sum(1 for offer in live_offer_by_asin.values() if offer and offer.get("shipping_rejected"))
     print(f"Fetched {live_prime_offer_count} live Prime/free-shipping Buy Box prices from Amazon Creators API")
     print(f"Rejected {shipping_rejected_count} live offers without Prime/free-shipping evidence")
-    require_live_prime_offer = bool(AmazonCreatorsApi and Country and GetItemsResource and CREATORS_CREDENTIAL_ID and CREATORS_CREDENTIAL_SECRET)
-    print(f"Require live Prime/free-shipping offer: {require_live_prime_offer}")
+    require_live_offer = bool(AmazonCreatorsApi and Country and GetItemsResource and CREATORS_CREDENTIAL_ID and CREATORS_CREDENTIAL_SECRET)
+    print(f"Require live offer before showing regular dashboard deals: {require_live_offer}")
 
     scan_deals = []
     skipped = 0
@@ -1302,7 +1303,7 @@ def main():
     for product in products:
         try:
             asin = str(product.get("asin") or "").upper()
-            deal = build_deal(product, live_offer_by_asin.get(asin), require_live_prime_offer=require_live_prime_offer)
+            deal = build_deal(product, live_offer_by_asin.get(asin), require_live_offer=require_live_offer)
         except Exception as exc:
             skipped += 1
             print(f"Skipped {product.get('asin', 'unknown ASIN')}: {exc}")
@@ -1369,7 +1370,8 @@ def main():
             "keepa_stats_days": 7,
             "keepa_product_params": {"stats": 7, "history": 1},
             "live_buy_box_source": "Amazon Creators API offers_v2 listings",
-            "requires_live_prime_or_free_shipping": require_live_prime_offer,
+            "requires_live_offer": require_live_offer,
+            "rejects_only_explicit_non_prime_or_paid_shipping": True,
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
                 for track in PRICE_TRACKS
@@ -1379,6 +1381,7 @@ def main():
         "price_track_scan_summary": price_track_scan_summary,
         "live_buy_box_scan_summary": {
             "products_with_live_prime_or_free_shipping_buy_box_price": live_prime_offer_count,
+            "products_with_missing_shipping_evidence": sum(1 for offer in live_offer_by_asin.values() if offer and not offer.get("shipping_rejected") and not (offer.get("shipping_status") or {}).get("has_shipping_evidence")),
             "products_rejected_for_shipping": shipping_rejected_count,
             "live_buy_box_qualifies_against_keepa_history": sum(1 for deal in scan_deals if str(deal.get("price_type") or "").startswith("live_buy_box")),
         },
