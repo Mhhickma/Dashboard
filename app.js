@@ -482,9 +482,6 @@ async function cleanSourceSheet() {
 }
 
 async function queueRemoveDeal(asin) {
-  const confirmRemove = confirm(`Remove ASIN ${asin} from the source sheet?`);
-  if (!confirmRemove) return;
-
   try {
     const result = await removeAsinWithScript(asin);
 
@@ -495,7 +492,6 @@ async function queueRemoveDeal(asin) {
     }
 
     hideDeal(asin);
-    alert(`Removed ${asin} from ${result.sheet || "the source sheet"}.`);
   } catch (error) {
     const removeQueue = removeQueueAsins();
     removeQueue.add(asin);
