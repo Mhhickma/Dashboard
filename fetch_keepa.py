@@ -40,6 +40,7 @@ SCAN_LIMIT_RAW = os.getenv("SCAN_LIMIT", "auto").strip().lower()
 SCAN_RUNS_PER_DAY = max(1, int(os.getenv("SCAN_RUNS_PER_DAY", "48")))
 SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", "10")))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
+LIVE_OFFER_DEBUG_SAMPLE_LIMIT = int(os.getenv("LIVE_OFFER_DEBUG_SAMPLE_LIMIT", "8"))
 
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/influencer-prospects")
 CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "creator-connections")
@@ -65,6 +66,7 @@ ASIN_RE = re.compile(r"\bB[0-9A-Z]{9}\b")
 KEEPA_EPOCH = datetime(2011, 1, 1, tzinfo=timezone.utc)
 NON_AMAZON_PRICE_TYPES = {track["type"] for track in PRICE_TRACKS if track["type"] != "amazon"}
 NON_AMAZON_PRICE_TYPES.add("prime_exclusive_offer")
+LIVE_OFFER_DEBUG_SAMPLES = []
 
 
 def utc_now():
@@ -270,6 +272,7 @@ def creator_live_offer_from_item(item):
         pass
 
     shipping_status = creator_shipping_status(selected)
+    record_live_offer_debug(item, selected, shipping_status)
 
     try:
         price = round(float(selected.price.money.amount), 2)
@@ -310,6 +313,62 @@ def bool_attr(obj, *names):
             if text in {"false", "no", "0"}:
                 return False
     return None
+
+
+def debug_value(value):
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    text = str(value)
+    if len(text) > 160:
+        text = text[:157] + "..."
+    return text
+
+
+def debug_public_attrs(obj):
+    if obj is None:
+        return {}
+    attrs = {}
+    try:
+        names = [name for name in dir(obj) if not name.startswith("_")]
+    except Exception:
+        return attrs
+    for name in names:
+        if name in {"model_config", "model_fields", "model_fields_set"}:
+            continue
+        try:
+            value = getattr(obj, name)
+        except Exception:
+            continue
+        if callable(value):
+            continue
+        if value is None or isinstance(value, (bool, int, float, str)):
+            attrs[name] = value
+    return attrs
+
+
+def record_live_offer_debug(item, listing, shipping_status):
+    if len(LIVE_OFFER_DEBUG_SAMPLES) >= LIVE_OFFER_DEBUG_SAMPLE_LIMIT:
+        return
+    sample = {
+        "asin": str(getattr(item, "asin", "") or "").upper(),
+        "shipping_status": shipping_status,
+        "listing_attrs": debug_public_attrs(listing),
+        "nested_attrs": {},
+    }
+    for name in (
+        "availability", "condition", "delivery_info", "deliveryInfo", "delivery",
+        "fulfillment", "fulfillment_info", "fulfillmentInfo", "merchant_info",
+        "merchantInfo", "price", "shipping", "shipping_info", "shippingInfo",
+    ):
+        try:
+            nested = getattr(listing, name)
+        except Exception:
+            continue
+        if nested is None:
+            continue
+        attrs = debug_public_attrs(nested)
+        sample["nested_attrs"][name] = attrs if attrs else debug_value(nested)
+    LIVE_OFFER_DEBUG_SAMPLES.append(sample)
 
 
 def creator_shipping_status(listing):
@@ -1373,6 +1432,7 @@ def main():
             "live_buy_box_source": "Amazon Creators API offers_v2 listings",
             "requires_live_offer": require_live_offer,
             "shipping_filter_mode": "informational_only",
+            "live_offer_debug_sample_limit": LIVE_OFFER_DEBUG_SAMPLE_LIMIT,
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
                 for track in PRICE_TRACKS
@@ -1386,6 +1446,7 @@ def main():
             "products_rejected_for_shipping": 0,
             "live_buy_box_qualifies_against_keepa_history": sum(1 for deal in scan_deals if str(deal.get("price_type") or "").startswith("live_buy_box")),
         },
+        "live_offer_debug_samples": LIVE_OFFER_DEBUG_SAMPLES,
         "keepa_raw_diagnostics": keepa_raw_diagnostics,
         "deals": all_deals,
     }
