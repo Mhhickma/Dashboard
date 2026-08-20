@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-08-20T11:14:44.125790+00:00",
+  "updated_at": "2026-08-20T11:44:03.260570+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
-  "deal_count": 30,
-  "new_scan_deal_count": 30,
-  "new_deals_added": 30,
+  "deal_count": 32,
+  "new_scan_deal_count": 32,
+  "new_deals_added": 32,
   "existing_deals_updated": 0,
-  "expired_deals_removed": 39,
+  "expired_deals_removed": 30,
   "skipped_count": 0,
   "missing_image_count": 0,
   "non_amazon_scan_deal_count": 0,
@@ -15,7 +15,7 @@
   "prime_exclusive_scan_deal_count": 0,
   "prime_exclusive_active_deal_count": 0,
   "creator_campaign_deal_count": 0,
-  "creator_image_update_count": 30,
+  "creator_image_update_count": 32,
   "creator_connections": {
     "repo": "Mhhickma/influencer-prospects",
     "path": "creator-connections",
@@ -32,10 +32,10 @@
   },
   "scan_window": {
     "total_asins": 16878,
-    "start_index": 213,
-    "start_sheet_row": 215,
-    "next_start_index": 600,
-    "next_start_sheet_row": 602,
+    "start_index": 600,
+    "start_sheet_row": 602,
+    "next_start_index": 987,
+    "next_start_sheet_row": 989,
     "scan_count": 387
   },
   "settings": {
@@ -85,34 +85,34 @@
       "price_type": "amazon",
       "label": "Amazon price",
       "keepa_price_index": 0,
-      "products_with_current_price": 73,
-      "products_with_avg30_price": 84,
+      "products_with_current_price": 66,
+      "products_with_avg30_price": 73,
       "products_lower_than_amazon_current": 0,
       "sample_current_prices": [
         {
-          "asin": "B0FBF6RKH4",
-          "current_price": 189.58,
-          "amazon_current_price": 189.58
+          "asin": "B0875WV3CD",
+          "current_price": 35.99,
+          "amazon_current_price": 35.99
         },
         {
-          "asin": "B095HMGPDW",
-          "current_price": 108.15,
-          "amazon_current_price": 108.15
-        },
-        {
-          "asin": "B08FHCFV59",
-          "current_price": 58.5,
-          "amazon_current_price": 58.5
-        },
-        {
-          "asin": "B005VRJIW8",
+          "asin": "B07Z94FG62",
           "current_price": 11.99,
           "amazon_current_price": 11.99
         },
         {
-          "asin": "B0CLBMMBW5",
-          "current_price": 36.97,
-          "amazon_current_price": 36.97
+          "asin": "B006XBXNZO",
+          "current_price": 30.75,
+          "amazon_current_price": 30.75
+        },
+        {
+          "asin": "B075K4CTYM",
+          "current_price": 9.89,
+          "amazon_current_price": 9.89
+        },
+        {
+          "asin": "B00008WQ30",
+          "current_price": 36.68,
+          "amazon_current_price": 36.68
         }
       ]
     },
@@ -120,33 +120,33 @@
       "price_type": "new",
       "label": "New price",
       "keepa_price_index": 1,
-      "products_with_current_price": 337,
-      "products_with_avg30_price": 345,
-      "products_lower_than_amazon_current": 8,
+      "products_with_current_price": 342,
+      "products_with_avg30_price": 354,
+      "products_lower_than_amazon_current": 11,
       "sample_current_prices": [
         {
-          "asin": "B0BM3TCBSS",
-          "current_price": 42.8,
+          "asin": "B08X4R2838",
+          "current_price": 19.99,
           "amazon_current_price": null
         },
         {
-          "asin": "B09T3FLZTF",
-          "current_price": 23.99,
+          "asin": "B0F7H22MJL",
+          "current_price": 24.99,
           "amazon_current_price": null
         },
         {
-          "asin": "B0FK9SB5KR",
-          "current_price": 149.99,
+          "asin": "B0D6L13PH1",
+          "current_price": 8.79,
           "amazon_current_price": null
         },
         {
-          "asin": "B0F84BZVFB",
-          "current_price": 8.99,
+          "asin": "B0D8D17GQW",
+          "current_price": 139.99,
           "amazon_current_price": null
         },
         {
-          "asin": "B088GZZZD5",
-          "current_price": 16.99,
+          "asin": "B0CY42SQD3",
+          "current_price": 42.31,
           "amazon_current_price": null
         }
       ]
@@ -180,14 +180,72 @@
     }
   ],
   "live_buy_box_scan_summary": {
-    "products_with_live_prime_or_free_shipping_buy_box_price": 324,
-    "products_with_missing_shipping_evidence": 324,
+    "products_with_live_prime_or_free_shipping_buy_box_price": 328,
+    "products_with_missing_shipping_evidence": 328,
     "products_rejected_for_shipping": 0,
-    "live_buy_box_qualifies_against_keepa_history": 30
+    "live_buy_box_qualifies_against_keepa_history": 32
   },
   "live_offer_debug_samples": [
     {
-      "asin": "B0BM3TCBSS",
+      "asin": "B0BZL27VTN",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "condition": null,
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "price": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": null,
+          "message": "Currently unavailable.",
+          "min_order_quantity": null,
+          "model_extra": null,
+          "type": "OUT_OF_STOCK"
+        }
+      }
+    },
+    {
+      "asin": "B0CGQWJYFV",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "condition": null,
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "price": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": null,
+          "message": "Currently unavailable.",
+          "min_order_quantity": null,
+          "model_extra": null,
+          "type": "OUT_OF_STOCK"
+        }
+      }
+    },
+    {
+      "asin": "B08X4R2838",
       "shipping_status": {
         "has_shipping_evidence": false,
         "prime_or_free_shipping": false,
@@ -205,8 +263,150 @@
       },
       "nested_attrs": {
         "availability": {
-          "max_order_quantity": 14,
-          "message": "Only 14 left in stock - order soon.",
+          "max_order_quantity": 50,
+          "message": "In Stock",
+          "min_order_quantity": 1,
+          "model_extra": null,
+          "type": "IN_STOCK"
+        },
+        "condition": {
+          "condition_note": "",
+          "model_extra": null,
+          "sub_condition": "Unknown",
+          "value": "New"
+        },
+        "price": {
+          "model_extra": null,
+          "saving_basis": null,
+          "savings": null
+        }
+      }
+    },
+    {
+      "asin": "B0F1MCWB1W",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "condition": null,
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "price": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": null,
+          "message": "Currently unavailable.",
+          "min_order_quantity": null,
+          "model_extra": null,
+          "type": "OUT_OF_STOCK"
+        }
+      }
+    },
+    {
+      "asin": "B0F7H22MJL",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": 30,
+          "message": "In Stock",
+          "min_order_quantity": 1,
+          "model_extra": null,
+          "type": "IN_STOCK"
+        },
+        "condition": {
+          "condition_note": "",
+          "model_extra": null,
+          "sub_condition": "Unknown",
+          "value": "New"
+        },
+        "price": {
+          "model_extra": null
+        }
+      }
+    },
+    {
+      "asin": "B0D6L13PH1",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": 30,
+          "message": "In Stock",
+          "min_order_quantity": 1,
+          "model_extra": null,
+          "type": "IN_STOCK"
+        },
+        "condition": {
+          "condition_note": "",
+          "model_extra": null,
+          "sub_condition": "Unknown",
+          "value": "New"
+        },
+        "price": {
+          "model_extra": null,
+          "price_per_unit": null,
+          "saving_basis": null,
+          "savings": null
+        }
+      }
+    },
+    {
+      "asin": "B0D8D17GQW",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": 2,
+          "message": "Only 2 left in stock - order soon.",
           "min_order_quantity": 1,
           "model_extra": null,
           "type": "IN_STOCK_SCARCE"
@@ -226,241 +426,7 @@
       }
     },
     {
-      "asin": "B09T3FLZTF",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 17,
-          "message": "Only 17 left in stock - order soon.",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK_SCARCE"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B0FK9SB5KR",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 30,
-          "message": "In Stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B0F84BZVFB",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 30,
-          "message": "In Stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B088GZZZD5",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 30,
-          "message": "In Stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B0BGJRC586",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 26,
-          "message": "In Stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B003L28I94",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 17,
-          "message": "In stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B0FBF6RKH4",
+      "asin": "B0CY42SQD3",
       "shipping_status": {
         "has_shipping_evidence": false,
         "prime_or_free_shipping": false,
@@ -508,7 +474,7 @@
     "products_with_prime_exclusive_offer": 0,
     "sample_products": [
       {
-        "asin": "B0BM3TCBSS",
+        "asin": "B0BZL27VTN",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
@@ -516,35 +482,231 @@
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
           "0": -1,
-          "1": 4280,
+          "1": -1,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
           "0": -1,
-          "1": 4280,
+          "1": -1,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
           "0": -1,
-          "1": 4280,
+          "1": -1,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
           2,
-          50,
+          344,
+          56,
+          11580,
+          58,
+          0,
+          0,
+          0,
+          208,
+          0,
+          0,
+          240,
+          28,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B0CGQWJYFV",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": -1,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": -1,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": -1,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          8,
+          2,
+          1278,
+          74,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          8,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B08X4R2838",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 1999,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 1999,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 1936,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          402,
+          2,
+          13754,
+          86,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          166,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B0F1MCWB1W",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": -1,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": -1,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 3598,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          86,
+          2,
+          3570,
+          32,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          32,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B0F7H22MJL",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 2499,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 2931,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 2643,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
           42,
-          4480,
-          218,
+          6,
+          1712,
+          24,
           0,
           0,
           0,
           0,
           0,
           0,
-          48,
+          2,
           4,
           0,
           0,
@@ -557,7 +719,7 @@
         "offer_count": 0
       },
       {
-        "asin": "B09T3FLZTF",
+        "asin": "B0D6L13PH1",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
@@ -565,117 +727,19 @@
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
           "0": -1,
-          "1": 2399,
+          "1": 879,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
           "0": -1,
-          "1": 2399,
+          "1": 879,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
           "0": -1,
-          "1": 2315,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2,
-          24,
-          2,
-          2158,
-          154,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          10,
-          2,
-          2,
-          2,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B0FK9SB5KR",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 14999,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 14159,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": 13483,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2,
-          96,
-          2,
-          3604,
-          2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          22,
-          0,
-          2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B0F84BZVFB",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 899,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 899,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": 899,
+          "1": 879,
           "10": -1,
           "18": -1
         },
@@ -683,15 +747,15 @@
           2,
           10,
           2,
-          942,
+          1286,
+          54,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
           2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          10,
           0,
           0,
           0,
@@ -704,7 +768,7 @@
         "offer_count": 0
       },
       {
-        "asin": "B088GZZZD5",
+        "asin": "B0D8D17GQW",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
@@ -712,174 +776,34 @@
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
           "0": -1,
-          "1": 1699,
+          "1": 13999,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
           "0": -1,
-          "1": 1699,
+          "1": 13999,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
           "0": -1,
-          "1": 1699,
+          "1": 13999,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
           2,
-          40,
+          32,
           2,
-          9348,
-          344,
+          784,
+          80,
           0,
           0,
           0,
           0,
           0,
           0,
-          16,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B0BGJRC586",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 1900,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 1929,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": 1944,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2,
-          48,
-          38,
-          7148,
-          156,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          62,
-          24,
-          2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B003L28I94",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 1270,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 1270,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": 1058,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          228,
-          4022,
-          10,
-          13310,
-          378,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          954,
-          8,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B0FBF6RKH4",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": 18958,
-          "1": 18099,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": 18958,
-          "1": 18099,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": 18598,
-          "1": 17933,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          68,
-          60,
-          64,
-          2102,
           14,
           0,
           0,
@@ -887,9 +811,51 @@
           0,
           0,
           0,
-          24,
-          56,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B0CY42SQD3",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 4231,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 4231,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 4231,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
           2,
+          104,
+          8,
+          3694,
+          94,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          18,
+          2,
+          0,
           0,
           0,
           0,
@@ -903,539 +869,450 @@
   },
   "deals": [
     {
-      "asin": "B0DGG2BHBN",
-      "title": "Gutimore Thin Flat Soapstone Holder 2pcs, with 22pcs Flat Soapstone Refills 1/16\",for Welding and Welders, Perfect for Marking on Steel, Aluminum and Cast Iron",
-      "current_price": 11.15,
-      "avg_7_price": 11.99,
-      "min_7_price": 11.99,
-      "avg_30_price": 11.99,
+      "asin": "B08GFRMWZQ",
+      "title": "Dura-Gold Premium 1/2 Sheet Gold Sandpaper Sheets, 80 Grit (Box of 16) - Wood Furniture Woodworking - 4.5\" x 11\" Size Hook & Loop Backing Sheets - for Sanders, Hand Sanding Block Tools, Auto Paint",
+      "current_price": 11.99,
+      "avg_7_price": 15.64,
+      "min_7_price": 15.42,
+      "avg_30_price": 14.74,
       "min_30_price": null,
-      "drop_percent": 7.0,
-      "drop_30_percent": 7.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41P4dDpcyKL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41P4dDpcyKL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0DGG2BHBN.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0DGG2BHBN?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.106284+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 11.15,
-      "best_price_days": 407,
-      "best_price_message": "best price in 407 days",
-      "best_price_previous_price": null,
-      "best_price_previous_date": "2025-07-08",
-      "qualification_reasons": [
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$11.15",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 11.99,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 0.84,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B01M35BE8D",
-      "title": "2-1/2\" x 10' Ultra Flex Clear-Vue Heavy Duty PVC Hose Made In USA",
-      "current_price": 25.69,
-      "avg_7_price": 27.85,
-      "min_7_price": 27.85,
-      "avg_30_price": 27.84,
-      "min_30_price": null,
-      "drop_percent": 7.8,
-      "drop_30_percent": 7.7,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41U0YhdmcGL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41U0YhdmcGL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B01M35BE8D.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B01M35BE8D?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.107111+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 25.69,
-      "best_price_days": 0,
-      "best_price_message": "",
-      "best_price_previous_price": 25.69,
-      "best_price_previous_date": "2026-08-20",
-      "qualification_reasons": [
-        "7%+ below both 7-day and 30-day averages"
-      ],
-      "price": "$25.69",
-      "currency": "USD",
-      "availability": "IN_STOCK_SCARCE",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 25.69,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B000X2AZNC",
-      "title": "IRWIN QUICK-GRIP 600mm (24\") Heavy-Duty Bar Clamp/Spreader",
-      "current_price": 86.49,
-      "avg_7_price": 104.27,
-      "min_7_price": 104.04,
-      "avg_30_price": 103.33,
-      "min_30_price": null,
-      "drop_percent": 17.1,
-      "drop_30_percent": 16.3,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/21reMuiMPiL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/21reMuiMPiL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B000X2AZNC.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B000X2AZNC?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.125662+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 86.49,
-      "best_price_days": 343,
-      "best_price_message": "best price in 343 days",
-      "best_price_previous_price": 69.99,
-      "best_price_previous_date": "2025-09-10",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$86.49",
-      "currency": "USD",
-      "availability": "IN_STOCK_SCARCE",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 104.04,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 17.55,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B09XH2S5M5",
-      "title": "WORKPRO 7116 Pneumatic Staple Gun, 22 Gauge Upholstery Stapler with 1884pcs Staples 1/4\" to 5/8\", Air-Powered, Rear Exhaust, for Carpentry, Woodworking and DIY Projects",
-      "current_price": 36.26,
-      "avg_7_price": 40.29,
-      "min_7_price": 40.29,
-      "avg_30_price": 40.29,
-      "min_30_price": null,
-      "drop_percent": 10.0,
-      "drop_30_percent": 10.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41S+7x5jScL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41S+7x5jScL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B09XH2S5M5.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B09XH2S5M5?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.126794+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 36.26,
-      "best_price_days": 267,
-      "best_price_message": "best price in 267 days",
-      "best_price_previous_price": 28.99,
-      "best_price_previous_date": "2025-11-25",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$36.26",
-      "currency": "USD",
-      "availability": "IN_STOCK_SCARCE",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 40.29,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 4.03,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0DGLVW14Y",
-      "title": "Router Corner Radius Template Router Radius Jig Aluminum Alloy Router Templates for Woodworking Router Corner Jigs and Templates R10/R15/R20/R25/ R30/R35/R40/R50 Use with Router Table",
-      "current_price": 12.34,
-      "avg_7_price": 12.99,
-      "min_7_price": 12.99,
-      "avg_30_price": 12.99,
-      "min_30_price": null,
-      "drop_percent": 5.0,
-      "drop_30_percent": 5.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41P7N+g2hIL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41P7N+g2hIL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0DGLVW14Y.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0DGLVW14Y?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.127427+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 12.34,
-      "best_price_days": 678,
-      "best_price_message": "best price in 678 days",
-      "best_price_previous_price": null,
-      "best_price_previous_date": "2024-10-11",
-      "qualification_reasons": [
-        "best price in 90+ days"
-      ],
-      "price": "$12.34",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 12.99,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 0.65,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0FF4SG7TZ",
-      "title": "3-Pack 12 Inch Bar Clamps for Woodworking with Clamp Connector, 12\" Quick-Release Wood Clamps with 150 LBS Load Limit, Trigger Clamp Set, One-Handed Clamps/Spreader Ideal for Woodworking DIY Projects",
-      "current_price": 17.99,
-      "avg_7_price": 17.99,
-      "min_7_price": 17.99,
-      "avg_30_price": 21.09,
-      "min_30_price": null,
-      "drop_percent": 0.0,
-      "drop_30_percent": 14.7,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41Os1Gl9hAL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41Os1Gl9hAL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0FF4SG7TZ.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0FF4SG7TZ?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.130703+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 17.99,
-      "best_price_days": 7,
-      "best_price_message": "best price in 7 days",
-      "best_price_previous_price": 17.99,
-      "best_price_previous_date": "2026-08-12",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ],
-      "price": "$17.99",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 17.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0G7ZDM8D6",
-      "title": "8Ah Replacement Compatible for Dewalt 20V Max Battery with High Capacity",
-      "current_price": 39.99,
-      "avg_7_price": 46.93,
-      "min_7_price": 39.99,
-      "avg_30_price": 48.95,
-      "min_30_price": null,
-      "drop_percent": 14.8,
-      "drop_30_percent": 18.3,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41bgFpanH9L._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41bgFpanH9L._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0G7ZDM8D6.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0G7ZDM8D6?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.132524+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 39.99,
-      "best_price_days": 2,
-      "best_price_message": "best price in 2 days",
-      "best_price_previous_price": 39.99,
-      "best_price_previous_date": "2026-08-18",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages"
-      ],
-      "price": "$39.99",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 39.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0BQLD28RB",
-      "title": "Long Polyurethane Coated Roller with Bracket - Ideal for Conveyor Belts and Kayak Rollers - Heavy Duty Roller with 22\u2033 Between Frame and 1.5\u2033 Diameter by Ultimation Industries",
-      "current_price": 36.95,
-      "avg_7_price": 40.42,
-      "min_7_price": 36.95,
-      "avg_30_price": 44.64,
-      "min_30_price": null,
-      "drop_percent": 8.6,
-      "drop_30_percent": 17.2,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41fIRgH4CYL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41fIRgH4CYL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0BQLD28RB.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0BQLD28RB?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.132743+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 36.95,
-      "best_price_days": 4,
-      "best_price_message": "best price in 4 days",
-      "best_price_previous_price": 36.95,
-      "best_price_previous_date": "2026-08-16",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages"
-      ],
-      "price": "$36.95",
-      "currency": "USD",
-      "availability": "AVAILABLE_DATE",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 36.95,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0C7VBS8D2",
-      "title": "HOUSERAN Rubber Mallet Hammer 10 oz, Soft Face Mallet",
-      "current_price": 9.99,
-      "avg_7_price": 9.99,
-      "min_7_price": 9.99,
-      "avg_30_price": 11.81,
-      "min_30_price": null,
-      "drop_percent": 0.0,
-      "drop_30_percent": 15.4,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/31tONoVX0uL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/31tONoVX0uL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0C7VBS8D2.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0C7VBS8D2?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.161694+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 9.99,
-      "best_price_days": 15,
-      "best_price_message": "best price in 15 days",
-      "best_price_previous_price": 9.99,
-      "best_price_previous_date": "2026-08-04",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ],
-      "price": "$9.99",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 9.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B000051WSG",
-      "title": "IRWIN QUICK-GRIP Handi-Clamp, 2\", 59200CD",
-      "current_price": 12.98,
-      "avg_7_price": 13.95,
-      "min_7_price": 13.48,
-      "avg_30_price": 13.95,
-      "min_30_price": null,
-      "drop_percent": 7.0,
-      "drop_30_percent": 7.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41ktIc0x1UL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41ktIc0x1UL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B000051WSG.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B000051WSG?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.163836+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 12.98,
-      "best_price_days": 69,
-      "best_price_message": "best price in 69 days",
-      "best_price_previous_price": 6.99,
-      "best_price_previous_date": "2026-06-11",
-      "qualification_reasons": [
-        "7%+ below both 7-day and 30-day averages"
-      ],
-      "price": "$12.98",
-      "currency": "USD",
-      "availability": "IN_STOCK_SCARCE",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 13.97,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 0.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0BY18MLYN",
-      "title": "KCOLVSION 1 Pair 38 Inch 500 Lb Capacity Heavy Duty Drawer Slides with Screws,Side Mount Full Extension 3 Fold Ball Bearing Stainless Steel Hardware Drawer Rails,Industrial DIY",
-      "current_price": 67.14,
-      "avg_7_price": 78.99,
-      "min_7_price": 78.99,
-      "avg_30_price": 78.99,
-      "min_30_price": null,
-      "drop_percent": 15.0,
-      "drop_30_percent": 15.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/51oPnkpbyDL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/51oPnkpbyDL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0BY18MLYN.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0BY18MLYN?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.164211+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 67.14,
-      "best_price_days": 57,
-      "best_price_message": "best price in 57 days",
-      "best_price_previous_price": 67.14,
-      "best_price_previous_date": "2026-06-24",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages"
-      ],
-      "price": "$67.14",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 78.99,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 11.85,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0068AJ0X4",
-      "title": "POWERTEC 4 x 24 Inch Sanding Belts, 10 PK, 120 Grit, 4x24 Belt Sander Sanding Belts Assortment, Aluminum Oxide Sandpaper for Oscillating Belt Sander, Woodworking, Metalworking (110010)",
-      "current_price": 14.99,
-      "avg_7_price": 16.32,
-      "min_7_price": 14.99,
-      "avg_30_price": 16.74,
-      "min_30_price": null,
-      "drop_percent": 8.1,
-      "drop_30_percent": 10.5,
+      "drop_percent": 23.3,
+      "drop_30_percent": 18.7,
       "price_stats_source": "creator_live_buy_box_vs_keepa_amazon",
-      "image": "https://m.media-amazon.com/images/I/41V8FsX0frL._SL500_.jpg",
+      "image": "https://m.media-amazon.com/images/I/41G3F8FG-sL._SL500_.jpg",
       "image_candidates": [
-        "https://m.media-amazon.com/images/I/41V8FsX0frL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0068AJ0X4.01._SL500_.jpg"
+        "https://m.media-amazon.com/images/I/41G3F8FG-sL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B08GFRMWZQ.01._SL500_.jpg"
       ],
-      "amazon_url": "https://www.amazon.com/dp/B0068AJ0X4?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.166089+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
+      "amazon_url": "https://www.amazon.com/dp/B08GFRMWZQ?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.802647+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
       "price_type": "live_buy_box_amazon",
       "price_type_label": "Live Buy Box price vs Amazon history",
       "keepa_price_index": 0,
-      "amazon_current_price": 14.99,
-      "best_price_days": 5,
-      "best_price_message": "best price in 5 days",
-      "best_price_previous_price": 14.99,
-      "best_price_previous_date": "2026-08-15",
+      "amazon_current_price": 15.42,
+      "best_price_days": 18,
+      "best_price_message": "best price in 18 days",
+      "best_price_previous_price": 11.38,
+      "best_price_previous_date": "2026-08-01",
       "qualification_reasons": [
         "10%+ below 30-day average",
         "7%+ below both 7-day and 30-day averages"
+      ],
+      "price": "$11.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 15.42,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 3.43,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0GK7BT51L",
+      "title": "Pinelicorn 60W 2 in 1 Mini Nail Dust Collector, Dental Polishing Dust Collector with Fan and LED Dual Function, Desktop Vacuum Cleaner Dust Suction Machine for Dental Lab Nail Salon (Pink)",
+      "current_price": 27.99,
+      "avg_7_price": 36.09,
+      "min_7_price": 36.09,
+      "avg_30_price": 36.09,
+      "min_30_price": null,
+      "drop_percent": 22.4,
+      "drop_30_percent": 22.4,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/413PWK1es3L._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/413PWK1es3L._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0GK7BT51L.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0GK7BT51L?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.802845+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 27.99,
+      "best_price_days": 149,
+      "best_price_message": "best price in 149 days",
+      "best_price_previous_price": null,
+      "best_price_previous_date": "2026-03-23",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$27.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 36.09,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 8.1,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0DSPKFMSN",
+      "title": "GAINNEER Cabinet Hardware Jig Tool - Adjustable Drill Template for Handles & Pulls on Drawers/Doors | All Aluminum Alloy with Center Punch & Carrying Bag",
+      "current_price": 33.99,
+      "avg_7_price": 34.68,
+      "min_7_price": 33.99,
+      "avg_30_price": 38.42,
+      "min_30_price": null,
+      "drop_percent": 2.0,
+      "drop_30_percent": 11.5,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41P6EDfmdML._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41P6EDfmdML._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0DSPKFMSN.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0DSPKFMSN?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.803130+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 33.99,
+      "best_price_days": 2,
+      "best_price_message": "best price in 2 days",
+      "best_price_previous_price": 33.99,
+      "best_price_previous_date": "2026-08-18",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$33.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 33.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0FKGK5D7R",
+      "title": "3-Pack 6 Inch Bar Clamps for Woodworking with Clamp Connector, 6\" Quick-Release Wood Clamps with 150 LBS Load Limit, Trigger Clamp Set, One-Handed Clamps/Spreader Ideal for Woodworking DIY Projects",
+      "current_price": 13.99,
+      "avg_7_price": 14.7,
+      "min_7_price": 13.99,
+      "avg_30_price": 17.6,
+      "min_30_price": null,
+      "drop_percent": 4.8,
+      "drop_30_percent": 20.5,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41m8ucLUb-L._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41m8ucLUb-L._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0FKGK5D7R.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0FKGK5D7R?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.803385+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 13.99,
+      "best_price_days": 1,
+      "best_price_message": "best price in 1 days",
+      "best_price_previous_price": 13.99,
+      "best_price_previous_date": "2026-08-18",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$13.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 13.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0DGKQVT9J",
+      "title": "HayWHNKN Metal Working Downdraft Table Dust Collector Vacuum Welding Multi-stage Purification Dust Collector for Grinding Polishing Dusting Welding 31.5''*47.2'' 220V",
+      "current_price": 2079.0,
+      "avg_7_price": 2536.5,
+      "min_7_price": 2536.5,
+      "avg_30_price": 2536.5,
+      "min_30_price": null,
+      "drop_percent": 18.0,
+      "drop_30_percent": 18.0,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41uRjMeaSQL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41uRjMeaSQL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0DGKQVT9J.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0DGKQVT9J?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.803719+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 2079.0,
+      "best_price_days": 309,
+      "best_price_message": "best price in 309 days",
+      "best_price_previous_price": 2079.0,
+      "best_price_previous_date": "2025-10-15",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$2,079.00",
+      "currency": "USD",
+      "availability": "IN_STOCK_SCARCE",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 2536.5,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 457.5,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0G5Z12C14",
+      "title": "TrivdPro 52PCS Oscillating Tool Blades for Wood Plastics Metal Cutting",
+      "current_price": 24.29,
+      "avg_7_price": 25.14,
+      "min_7_price": 24.29,
+      "avg_30_price": 27.0,
+      "min_30_price": null,
+      "drop_percent": 3.4,
+      "drop_30_percent": 10.0,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/51pciUZjG4L._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/51pciUZjG4L._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0G5Z12C14.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0G5Z12C14?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.813354+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 24.29,
+      "best_price_days": 4,
+      "best_price_message": "best price in 4 days",
+      "best_price_previous_price": 24.29,
+      "best_price_previous_date": "2026-08-15",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$24.29",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 24.29,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0775VBBR1",
+      "title": "KMC 50ft 16AWG Outdoor Extension Cord, SJTW 16/3 Lighted Power Cord, Bright Orange, ETL Certified (50ft/15.24m)",
+      "current_price": 20.93,
+      "avg_7_price": 20.93,
+      "min_7_price": 20.93,
+      "avg_30_price": 24.96,
+      "min_30_price": null,
+      "drop_percent": 0.0,
+      "drop_30_percent": 16.1,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41DVavuflXL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41DVavuflXL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0775VBBR1.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0775VBBR1?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.818495+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 20.93,
+      "best_price_days": 10,
+      "best_price_message": "best price in 10 days",
+      "best_price_previous_price": 20.93,
+      "best_price_previous_date": "2026-08-10",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$20.93",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 20.93,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0CDH62JZJ",
+      "title": "Flex Edge Gold 3 Inch Hook and Loop Sanding Discs 3 Inch 320 Grit 25 Pack",
+      "current_price": 10.34,
+      "avg_7_price": 15.33,
+      "min_7_price": 15.33,
+      "avg_30_price": 15.33,
+      "min_30_price": null,
+      "drop_percent": 32.6,
+      "drop_30_percent": 32.6,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41xMlRJra5L._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41xMlRJra5L._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0CDH62JZJ.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0CDH62JZJ?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.818940+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 10.34,
+      "best_price_days": 84,
+      "best_price_message": "best price in 84 days",
+      "best_price_previous_price": 10.34,
+      "best_price_previous_date": "2026-05-27",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages"
+      ],
+      "price": "$10.34",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 15.33,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 4.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B082BY19V2",
+      "title": "Makita CL280FDZC Cordless Vacuum Cleaner, Blue Capsule Type & Cyclone, 18 V Battery Charger Sold Separately",
+      "current_price": 143.02,
+      "avg_7_price": 181.83,
+      "min_7_price": 181.6,
+      "avg_30_price": 177.38,
+      "min_30_price": null,
+      "drop_percent": 21.3,
+      "drop_30_percent": 19.4,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41TAnRGQRSL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41TAnRGQRSL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B082BY19V2.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B082BY19V2?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.820268+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 143.02,
+      "best_price_days": 126,
+      "best_price_message": "best price in 126 days",
+      "best_price_previous_price": 129.14,
+      "best_price_previous_date": "2026-04-16",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$143.02",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 181.79,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 38.77,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B004FVNQK6",
+      "title": "XL Risers for Rockler Bench Cookie Plus & Connect - Woodworking Tools for Clearance & Lateral Stability - Risers w/Height up to 5\u201d for Woodworking Bench - Wood Riser w/Threaded Stud (4 Pack)",
+      "current_price": 14.99,
+      "avg_7_price": 22.98,
+      "min_7_price": 22.98,
+      "avg_30_price": 22.98,
+      "min_30_price": null,
+      "drop_percent": 34.8,
+      "drop_30_percent": 34.8,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/51icpCVm1dL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/51icpCVm1dL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B004FVNQK6.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B004FVNQK6?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.820801+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 14.99,
+      "best_price_days": 136,
+      "best_price_message": "best price in 136 days",
+      "best_price_previous_price": 14.99,
+      "best_price_previous_date": "2026-04-05",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
       ],
       "price": "$14.99",
       "currency": "USD",
@@ -1446,134 +1323,44 @@
         "is_prime_eligible": false,
         "is_free_shipping_eligible": false
       },
-      "keepa_current_price": 14.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B076C3TB8P",
-      "title": "BOSCH GLM165-40 Blaze Pro 165 Ft. Laser Measure, Distance Measuring Laser",
-      "current_price": 69.0,
-      "avg_7_price": 69.22,
-      "min_7_price": 69.0,
-      "avg_30_price": 92.05,
-      "min_30_price": null,
-      "drop_percent": 0.3,
-      "drop_30_percent": 25.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_amazon",
-      "image": "https://m.media-amazon.com/images/I/41blVMvI9BL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41blVMvI9BL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B076C3TB8P.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B076C3TB8P?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.180967+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_amazon",
-      "price_type_label": "Live Buy Box price vs Amazon history",
-      "keepa_price_index": 0,
-      "amazon_current_price": 69.0,
-      "best_price_days": 6,
-      "best_price_message": "best price in 6 days",
-      "best_price_previous_price": 69.0,
-      "best_price_previous_date": "2026-08-13",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ],
-      "price": "$69.00",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 69.0,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0CYZMJVS8",
-      "title": "Nvifco 2-1/2\" x 30ft Clear PVC Dust Collection Hose with Clamps",
-      "current_price": 35.52,
-      "avg_7_price": 43.99,
-      "min_7_price": 43.99,
-      "avg_30_price": 43.99,
-      "min_30_price": null,
-      "drop_percent": 19.3,
-      "drop_30_percent": 19.3,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41HpsjB4GVL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41HpsjB4GVL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0CYZMJVS8.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0CYZMJVS8?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.194230+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 35.52,
-      "best_price_days": 268,
-      "best_price_message": "best price in 268 days",
-      "best_price_previous_price": 33.59,
-      "best_price_previous_date": "2025-11-24",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$35.52",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 43.99,
+      "keepa_current_price": 22.98,
       "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 8.47,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
+      "live_price_savings_vs_keepa": 7.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
     },
     {
-      "asin": "B0C4LFNWB7",
-      "title": "15/16'' Carbide Forstner Drill Bit for Hard Wood,Woodworking Forstner Bits",
-      "current_price": 11.39,
-      "avg_7_price": 11.99,
-      "min_7_price": 11.99,
-      "avg_30_price": 11.99,
+      "asin": "B0B5FH2D4J",
+      "title": "BLUM 21 Inch Undermount Drawer Slide. (Soft Close, Full Extension, Concealed). Model: 563F5330B (100 Lbs. Weight Capacity), for 3/4 inch Thick Drawers. (Pair)",
+      "current_price": 38.74,
+      "avg_7_price": 40.49,
+      "min_7_price": 40.49,
+      "avg_30_price": 40.49,
       "min_30_price": null,
-      "drop_percent": 5.0,
-      "drop_30_percent": 5.0,
+      "drop_percent": 4.3,
+      "drop_30_percent": 4.3,
       "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/316+Br+JzJL._SL500_.jpg",
+      "image": "https://m.media-amazon.com/images/I/415yjkJQQWL._SL500_.jpg",
       "image_candidates": [
-        "https://m.media-amazon.com/images/I/316+Br+JzJL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0C4LFNWB7.01._SL500_.jpg"
+        "https://m.media-amazon.com/images/I/415yjkJQQWL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0B5FH2D4J.01._SL500_.jpg"
       ],
-      "amazon_url": "https://www.amazon.com/dp/B0C4LFNWB7?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.194509+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
+      "amazon_url": "https://www.amazon.com/dp/B0B5FH2D4J?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.833367+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
       "price_type": "live_buy_box_new",
       "price_type_label": "Live Buy Box price vs New history",
       "keepa_price_index": 1,
-      "amazon_current_price": 11.39,
-      "best_price_days": 414,
-      "best_price_message": "best price in 414 days",
-      "best_price_previous_price": 11.2,
-      "best_price_previous_date": "2025-07-01",
+      "amazon_current_price": 38.74,
+      "best_price_days": 519,
+      "best_price_message": "best price in 519 days",
+      "best_price_previous_price": 33.0,
+      "best_price_previous_date": "2025-03-19",
       "qualification_reasons": [
         "best price in 90+ days"
       ],
-      "price": "$11.39",
+      "price": "$38.74",
       "currency": "USD",
       "availability": "IN_STOCK",
       "shipping_status": {
@@ -1582,461 +1369,228 @@
         "is_prime_eligible": false,
         "is_free_shipping_eligible": false
       },
-      "keepa_current_price": 11.99,
+      "keepa_current_price": 40.49,
       "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 0.6,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
+      "live_price_savings_vs_keepa": 1.75,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
     },
     {
-      "asin": "B08YT772ZG",
-      "title": "Custom Logo Wood Branding Iron Personalized for Food Leather Wedding, 2.5\"",
-      "current_price": 51.99,
-      "avg_7_price": 57.98,
-      "min_7_price": 57.98,
-      "avg_30_price": 57.98,
-      "min_30_price": null,
-      "drop_percent": 10.3,
-      "drop_30_percent": 10.3,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41DteeAAzYL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41DteeAAzYL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B08YT772ZG.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B08YT772ZG?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.194596+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 51.99,
-      "best_price_days": 136,
-      "best_price_message": "best price in 136 days",
-      "best_price_previous_price": 51.99,
-      "best_price_previous_date": "2026-04-06",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$51.99",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 57.98,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 5.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0BVXXLP3T",
-      "title": "CRAFTSMAN 25-Ft Tape Measure with Fraction Marketing, Retractable, Manual-Locking Blade (CMHT37443S)",
-      "current_price": 12.98,
-      "avg_7_price": 12.98,
-      "min_7_price": 12.98,
-      "avg_30_price": 15.45,
-      "min_30_price": null,
-      "drop_percent": 0.0,
-      "drop_30_percent": 16.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_amazon",
-      "image": "https://m.media-amazon.com/images/I/41Xr71DqkVL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41Xr71DqkVL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0BVXXLP3T.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0BVXXLP3T?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.196597+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_amazon",
-      "price_type_label": "Live Buy Box price vs Amazon history",
-      "keepa_price_index": 0,
-      "amazon_current_price": 12.98,
-      "best_price_days": 19,
-      "best_price_message": "best price in 19 days",
-      "best_price_previous_price": 12.98,
-      "best_price_previous_date": "2026-08-01",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ],
-      "price": "$12.98",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 12.98,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0GDXQ2XQY",
-      "title": "ZNZNZZ Line Lock Stabilizer for Husqvarna Soff Cut 150 Concrete Saw",
-      "current_price": 28.99,
-      "avg_7_price": 28.99,
-      "min_7_price": 28.99,
-      "avg_30_price": 33.85,
-      "min_30_price": null,
-      "drop_percent": 0.0,
-      "drop_30_percent": 14.4,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/21AibeAGjWL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/21AibeAGjWL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0GDXQ2XQY.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0GDXQ2XQY?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.197337+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 28.99,
-      "best_price_days": 9,
-      "best_price_message": "best price in 9 days",
-      "best_price_previous_price": 28.99,
-      "best_price_previous_date": "2026-08-11",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ],
-      "price": "$28.99",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 28.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0CFF8R7XG",
-      "title": "INTSUPERMAI 9 Rolls Adjustable Conveyor Roller Heavy-Duty StandTable Adjustable Roller Conveyor Feed Stand Roller Table Conveyor Stand 440 Lbs",
-      "current_price": 215.0,
-      "avg_7_price": 275.2,
-      "min_7_price": 275.2,
-      "avg_30_price": 275.19,
-      "min_30_price": null,
-      "drop_percent": 21.9,
-      "drop_30_percent": 21.9,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/31auuDE8WGL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/31auuDE8WGL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0CFF8R7XG.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0CFF8R7XG?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.204290+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 215.0,
-      "best_price_days": 124,
-      "best_price_message": "best price in 124 days",
-      "best_price_previous_price": 215.0,
-      "best_price_previous_date": "2026-04-18",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$215.00",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 275.2,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 60.2,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0D9L9XX83",
-      "title": "5/8 Inch Forstner Bit for Wood,5/8\" Forstner Bit for Woodworking",
-      "current_price": 6.83,
-      "avg_7_price": 7.59,
-      "min_7_price": 7.59,
-      "avg_30_price": 7.59,
-      "min_30_price": null,
-      "drop_percent": 10.0,
-      "drop_30_percent": 10.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/21RTBeqSweL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/21RTBeqSweL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0D9L9XX83.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0D9L9XX83?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.213766+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 6.83,
-      "best_price_days": 268,
-      "best_price_message": "best price in 268 days",
-      "best_price_previous_price": 6.34,
-      "best_price_previous_date": "2025-11-24",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$6.83",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 7.59,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 0.76,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0D4YRMZLM",
-      "title": "Drywall Sander, 1000W Popcorn Ceiling Removal Tool, Automatic Drywall Sander with Vacuum Dust Collection, LED Light, 6 Variable Speed 800-2200RPM, Foldable & Extendable Handle,15Pcs Sanding Discs",
-      "current_price": 98.98,
-      "avg_7_price": 109.8,
-      "min_7_price": 98.98,
-      "avg_30_price": 109.94,
-      "min_30_price": null,
-      "drop_percent": 9.9,
-      "drop_30_percent": 10.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41rYbZx5VtL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41rYbZx5VtL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0D4YRMZLM.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0D4YRMZLM?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.214112+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 98.98,
-      "best_price_days": 0,
-      "best_price_message": "",
-      "best_price_previous_price": 98.98,
-      "best_price_previous_date": "2026-08-20",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages"
-      ],
-      "price": "$98.98",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 98.98,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0C596PRPY",
-      "title": "Sactulaz Drill Wall Guide & Dust Collector for 1/4\u201d hole, Dust Savor for Electric Hammer, Drill Wall dustproof cover, Dust Extractor Tool, No Need Extractor Vacuum (2 Pack)",
-      "current_price": 7.99,
-      "avg_7_price": 8.98,
-      "min_7_price": 8.98,
-      "avg_30_price": 8.98,
-      "min_30_price": null,
-      "drop_percent": 11.0,
-      "drop_30_percent": 11.0,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/31E-4BocPGL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/31E-4BocPGL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0C596PRPY.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0C596PRPY?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.214526+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 7.99,
-      "best_price_days": 462,
-      "best_price_message": "best price in 462 days",
-      "best_price_previous_price": 7.99,
-      "best_price_previous_date": "2025-05-15",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$7.99",
-      "currency": "USD",
-      "availability": "IN_STOCK_SCARCE",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 8.98,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 0.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B00EWO580M",
-      "title": "POWERTEC Universal Fence Clamps for Woodworking, Compatible with Table Saw, Miter Saw, Router Table, Drill Press Table, Clamping Square, Woodworking Clamps with 3/8\" Rod - 2PCs (71004)",
-      "current_price": 15.99,
-      "avg_7_price": 15.99,
-      "min_7_price": 15.99,
-      "avg_30_price": 17.81,
-      "min_30_price": null,
-      "drop_percent": 0.0,
-      "drop_30_percent": 10.2,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_amazon",
-      "image": "https://m.media-amazon.com/images/I/31OH5HzEVtL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/31OH5HzEVtL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B00EWO580M.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B00EWO580M?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.226287+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_amazon",
-      "price_type_label": "Live Buy Box price vs Amazon history",
-      "keepa_price_index": 0,
-      "amazon_current_price": 15.99,
-      "best_price_days": 20,
-      "best_price_message": "best price in 20 days",
-      "best_price_previous_price": 15.99,
-      "best_price_previous_date": "2026-07-31",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ],
-      "price": "$15.99",
-      "currency": "USD",
-      "availability": "IN_STOCK_SCARCE",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 15.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B00KX6X4LS",
-      "title": "AvantiPro by Freud Fine Finish Saw Blades with Carbide-Tipped Teeth - Ideal for Precision Cutting for DIYers and Professionals - 10\", 60-Tooth, Max RPM 6000-2-Pack - P106060PP",
-      "current_price": 24.99,
-      "avg_7_price": 41.97,
-      "min_7_price": 41.97,
-      "avg_30_price": 42.32,
-      "min_30_price": null,
-      "drop_percent": 40.5,
-      "drop_30_percent": 40.9,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_amazon",
-      "image": "https://m.media-amazon.com/images/I/51z-6RUppPL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/51z-6RUppPL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B00KX6X4LS.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B00KX6X4LS?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.227610+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_amazon",
-      "price_type_label": "Live Buy Box price vs Amazon history",
-      "keepa_price_index": 0,
-      "amazon_current_price": 41.97,
-      "best_price_days": 1395,
-      "best_price_message": "best price in 1395 days",
-      "best_price_previous_price": 24.97,
-      "best_price_previous_date": "2022-10-24",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$24.99",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 41.97,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 16.98,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0F9DSQNF1",
-      "title": "41-Piece Premium 1/4\" Drive Magnetic Impact Nut Driver Set Metric & SAE Standard & Deep with Socket Adapters, 2-in-1 Ratchet Wrench, Wing Nut Driver, Universal Sockets, Quick Release Bit Holder",
-      "current_price": 39.99,
-      "avg_7_price": 59.99,
-      "min_7_price": 59.99,
-      "avg_30_price": 55.27,
+      "asin": "B0007VO0GM",
+      "title": "Bench Dog\u00ae Pro-Cut\u2122 Portable Saw Guide",
+      "current_price": 19.99,
+      "avg_7_price": 29.98,
+      "min_7_price": 29.98,
+      "avg_30_price": 29.98,
       "min_30_price": null,
       "drop_percent": 33.3,
-      "drop_30_percent": 27.6,
+      "drop_30_percent": 33.3,
       "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/51bURd7eo+L._SL500_.jpg",
+      "image": "https://m.media-amazon.com/images/I/51d5qHCNviL._SL500_.jpg",
       "image_candidates": [
-        "https://m.media-amazon.com/images/I/51bURd7eo+L._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0F9DSQNF1.01._SL500_.jpg"
+        "https://m.media-amazon.com/images/I/51d5qHCNviL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0007VO0GM.01._SL500_.jpg"
       ],
-      "amazon_url": "https://www.amazon.com/dp/B0F9DSQNF1?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.255593+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
+      "amazon_url": "https://www.amazon.com/dp/B0007VO0GM?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.833734+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 19.99,
+      "best_price_days": 143,
+      "best_price_message": "best price in 143 days",
+      "best_price_previous_price": 19.99,
+      "best_price_previous_date": "2026-03-29",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$19.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 29.98,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 9.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0D81DXRS6",
+      "title": "MHY 8 PCs 6061-T651 Aluminum Table Setup Blocks for Woodworking |Height, Depth, Angle & Fence Alignment Gauge Set with Laser-Marked and Durable Storage Case",
+      "current_price": 27.88,
+      "avg_7_price": 27.88,
+      "min_7_price": 27.88,
+      "avg_30_price": 32.72,
+      "min_30_price": null,
+      "drop_percent": 0.0,
+      "drop_30_percent": 14.8,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/412CLFQyknL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/412CLFQyknL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0D81DXRS6.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0D81DXRS6?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.833833+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 27.88,
+      "best_price_days": 9,
+      "best_price_message": "best price in 9 days",
+      "best_price_previous_price": 27.88,
+      "best_price_previous_date": "2026-08-10",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$27.88",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 27.88,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0FX3T98TQ",
+      "title": "POWERTEC Heavy Duty 12\" F Style Bar Clamps, 3-5/8\" Throat, 480 lb Clamping Force \u2013 Woodworking, Cabinetry, Welding & Workshop Use, 2 Pack (72339)",
+      "current_price": 26.22,
+      "avg_7_price": 29.13,
+      "min_7_price": 29.13,
+      "avg_30_price": 28.86,
+      "min_30_price": null,
+      "drop_percent": 10.0,
+      "drop_30_percent": 9.1,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/31E-6sC-IdL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/31E-6sC-IdL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0FX3T98TQ.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0FX3T98TQ?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.834044+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 29.13,
+      "best_price_days": 9,
+      "best_price_message": "best price in 9 days",
+      "best_price_previous_price": 22.82,
+      "best_price_previous_date": "2026-08-11",
+      "qualification_reasons": [
+        "7%+ below both 7-day and 30-day averages"
+      ],
+      "price": "$26.22",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 29.13,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 2.91,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0DNJY54G2",
+      "title": "Betterhood 60\" Adjustable Height Workbench, 2000 LBS Heavy Duty Work Table with Power Outlets & Pegboard, Rubber Wood Workstation for Garage, Workshop, Office, Home, Commercial",
+      "current_price": 189.99,
+      "avg_7_price": 209.98,
+      "min_7_price": 209.98,
+      "avg_30_price": 209.98,
+      "min_30_price": null,
+      "drop_percent": 9.5,
+      "drop_30_percent": 9.5,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41MeZSc36cL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41MeZSc36cL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0DNJY54G2.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0DNJY54G2?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.834295+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 189.99,
+      "best_price_days": 313,
+      "best_price_message": "best price in 313 days",
+      "best_price_previous_price": 188.99,
+      "best_price_previous_date": "2025-10-11",
+      "qualification_reasons": [
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$189.99",
+      "currency": "USD",
+      "availability": "IN_STOCK_SCARCE",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 209.98,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 19.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0CYSHN2XC",
+      "title": "KARRYTON Heavy Duty 12\" Inch F-Clamp w/Replaceable Pad, 5-1/2-Inch(140mm) Deep Throat, Bar Size 1-1/5\" * 3/5\" Drop Forged Steel Bar Clamps, 2900LB Clamping Force",
+      "current_price": 39.99,
+      "avg_7_price": 44.99,
+      "min_7_price": 44.99,
+      "avg_30_price": 46.81,
+      "min_30_price": null,
+      "drop_percent": 11.1,
+      "drop_30_percent": 14.6,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/414cylGX6KL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/414cylGX6KL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0CYSHN2XC.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0CYSHN2XC?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.834429+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
       "price_type": "live_buy_box_new",
       "price_type_label": "Live Buy Box price vs New history",
       "keepa_price_index": 1,
       "amazon_current_price": 39.99,
-      "best_price_days": 376,
-      "best_price_message": "best price in 376 days",
-      "best_price_previous_price": null,
-      "best_price_previous_date": "2025-08-09",
+      "best_price_days": 13,
+      "best_price_message": "best price in 13 days",
+      "best_price_previous_price": 39.99,
+      "best_price_previous_date": "2026-08-07",
       "qualification_reasons": [
         "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
+        "7%+ below both 7-day and 30-day averages"
       ],
       "price": "$39.99",
       "currency": "USD",
@@ -2047,181 +1601,44 @@
         "is_prime_eligible": false,
         "is_free_shipping_eligible": false
       },
-      "keepa_current_price": 59.99,
+      "keepa_current_price": 44.99,
       "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 20.0,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
+      "live_price_savings_vs_keepa": 5.0,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
     },
     {
-      "asin": "B0001GUE3Q",
-      "title": "FastCap ProCarpenter Standard Reverse Measuring Tape, 25-Foot",
-      "current_price": 10.99,
-      "avg_7_price": 10.99,
-      "min_7_price": 10.99,
-      "avg_30_price": 12.88,
+      "asin": "B0GJZD74TN",
+      "title": "Brolena Guide Rail Adapter Fits Dewalt Router, Precise Straight Cuts",
+      "current_price": 13.99,
+      "avg_7_price": 14.26,
+      "min_7_price": 13.99,
+      "avg_30_price": 15.58,
       "min_30_price": null,
-      "drop_percent": 0.0,
-      "drop_30_percent": 14.7,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_amazon",
-      "image": "https://m.media-amazon.com/images/I/319A6mDsMZL._SL500_.jpg",
+      "drop_percent": 1.9,
+      "drop_30_percent": 10.2,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41d3vO4+ymL._SL500_.jpg",
       "image_candidates": [
-        "https://m.media-amazon.com/images/I/319A6mDsMZL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0001GUE3Q.01._SL500_.jpg"
+        "https://m.media-amazon.com/images/I/41d3vO4+ymL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0GJZD74TN.01._SL500_.jpg"
       ],
-      "amazon_url": "https://www.amazon.com/dp/B0001GUE3Q?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.264102+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_amazon",
-      "price_type_label": "Live Buy Box price vs Amazon history",
-      "keepa_price_index": 0,
-      "amazon_current_price": 10.99,
-      "best_price_days": 14,
-      "best_price_message": "best price in 14 days",
-      "best_price_previous_price": 10.99,
-      "best_price_previous_date": "2026-08-05",
+      "amazon_url": "https://www.amazon.com/dp/B0GJZD74TN?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.834598+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 13.99,
+      "best_price_days": 6,
+      "best_price_message": "best price in 6 days",
+      "best_price_previous_price": 13.99,
+      "best_price_previous_date": "2026-08-14",
       "qualification_reasons": [
         "10%+ below 30-day average"
       ],
-      "price": "$10.99",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 10.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0GR8T22NR",
-      "title": "Vivid Totes Magnetic Battery Base Compatible with Milwaukee M18 Battery Base,Base Cover with High\u2011Strength for Secure Mounting and Protection on Jobsites,2 Pack (Black)",
-      "current_price": 29.9,
-      "avg_7_price": 35.88,
-      "min_7_price": 35.88,
-      "avg_30_price": 35.94,
-      "min_30_price": null,
-      "drop_percent": 16.7,
-      "drop_30_percent": 16.8,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/411XySTuGML._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/411XySTuGML._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0GR8T22NR.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0GR8T22NR?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.265285+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 29.9,
-      "best_price_days": 125,
-      "best_price_message": "best price in 125 days",
-      "best_price_previous_price": null,
-      "best_price_previous_date": "2026-04-17",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
-      ],
-      "price": "$29.90",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 35.89,
-      "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 5.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B07CB9F446",
-      "title": "DEWALT DXV14P Shop Vacuum Wet/Dry 14 Gallon, 6 HP Wet/Dry Vac with 110 CFM Powerful Suction, Yellow",
-      "current_price": 182.89,
-      "avg_7_price": 183.58,
-      "min_7_price": 182.88,
-      "avg_30_price": 214.71,
-      "min_30_price": null,
-      "drop_percent": 0.4,
-      "drop_30_percent": 14.8,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41-AVYr+yNL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41-AVYr+yNL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B07CB9F446.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B07CB9F446?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.267249+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 182.89,
-      "best_price_days": 0,
-      "best_price_message": "",
-      "best_price_previous_price": 182.89,
-      "best_price_previous_date": "2026-08-19",
-      "qualification_reasons": [
-        "10%+ below 30-day average"
-      ],
-      "price": "$182.89",
-      "currency": "USD",
-      "availability": "IN_STOCK",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "keepa_current_price": 182.89,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
-    },
-    {
-      "asin": "B0FN3STXYG",
-      "title": "SeekLiny T Tracks Woodworking Aluminum 24 inch Green 4 Pack with Screws",
-      "current_price": 23.99,
-      "avg_7_price": 26.18,
-      "min_7_price": 23.99,
-      "avg_30_price": 26.8,
-      "min_30_price": null,
-      "drop_percent": 8.4,
-      "drop_30_percent": 10.5,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/513Mcg+ghkL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/513Mcg+ghkL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0FN3STXYG.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0FN3STXYG?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.270830+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
-      "price_type": "live_buy_box_new",
-      "price_type_label": "Live Buy Box price vs New history",
-      "keepa_price_index": 1,
-      "amazon_current_price": 23.99,
-      "best_price_days": 1,
-      "best_price_message": "best price in 1 days",
-      "best_price_previous_price": 23.99,
-      "best_price_previous_date": "2026-08-18",
-      "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages"
-      ],
-      "price": "$23.99",
+      "price": "$13.99",
       "currency": "USD",
       "availability": "IN_STOCK_SCARCE",
       "shipping_status": {
@@ -2230,43 +1647,42 @@
         "is_prime_eligible": false,
         "is_free_shipping_eligible": false
       },
-      "keepa_current_price": 23.99,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
+      "keepa_current_price": 13.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
     },
     {
-      "asin": "B07R5MZ158",
-      "title": "3.8\" Flush Mount Adapter 5/8-11 Flange for Diamond Saw Blades-2 Pcs Set",
-      "current_price": 22.99,
-      "avg_7_price": 24.99,
-      "min_7_price": 24.99,
-      "avg_30_price": 24.99,
+      "asin": "B0CTKCNP3C",
+      "title": "GOINGMAKE All Metal Pocket Hole Jig Kit with Quick Clamp and Dust Collection Easy Use 3 Holes Pocket Hole Screw Jig System 3/8 Inch Accurate Adjustable Drill Guide with Accessories Woodworking Tool",
+      "current_price": 55.99,
+      "avg_7_price": 69.99,
+      "min_7_price": 69.99,
+      "avg_30_price": 61.42,
       "min_30_price": null,
-      "drop_percent": 8.0,
-      "drop_30_percent": 8.0,
+      "drop_percent": 20.0,
+      "drop_30_percent": 8.8,
       "price_stats_source": "creator_live_buy_box_vs_keepa_new",
-      "image": "https://m.media-amazon.com/images/I/41o0SIR7MpL._SL500_.jpg",
+      "image": "https://m.media-amazon.com/images/I/41wZTolB2eL._SL500_.jpg",
       "image_candidates": [
-        "https://m.media-amazon.com/images/I/41o0SIR7MpL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B07R5MZ158.01._SL500_.jpg"
+        "https://m.media-amazon.com/images/I/41wZTolB2eL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0CTKCNP3C.01._SL500_.jpg"
       ],
-      "amazon_url": "https://www.amazon.com/dp/B07R5MZ158?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T11:14:42.270974+00:00",
-      "last_checked_at": "2026-08-20T11:14:42.271465+00:00",
+      "amazon_url": "https://www.amazon.com/dp/B0CTKCNP3C?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.834933+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
       "price_type": "live_buy_box_new",
       "price_type_label": "Live Buy Box price vs New history",
       "keepa_price_index": 1,
-      "amazon_current_price": 22.99,
-      "best_price_days": 377,
-      "best_price_message": "best price in 377 days",
-      "best_price_previous_price": 22.99,
-      "best_price_previous_date": "2025-08-07",
+      "amazon_current_price": 55.99,
+      "best_price_days": 30,
+      "best_price_message": "best price in 30 days",
+      "best_price_previous_price": 49.98,
+      "best_price_previous_date": "2026-07-20",
       "qualification_reasons": [
-        "7%+ below both 7-day and 30-day averages",
-        "best price in 90+ days"
+        "7%+ below both 7-day and 30-day averages"
       ],
-      "price": "$22.99",
+      "price": "$55.99",
       "currency": "USD",
       "availability": "IN_STOCK",
       "shipping_status": {
@@ -2275,12 +1691,659 @@
         "is_prime_eligible": false,
         "is_free_shipping_eligible": false
       },
-      "keepa_current_price": 24.99,
+      "keepa_current_price": 69.99,
       "live_price_lower_than_keepa": true,
-      "live_price_savings_vs_keepa": 2.0,
-      "posted_at": "2026-08-20T11:14:42.271465+00:00",
-      "first_seen_at": "2026-08-20T11:14:42.271465+00:00",
-      "expires_at": "2026-08-21T11:14:42.271468+00:00"
+      "live_price_savings_vs_keepa": 14.0,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0FM87HS8N",
+      "title": "Terwex Custom Electric Branding Iron for Wood, Branding Irons Personalized with Stand, Wood Burning Tool Leather Branding Iron, Woodworking Tools for DIY Crafts Handmade Lover Gift(Electric Handle)",
+      "current_price": 59.99,
+      "avg_7_price": 69.98,
+      "min_7_price": 69.98,
+      "avg_30_price": 69.98,
+      "min_30_price": null,
+      "drop_percent": 14.3,
+      "drop_30_percent": 14.3,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/51z86wjGgxL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/51z86wjGgxL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0FM87HS8N.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0FM87HS8N?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.845862+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 59.99,
+      "best_price_days": 124,
+      "best_price_message": "best price in 124 days",
+      "best_price_previous_price": 59.99,
+      "best_price_previous_date": "2026-04-18",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$59.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 69.98,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 9.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B07JDRKS2B",
+      "title": "Dura-Gold Premium 2\" Gold Hook & Loop Sanding Discs Variety Pack Box - 40, 60, 80, 120, 220, 320, 400, 600, 800, 1000 Grit (5 Sheets Each, 50 Total) & Drill Backing Plate, Automotive, Woodworking",
+      "current_price": 14.99,
+      "avg_7_price": 17.23,
+      "min_7_price": 16.16,
+      "avg_30_price": 18.52,
+      "min_30_price": null,
+      "drop_percent": 13.0,
+      "drop_30_percent": 19.1,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_amazon",
+      "image": "https://m.media-amazon.com/images/I/51mo2zIeO5L._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/51mo2zIeO5L._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B07JDRKS2B.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B07JDRKS2B?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.854141+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_amazon",
+      "price_type_label": "Live Buy Box price vs Amazon history",
+      "keepa_price_index": 0,
+      "amazon_current_price": 20.33,
+      "best_price_days": 206,
+      "best_price_message": "best price in 206 days",
+      "best_price_previous_price": 14.5,
+      "best_price_previous_date": "2026-01-26",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$14.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 20.33,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 5.34,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0GF1W23S5",
+      "title": "Digital Angle Finder Protractor Tool, 4\u00d790\u00b0 High Accuracy Measuring Tool with Large Display, 4-Side Magnetic Angle Gauge, Cube Inclinometer, Table Saw Miter Protractor for Woodworking Measuring Tool",
+      "current_price": 20.99,
+      "avg_7_price": 23.0,
+      "min_7_price": 20.99,
+      "avg_30_price": 23.76,
+      "min_30_price": null,
+      "drop_percent": 8.7,
+      "drop_30_percent": 11.7,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41Tm+TQ-YLL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41Tm+TQ-YLL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0GF1W23S5.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0GF1W23S5?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.865446+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 20.99,
+      "best_price_days": 2,
+      "best_price_message": "best price in 2 days",
+      "best_price_previous_price": 20.99,
+      "best_price_previous_date": "2026-08-18",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages"
+      ],
+      "price": "$20.99",
+      "currency": "USD",
+      "availability": "IN_STOCK_SCARCE",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 20.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0DQPQDZCC",
+      "title": "TORACK Heavy Duty Wall Mounted Folding Workbench, Collapsible Wall Table",
+      "current_price": 89.99,
+      "avg_7_price": 109.99,
+      "min_7_price": 109.99,
+      "avg_30_price": 109.99,
+      "min_30_price": null,
+      "drop_percent": 18.2,
+      "drop_30_percent": 18.2,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/31nndfSWXPL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/31nndfSWXPL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0DQPQDZCC.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0DQPQDZCC?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.865796+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 89.99,
+      "best_price_days": 164,
+      "best_price_message": "best price in 164 days",
+      "best_price_previous_price": 89.99,
+      "best_price_previous_date": "2026-03-09",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$89.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 109.99,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 20.0,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B09MK6LB85",
+      "title": "Purisystems Air Filtration System 3-Speed Remote, Built-in Ionizer, PuriCare 1100IG Hanging Air Filter w/RF Remote for Woodworking, Garage, Shop Dust Collector, up to 1100 sq. ft (1100 CFM)",
+      "current_price": 246.75,
+      "avg_7_price": 329.0,
+      "min_7_price": 329.0,
+      "avg_30_price": 329.0,
+      "min_30_price": null,
+      "drop_percent": 25.0,
+      "drop_30_percent": 25.0,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41MituixiwL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41MituixiwL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B09MK6LB85.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B09MK6LB85?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.887245+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 246.75,
+      "best_price_days": 269,
+      "best_price_message": "best price in 269 days",
+      "best_price_previous_price": 194.11,
+      "best_price_previous_date": "2025-11-24",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$246.75",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 329.0,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 82.25,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B01L2SWCHW",
+      "title": "LAGUNA TOOLS C|Flux:3 3HP Clean Air Dust Co",
+      "current_price": 2999.0,
+      "avg_7_price": 3198.0,
+      "min_7_price": 3198.0,
+      "avg_30_price": 3198.0,
+      "min_30_price": null,
+      "drop_percent": 6.2,
+      "drop_30_percent": 6.2,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41lOPuWWhTL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41lOPuWWhTL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B01L2SWCHW.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B01L2SWCHW?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.887480+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 2999.0,
+      "best_price_days": 253,
+      "best_price_message": "best price in 253 days",
+      "best_price_previous_price": 2999.0,
+      "best_price_previous_date": "2025-12-10",
+      "qualification_reasons": [
+        "best price in 90+ days"
+      ],
+      "price": "$2,999.00",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 3198.0,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 199.0,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0DCFZ6ZCJ",
+      "title": "VEVOR Retractable Extension Cord Reel, 30 FT, Heavy Duty 16AWG/3C SJTOW Retractable Power Cord Reel with Lighted Triple Tap Outlet 10 Amp Circuit Breaker 4.5FT Lead-in Cord, for Ceiling or Wall Mount",
+      "current_price": 39.59,
+      "avg_7_price": 40.39,
+      "min_7_price": 39.59,
+      "avg_30_price": 44.27,
+      "min_30_price": null,
+      "drop_percent": 2.0,
+      "drop_30_percent": 10.6,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41wMZTjTeUL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41wMZTjTeUL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0DCFZ6ZCJ.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0DCFZ6ZCJ?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.887963+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 39.59,
+      "best_price_days": 5,
+      "best_price_message": "best price in 5 days",
+      "best_price_previous_price": 39.59,
+      "best_price_previous_date": "2026-08-14",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$39.59",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 39.59,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B07VL8H15C",
+      "title": "Weewooday 2 Pcs Center Finder Tool Woodworking Marking Gauge Multifunction Magnetic Scriber Offset Marking Tool Pencil Holder Fits Standard Wooden Pencils (Blue)",
+      "current_price": 9.99,
+      "avg_7_price": 9.99,
+      "min_7_price": 9.99,
+      "avg_30_price": 12.61,
+      "min_30_price": null,
+      "drop_percent": 0.0,
+      "drop_30_percent": 20.8,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/413eSi7Q3RL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/413eSi7Q3RL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B07VL8H15C.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B07VL8H15C?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.888501+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 9.99,
+      "best_price_days": 7,
+      "best_price_message": "best price in 7 days",
+      "best_price_previous_price": 9.99,
+      "best_price_previous_date": "2026-08-12",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$9.99",
+      "currency": "USD",
+      "availability": "IN_STOCK_SCARCE",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 9.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B09MK3GLRC",
+      "title": "PURISYSTEMS 3-Speed Remote Air Filtration System, PuriCare 500 Hanging Air Filter w/RF Remote for Woodworking, Garage Air Purifier, Shop Dust Collector, up to 500 sq. ft(500 CFM)",
+      "current_price": 203.15,
+      "avg_7_price": 239.0,
+      "min_7_price": 239.0,
+      "avg_30_price": 239.0,
+      "min_30_price": null,
+      "drop_percent": 15.0,
+      "drop_30_percent": 15.0,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41r636wrvSL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41r636wrvSL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B09MK3GLRC.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B09MK3GLRC?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.888736+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 203.15,
+      "best_price_days": 67,
+      "best_price_message": "best price in 67 days",
+      "best_price_previous_price": 191.2,
+      "best_price_previous_date": "2026-06-13",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages"
+      ],
+      "price": "$203.15",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 239.0,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 35.85,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B07RTM6BYZ",
+      "title": "BORA Speedhorse Saw Horses 2 Pack Folding Heavy Duty Metal Sawhorse",
+      "current_price": 129.99,
+      "avg_7_price": 129.99,
+      "min_7_price": 129.99,
+      "avg_30_price": 154.19,
+      "min_30_price": null,
+      "drop_percent": 0.0,
+      "drop_30_percent": 15.7,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_amazon",
+      "image": "https://m.media-amazon.com/images/I/51qbrUL-zuL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/51qbrUL-zuL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B07RTM6BYZ.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B07RTM6BYZ?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.894071+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_amazon",
+      "price_type_label": "Live Buy Box price vs Amazon history",
+      "keepa_price_index": 0,
+      "amazon_current_price": 129.99,
+      "best_price_days": 12,
+      "best_price_message": "best price in 12 days",
+      "best_price_previous_price": 129.99,
+      "best_price_previous_date": "2026-08-07",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$129.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 129.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0F1CNSWRZ",
+      "title": "YITAHOME 60in Adjustable Workbench with Pegboard & Wheels 1600lb Load",
+      "current_price": 195.63,
+      "avg_7_price": 211.23,
+      "min_7_price": 195.63,
+      "avg_30_price": 216.01,
+      "min_30_price": null,
+      "drop_percent": 7.4,
+      "drop_30_percent": 9.4,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/51m7JrCwe-L._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/51m7JrCwe-L._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0F1CNSWRZ.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0F1CNSWRZ?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.898550+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 195.63,
+      "best_price_days": 4,
+      "best_price_message": "best price in 4 days",
+      "best_price_previous_price": 195.63,
+      "best_price_previous_date": "2026-08-15",
+      "qualification_reasons": [
+        "7%+ below both 7-day and 30-day averages"
+      ],
+      "price": "$195.63",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 195.63,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B006834FQI",
+      "title": "12\u201d Wooden Handscrew Clamp - Angled Jaws & Screw Clamps for Woodworking - DIY Ready Durable Wood Clamp Set - Ideal Precision Hold Wooden Clamps for Joinery & Woodworking Vises",
+      "current_price": 17.99,
+      "avg_7_price": 27.98,
+      "min_7_price": 27.98,
+      "avg_30_price": 27.98,
+      "min_30_price": null,
+      "drop_percent": 35.7,
+      "drop_30_percent": 35.7,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41MOcvQlKdL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41MOcvQlKdL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B006834FQI.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B006834FQI?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.899039+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 17.99,
+      "best_price_days": 141,
+      "best_price_message": "best price in 141 days",
+      "best_price_previous_price": 17.99,
+      "best_price_previous_date": "2026-03-31",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$17.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 27.98,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 9.99,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0GCHJRHX4",
+      "title": "HQZYKJ Clamp Light, 3000 Lumen Work Light with Strong Metal Clamp Base for Office, Crafting, Woodworking Shop, Garage Workbench, Lathe and Sewing, Bright Task Lighting, 98-inch Extended Cord, Silver",
+      "current_price": 37.71,
+      "avg_7_price": 42.27,
+      "min_7_price": 37.71,
+      "avg_30_price": 45.12,
+      "min_30_price": null,
+      "drop_percent": 10.8,
+      "drop_30_percent": 16.4,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/31QoWF+-t3L._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/31QoWF+-t3L._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0GCHJRHX4.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0GCHJRHX4?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.899764+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 37.71,
+      "best_price_days": 3,
+      "best_price_message": "best price in 3 days",
+      "best_price_previous_price": 37.71,
+      "best_price_previous_date": "2026-08-17",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages"
+      ],
+      "price": "$37.71",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 37.71,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
+    },
+    {
+      "asin": "B0CB66HP9Q",
+      "title": "Track Saw Clamp, KITLUCK Quick Release Guide Rail Clamp for Circular Saw Guide Rail System, 6\" Clamping Thickness, Universal Wood Track Clamps for Woodworking-2 Pcs",
+      "current_price": 19.99,
+      "avg_7_price": 22.99,
+      "min_7_price": 22.99,
+      "avg_30_price": 22.99,
+      "min_30_price": null,
+      "drop_percent": 13.0,
+      "drop_30_percent": 13.0,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/31ySaihsk-L._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/31ySaihsk-L._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0CB66HP9Q.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0CB66HP9Q?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T11:44:00.900085+00:00",
+      "last_checked_at": "2026-08-20T11:44:00.900117+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 19.99,
+      "best_price_days": 272,
+      "best_price_message": "best price in 272 days",
+      "best_price_previous_price": 16.99,
+      "best_price_previous_date": "2025-11-20",
+      "qualification_reasons": [
+        "10%+ below 30-day average",
+        "7%+ below both 7-day and 30-day averages",
+        "best price in 90+ days"
+      ],
+      "price": "$19.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 22.99,
+      "live_price_lower_than_keepa": true,
+      "live_price_savings_vs_keepa": 3.0,
+      "posted_at": "2026-08-20T11:44:00.900117+00:00",
+      "first_seen_at": "2026-08-20T11:44:00.900117+00:00",
+      "expires_at": "2026-08-21T11:44:00.900118+00:00"
     }
   ],
   "qualification_rules": {
