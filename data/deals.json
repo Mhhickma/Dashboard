@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-08-20T21:00:02.583450+00:00",
+  "updated_at": "2026-08-20T21:31:25.567704+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
-  "deal_count": 1,
-  "new_scan_deal_count": 1,
-  "new_deals_added": 1,
+  "deal_count": 4,
+  "new_scan_deal_count": 4,
+  "new_deals_added": 4,
   "existing_deals_updated": 0,
-  "expired_deals_removed": 4,
+  "expired_deals_removed": 1,
   "skipped_count": 0,
   "missing_image_count": 0,
   "non_amazon_scan_deal_count": 0,
@@ -15,7 +15,7 @@
   "prime_exclusive_scan_deal_count": 0,
   "prime_exclusive_active_deal_count": 0,
   "creator_campaign_deal_count": 0,
-  "creator_image_update_count": 1,
+  "creator_image_update_count": 4,
   "creator_connections": {
     "repo": "Mhhickma/influencer-prospects",
     "path": "creator-connections",
@@ -32,10 +32,10 @@
   },
   "scan_window": {
     "total_asins": 16875,
-    "start_index": 6792,
-    "start_sheet_row": 6794,
-    "next_start_index": 7179,
-    "next_start_sheet_row": 7181,
+    "start_index": 7179,
+    "start_sheet_row": 7181,
+    "next_start_index": 7566,
+    "next_start_sheet_row": 7568,
     "scan_count": 387
   },
   "settings": {
@@ -86,34 +86,34 @@
       "price_type": "amazon",
       "label": "Amazon price",
       "keepa_price_index": 0,
-      "products_with_current_price": 63,
-      "products_with_avg30_price": 67,
+      "products_with_current_price": 70,
+      "products_with_avg30_price": 81,
       "products_lower_than_amazon_current": 0,
       "sample_current_prices": [
         {
-          "asin": "B0DKHR6FYS",
-          "current_price": 16.25,
-          "amazon_current_price": 16.25
+          "asin": "B07FCTP2NM",
+          "current_price": 44.0,
+          "amazon_current_price": 44.0
         },
         {
-          "asin": "B001VXWEUY",
-          "current_price": 181.53,
-          "amazon_current_price": 181.53
+          "asin": "B01F8Q8Z6Q",
+          "current_price": 9.76,
+          "amazon_current_price": 9.76
         },
         {
-          "asin": "B0B2FL3VYL",
-          "current_price": 116.21,
-          "amazon_current_price": 116.21
+          "asin": "B0C5QKFTNB",
+          "current_price": 28.08,
+          "amazon_current_price": 28.08
         },
         {
-          "asin": "B08LYCGG2P",
-          "current_price": 134.99,
-          "amazon_current_price": 134.99
+          "asin": "B09HWPYPCM",
+          "current_price": 129.99,
+          "amazon_current_price": 129.99
         },
         {
-          "asin": "B01F8Q8RNC",
-          "current_price": 9.99,
-          "amazon_current_price": 9.99
+          "asin": "B000FK9QW8",
+          "current_price": 4.49,
+          "amazon_current_price": 4.49
         }
       ]
     },
@@ -121,33 +121,33 @@
       "price_type": "new",
       "label": "New price",
       "keepa_price_index": 1,
-      "products_with_current_price": 345,
+      "products_with_current_price": 344,
       "products_with_avg30_price": 357,
-      "products_lower_than_amazon_current": 7,
+      "products_lower_than_amazon_current": 14,
       "sample_current_prices": [
         {
-          "asin": "B0CXCNKQ37",
-          "current_price": 43.99,
+          "asin": "B07FCTP2NM",
+          "current_price": 44.0,
+          "amazon_current_price": 44.0
+        },
+        {
+          "asin": "B0FG2BH1W2",
+          "current_price": 459.99,
           "amazon_current_price": null
         },
         {
-          "asin": "B0DKHR6FYS",
-          "current_price": 16.25,
-          "amazon_current_price": 16.25
-        },
-        {
-          "asin": "B097ZHY17V",
-          "current_price": 35.99,
+          "asin": "B0F8QDMM85",
+          "current_price": 9.49,
           "amazon_current_price": null
         },
         {
-          "asin": "B0049RD9YO",
-          "current_price": 42.29,
+          "asin": "B001DT330Q",
+          "current_price": 13.99,
           "amazon_current_price": null
         },
         {
-          "asin": "B0GZK8XMVY",
-          "current_price": 29.99,
+          "asin": "B005UQNS3U",
+          "current_price": 115.0,
           "amazon_current_price": null
         }
       ]
@@ -181,14 +181,53 @@
     }
   ],
   "live_buy_box_scan_summary": {
-    "products_with_live_prime_or_free_shipping_buy_box_price": 325,
-    "products_with_missing_shipping_evidence": 325,
+    "products_with_live_prime_or_free_shipping_buy_box_price": 323,
+    "products_with_missing_shipping_evidence": 323,
     "products_rejected_for_shipping": 0,
-    "live_buy_box_qualifies_against_keepa_history": 1
+    "live_buy_box_qualifies_against_keepa_history": 4
   },
   "live_offer_debug_samples": [
     {
-      "asin": "B0CXCNKQ37",
+      "asin": "B07FCTP2NM",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": 27,
+          "message": "Only 2 left in stock (more on the way).",
+          "min_order_quantity": 1,
+          "model_extra": null,
+          "type": "IN_STOCK_SCARCE"
+        },
+        "condition": {
+          "condition_note": "",
+          "model_extra": null,
+          "sub_condition": "Unknown",
+          "value": "New"
+        },
+        "price": {
+          "model_extra": null,
+          "price_per_unit": null,
+          "saving_basis": null,
+          "savings": null
+        }
+      }
+    },
+    {
+      "asin": "B0FG2BH1W2",
       "shipping_status": {
         "has_shipping_evidence": false,
         "prime_or_free_shipping": false,
@@ -207,84 +246,6 @@
       "nested_attrs": {
         "availability": {
           "max_order_quantity": 30,
-          "message": "In Stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B0DKHR6FYS",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 30,
-          "message": "In Stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B097ZHY17V",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 5,
           "message": "In Stock",
           "min_order_quantity": 1,
           "model_extra": null,
@@ -303,7 +264,7 @@
       }
     },
     {
-      "asin": "B0049RD9YO",
+      "asin": "B0F8QDMM85",
       "shipping_status": {
         "has_shipping_evidence": false,
         "prime_or_free_shipping": false,
@@ -321,11 +282,11 @@
       },
       "nested_attrs": {
         "availability": {
-          "max_order_quantity": 10,
-          "message": "In Stock",
+          "max_order_quantity": 20,
+          "message": "Only 20 left in stock - order soon.",
           "min_order_quantity": 1,
           "model_extra": null,
-          "type": "IN_STOCK"
+          "type": "IN_STOCK_SCARCE"
         },
         "condition": {
           "condition_note": "",
@@ -342,123 +303,7 @@
       }
     },
     {
-      "asin": "B0GZK8XMVY",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 30,
-          "message": "In Stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B096X1LKY8",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 30,
-          "message": "In Stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "price_per_unit": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B07F4536QZ",
-      "shipping_status": {
-        "has_shipping_evidence": false,
-        "prime_or_free_shipping": false,
-        "is_prime_eligible": false,
-        "is_free_shipping_eligible": false
-      },
-      "listing_attrs": {
-        "deal_details": null,
-        "is_buy_box_winner": true,
-        "loyalty_points": null,
-        "merchant_info": null,
-        "model_extra": null,
-        "type": null,
-        "violates_map": false
-      },
-      "nested_attrs": {
-        "availability": {
-          "max_order_quantity": 10,
-          "message": "In Stock",
-          "min_order_quantity": 1,
-          "model_extra": null,
-          "type": "IN_STOCK"
-        },
-        "condition": {
-          "condition_note": "",
-          "model_extra": null,
-          "sub_condition": "Unknown",
-          "value": "New"
-        },
-        "price": {
-          "model_extra": null,
-          "saving_basis": null,
-          "savings": null
-        }
-      }
-    },
-    {
-      "asin": "B000GKDTB6",
+      "asin": "B0BNPDDHVF",
       "shipping_status": {
         "has_shipping_evidence": false,
         "prime_or_free_shipping": false,
@@ -485,6 +330,160 @@
           "type": "OUT_OF_STOCK"
         }
       }
+    },
+    {
+      "asin": "B001DT330Q",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": 30,
+          "message": "In Stock",
+          "min_order_quantity": 1,
+          "model_extra": null,
+          "type": "IN_STOCK"
+        },
+        "condition": {
+          "condition_note": "",
+          "model_extra": null,
+          "sub_condition": "Unknown",
+          "value": "New"
+        },
+        "price": {
+          "model_extra": null,
+          "saving_basis": null,
+          "savings": null
+        }
+      }
+    },
+    {
+      "asin": "B005UQNS3U",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": 1,
+          "message": "Only 1 left in stock - order soon.",
+          "min_order_quantity": 1,
+          "model_extra": null,
+          "type": "IN_STOCK_SCARCE"
+        },
+        "condition": {
+          "condition_note": "",
+          "model_extra": null,
+          "sub_condition": "Unknown",
+          "value": "New"
+        },
+        "price": {
+          "model_extra": null,
+          "price_per_unit": null,
+          "saving_basis": null,
+          "savings": null
+        }
+      }
+    },
+    {
+      "asin": "B01F8Q8Z6Q",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": 30,
+          "message": "",
+          "min_order_quantity": 1,
+          "model_extra": null,
+          "type": "AVAILABLE_DATE"
+        },
+        "condition": {
+          "condition_note": "",
+          "model_extra": null,
+          "sub_condition": "Unknown",
+          "value": "New"
+        },
+        "price": {
+          "model_extra": null,
+          "saving_basis": null,
+          "savings": null
+        }
+      }
+    },
+    {
+      "asin": "B07N5FH9M3",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "listing_attrs": {
+        "deal_details": null,
+        "is_buy_box_winner": true,
+        "loyalty_points": null,
+        "merchant_info": null,
+        "model_extra": null,
+        "type": null,
+        "violates_map": false
+      },
+      "nested_attrs": {
+        "availability": {
+          "max_order_quantity": 30,
+          "message": "In Stock",
+          "min_order_quantity": 1,
+          "model_extra": null,
+          "type": "IN_STOCK"
+        },
+        "condition": {
+          "condition_note": "",
+          "model_extra": null,
+          "sub_condition": "Unknown",
+          "value": "New"
+        },
+        "price": {
+          "model_extra": null,
+          "price_per_unit": null,
+          "saving_basis": null,
+          "savings": null
+        }
+      }
     }
   ],
   "keepa_raw_diagnostics": {
@@ -496,45 +495,45 @@
     "products_with_prime_exclusive_offer": 0,
     "sample_products": [
       {
-        "asin": "B0CXCNKQ37",
+        "asin": "B07FCTP2NM",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
         "has_images_csv": false,
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
-          "0": -1,
-          "1": 4399,
+          "0": 4400,
+          "1": 4400,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
-          "0": -1,
-          "1": 4399,
+          "0": 4400,
+          "1": 4400,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
-          "0": -1,
-          "1": 4399,
+          "0": 4384,
+          "1": 5045,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
+          592,
+          912,
+          1018,
+          33168,
+          274,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1656,
+          842,
           2,
-          14,
-          56,
-          3498,
-          94,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          14,
-          44,
-          0,
           0,
           0,
           0,
@@ -545,94 +544,45 @@
         "offer_count": 0
       },
       {
-        "asin": "B0DKHR6FYS",
+        "asin": "B0FG2BH1W2",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
         "has_images_csv": false,
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
-          "0": 1625,
-          "1": 1625,
+          "0": -1,
+          "1": 45999,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
-          "0": 1655,
-          "1": 1655,
+          "0": -1,
+          "1": 45613,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
-          "0": 1687,
-          "1": 1687,
+          "0": -1,
+          "1": 45679,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
-          214,
-          214,
-          96,
-          4640,
-          102,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
+          2,
+          106,
+          2,
+          1554,
           10,
-          58,
           0,
           0,
           0,
           0,
           0,
           0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B097ZHY17V",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 3599,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 3599,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": 4081,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2,
-          188,
-          410,
-          23836,
-          44,
+          26,
           0,
           0,
-          0,
-          32,
-          0,
-          0,
-          40,
-          272,
-          2,
           0,
           0,
           0,
@@ -643,7 +593,7 @@
         "offer_count": 0
       },
       {
-        "asin": "B0049RD9YO",
+        "asin": "B0F8QDMM85",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
@@ -651,76 +601,27 @@
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
           "0": -1,
-          "1": 4229,
+          "1": 949,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
           "0": -1,
-          "1": 4229,
+          "1": 949,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
           "0": -1,
-          "1": 4229,
+          "1": 949,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
           2,
-          192,
-          328,
-          42368,
-          152,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          192,
-          280,
+          22,
           2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B0GZK8XMVY",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 2999,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 2999,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": 2999,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2,
-          2,
-          2,
-          190,
+          1076,
           2,
           0,
           0,
@@ -741,7 +642,7 @@
         "offer_count": 0
       },
       {
-        "asin": "B096X1LKY8",
+        "asin": "B0BNPDDHVF",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
@@ -749,36 +650,36 @@
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
           "0": -1,
-          "1": 6699,
+          "1": -1,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
           "0": -1,
-          "1": 6699,
+          "1": -1,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
           "0": -1,
-          "1": 6824,
+          "1": -1,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
+          208,
+          208,
           2,
-          88,
-          186,
-          14626,
+          1346,
           2,
           0,
           0,
           0,
-          12,
           0,
           0,
-          58,
-          148,
+          0,
+          24,
+          0,
           0,
           0,
           0,
@@ -790,7 +691,7 @@
         "offer_count": 0
       },
       {
-        "asin": "B07F4536QZ",
+        "asin": "B001DT330Q",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
@@ -798,86 +699,184 @@
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
           "0": -1,
-          "1": 3091,
+          "1": 1399,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
           "0": -1,
-          "1": 3091,
+          "1": 1399,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
           "0": -1,
-          "1": 3091,
+          "1": 1399,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
           2,
-          84,
-          14,
-          13678,
-          170,
+          266,
+          2,
+          10780,
+          256,
           0,
           0,
           0,
           0,
           0,
           0,
-          96,
+          276,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B005UQNS3U",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 11500,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 11249,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 11044,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          5962,
+          1212,
+          27952,
+          278,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          6452,
+          1748,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B01F8Q8Z6Q",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": 976,
+          "1": 976,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": 963,
+          "1": 963,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": 960,
+          "1": 960,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          686,
+          708,
+          586,
+          19460,
+          322,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          332,
+          404,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B07N5FH9M3",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 1699,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 1699,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 1699,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          52,
           8,
+          10198,
+          412,
           0,
           0,
           0,
           0,
           0,
           0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B000GKDTB6",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 27628,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 27628,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": 21590,
-          "1": 23159,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          514,
-          1872,
-          212,
-          19314,
-          436,
+          72,
+          4,
           0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          2164,
-          92,
-          2,
           0,
           0,
           0,
@@ -891,37 +890,36 @@
   },
   "deals": [
     {
-      "asin": "B01LXLKFVK",
-      "title": "Broadfix Shim Flat Plastic 60PK",
-      "current_price": 9.98,
-      "avg_7_price": 10.8,
-      "min_7_price": 9.98,
-      "avg_30_price": 11.65,
+      "asin": "B07FCTP2NM",
+      "title": "SKIL 5 Amp Corded Jig Saw- JS313101",
+      "current_price": 44.0,
+      "avg_7_price": 44.0,
+      "min_7_price": 44.0,
+      "avg_30_price": 50.45,
       "min_30_price": null,
-      "drop_percent": 7.6,
-      "drop_30_percent": 14.3,
-      "price_stats_source": "creator_live_buy_box_vs_keepa_amazon",
-      "image": "https://m.media-amazon.com/images/I/412hGHDJxbS._SL500_.jpg",
+      "drop_percent": 0.0,
+      "drop_30_percent": 12.8,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41YKCL27DrL._SL500_.jpg",
       "image_candidates": [
-        "https://m.media-amazon.com/images/I/412hGHDJxbS._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B01LXLKFVK.01._SL500_.jpg"
+        "https://m.media-amazon.com/images/I/41YKCL27DrL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B07FCTP2NM.01._SL500_.jpg"
       ],
-      "amazon_url": "https://www.amazon.com/dp/B01LXLKFVK?tag=simplewoodsho-20",
-      "checked_at": "2026-08-20T21:00:02.129205+00:00",
-      "last_checked_at": "2026-08-20T21:00:02.154123+00:00",
-      "price_type": "live_buy_box_amazon",
-      "price_type_label": "Live Buy Box price vs Amazon history",
-      "keepa_price_index": 0,
-      "amazon_current_price": 9.98,
-      "best_price_days": 2,
-      "best_price_message": "best price in 2 days",
-      "best_price_previous_price": 9.98,
-      "best_price_previous_date": "2026-08-18",
+      "amazon_url": "https://www.amazon.com/dp/B07FCTP2NM?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T21:31:25.069564+00:00",
+      "last_checked_at": "2026-08-20T21:31:25.154363+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 44.0,
+      "best_price_days": 11,
+      "best_price_message": "best price in 11 days",
+      "best_price_previous_price": 44.0,
+      "best_price_previous_date": "2026-08-09",
       "qualification_reasons": [
-        "10%+ below 30-day average",
-        "7%+ below both 7-day and 30-day averages"
+        "10%+ below 30-day average"
       ],
-      "price": "$9.98",
+      "price": "$44.00",
       "currency": "USD",
       "availability": "IN_STOCK_SCARCE",
       "shipping_status": {
@@ -930,10 +928,142 @@
         "is_prime_eligible": false,
         "is_free_shipping_eligible": false
       },
-      "keepa_current_price": 9.98,
-      "posted_at": "2026-08-20T21:00:02.154123+00:00",
-      "first_seen_at": "2026-08-20T21:00:02.154123+00:00",
-      "expires_at": "2026-08-21T21:00:02.154126+00:00"
+      "keepa_current_price": 44.0,
+      "posted_at": "2026-08-20T21:31:25.154363+00:00",
+      "first_seen_at": "2026-08-20T21:31:25.154363+00:00",
+      "expires_at": "2026-08-21T21:31:25.154366+00:00"
+    },
+    {
+      "asin": "B0924BSLJ6",
+      "title": "VEVOR NEMA Steel Enclosure, 20 x 16 x 6'' NEMA 4X Steel Electrical Box, IP66 Waterproof & Dustproof, Outdoor/Indoor Electrical Junction Box, with Mounting Plate",
+      "current_price": 62.82,
+      "avg_7_price": 65.5,
+      "min_7_price": 62.82,
+      "avg_30_price": 71.94,
+      "min_30_price": null,
+      "drop_percent": 4.1,
+      "drop_30_percent": 12.7,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/416QKC3S0-L._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/416QKC3S0-L._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B0924BSLJ6.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B0924BSLJ6?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T21:31:25.104488+00:00",
+      "last_checked_at": "2026-08-20T21:31:25.154363+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 62.82,
+      "best_price_days": 5,
+      "best_price_message": "best price in 5 days",
+      "best_price_previous_price": 62.82,
+      "best_price_previous_date": "2026-08-15",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$62.82",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 62.82,
+      "posted_at": "2026-08-20T21:31:25.154363+00:00",
+      "first_seen_at": "2026-08-20T21:31:25.154363+00:00",
+      "expires_at": "2026-08-21T21:31:25.154366+00:00"
+    },
+    {
+      "asin": "B01M0J08MF",
+      "title": "BOSCH PR20EVS Colt 1.0 HP Variable-Speed Palm Router - 5.6 Amp Motor, Soft Start, Constant ResponsCircuitry, Ergonomic Grip, Rugged Aluminum Base, Fixed, Quick-Clamp System, 1/4\" Collet",
+      "current_price": 99.99,
+      "avg_7_price": 110.19,
+      "min_7_price": 99.99,
+      "avg_30_price": 107.53,
+      "min_30_price": null,
+      "drop_percent": 9.3,
+      "drop_30_percent": 7.0,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/41gjCas+2eL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/41gjCas+2eL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B01M0J08MF.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B01M0J08MF?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T21:31:25.109317+00:00",
+      "last_checked_at": "2026-08-20T21:31:25.154363+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 99.99,
+      "best_price_days": 1,
+      "best_price_message": "best price in 1 days",
+      "best_price_previous_price": 99.99,
+      "best_price_previous_date": "2026-08-19",
+      "qualification_reasons": [
+        "7%+ below both 7-day and 30-day averages"
+      ],
+      "price": "$99.99",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 99.99,
+      "posted_at": "2026-08-20T21:31:25.154363+00:00",
+      "first_seen_at": "2026-08-20T21:31:25.154363+00:00",
+      "expires_at": "2026-08-21T21:31:25.154366+00:00"
+    },
+    {
+      "asin": "B085DVKM62",
+      "title": "Makita E-00789 Impact XPS\u2122 #3 Phillips 2\" Power Bit, 3/pk",
+      "current_price": 7.47,
+      "avg_7_price": 7.47,
+      "min_7_price": 7.47,
+      "avg_30_price": 8.32,
+      "min_30_price": null,
+      "drop_percent": 0.0,
+      "drop_30_percent": 10.2,
+      "price_stats_source": "creator_live_buy_box_vs_keepa_new",
+      "image": "https://m.media-amazon.com/images/I/418Pxqfc4CL._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/418Pxqfc4CL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B085DVKM62.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B085DVKM62?tag=simplewoodsho-20",
+      "checked_at": "2026-08-20T21:31:25.123484+00:00",
+      "last_checked_at": "2026-08-20T21:31:25.154363+00:00",
+      "price_type": "live_buy_box_new",
+      "price_type_label": "Live Buy Box price vs New history",
+      "keepa_price_index": 1,
+      "amazon_current_price": 7.47,
+      "best_price_days": 16,
+      "best_price_message": "best price in 16 days",
+      "best_price_previous_price": 7.47,
+      "best_price_previous_date": "2026-08-04",
+      "qualification_reasons": [
+        "10%+ below 30-day average"
+      ],
+      "price": "$7.47",
+      "currency": "USD",
+      "availability": "IN_STOCK",
+      "shipping_status": {
+        "has_shipping_evidence": false,
+        "prime_or_free_shipping": false,
+        "is_prime_eligible": false,
+        "is_free_shipping_eligible": false
+      },
+      "keepa_current_price": 7.47,
+      "posted_at": "2026-08-20T21:31:25.154363+00:00",
+      "first_seen_at": "2026-08-20T21:31:25.154363+00:00",
+      "expires_at": "2026-08-21T21:31:25.154366+00:00"
     }
   ],
   "qualification_rules": {
