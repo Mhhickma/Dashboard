@@ -1018,6 +1018,7 @@ def build_live_buy_box_candidate(product, live_offer):
         avg_7_price = price_from_stats_array(stats, "avg", price_index)
         min_7_price = price_from_stats_array(stats, "minInInterval", price_index)
         avg_30_price = price_from_stats_array(stats, "avg30", price_index)
+        keepa_current_price = price_from_stats_array(stats, "current", price_index)
         amazon_current_price = price_from_stats_array(stats, "current", 0) or current_price
 
         if not avg_7_price or not min_7_price or not avg_30_price:
@@ -1045,6 +1046,11 @@ def build_live_buy_box_candidate(product, live_offer):
         candidate["currency"] = live_offer.get("currency") or "USD"
         candidate["availability"] = live_offer.get("availability") or ""
         candidate["shipping_status"] = live_offer.get("shipping_status") or {}
+        candidate["keepa_current_price"] = keepa_current_price
+        if keepa_current_price and current_price < keepa_current_price:
+            candidate["live_price_lower_than_keepa"] = True
+            candidate["live_price_savings_vs_keepa"] = round(keepa_current_price - current_price, 2)
+            candidate["qualification_reasons"] = ["Amazon live price below Keepa"] + candidate["qualification_reasons"]
         candidates.append(candidate)
 
     return max(candidates, key=deal_rank) if candidates else None

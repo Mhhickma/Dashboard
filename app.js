@@ -656,6 +656,14 @@ function money(value) {
   }).format(value);
 }
 
+function livePriceNote(deal) {
+  if (!deal || !deal.live_price_lower_than_keepa) return "";
+  const keepaPrice = numericValue(deal.keepa_current_price);
+  const livePrice = numericValue(deal.current_price);
+  if (keepaPrice === null || livePrice === null || livePrice >= keepaPrice) return "";
+  return `<div class="live-price-note">Amazon live price is below Keepa current (${money(keepaPrice)})</div>`;
+}
+
 function formatDate(value) {
   if (!value) return "Not updated yet";
   return new Date(value).toLocaleString();
@@ -972,6 +980,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
         <div class="price-box">
           <span>Current</span>
           <strong>${money(deal.current_price)}</strong>
+          ${livePriceNote(deal)}
         </div>
         <div class="price-box">
           <span>7-Day Avg.</span>
