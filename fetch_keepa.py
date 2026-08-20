@@ -41,6 +41,7 @@ SCAN_RUNS_PER_DAY = max(1, int(os.getenv("SCAN_RUNS_PER_DAY", "48")))
 SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", "10")))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 LIVE_OFFER_DEBUG_SAMPLE_LIMIT = int(os.getenv("LIVE_OFFER_DEBUG_SAMPLE_LIMIT", "8"))
+REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE = os.getenv("REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE", "true").strip().lower() not in {"0", "false", "no"}
 
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/influencer-prospects")
 CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "creator-connections")
@@ -1064,6 +1065,8 @@ def build_live_buy_box_candidate(product, live_offer):
     current_price = live_offer.get("current_price")
     if not current_price:
         return None
+    if REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE and not live_offer_matches_prime_or_amazon_track(stats, current_price):
+        return None
 
     comparison_tracks = [
         {"type": "live_buy_box", "label": "Live Buy Box price", "index": 18, "source_suffix": "buy_box"},
@@ -1115,6 +1118,20 @@ def build_live_buy_box_candidate(product, live_offer):
     return max(candidates, key=deal_rank) if candidates else None
 
 
+def live_offer_matches_prime_or_amazon_track(stats, current_price):
+    for price_index in (0, 10):
+        track_price = price_from_stats_array(stats, "current", price_index)
+        if prices_match(track_price, current_price):
+            return True
+    return False
+
+
+def prices_match(left, right):
+    if not left or not right:
+        return False
+    return abs(float(left) - float(right)) <= max(0.05, float(right) * 0.01)
+
+
 def deal_rank(deal):
     price_type = deal.get("price_type")
     current = float(deal.get("current_price") or 0)
@@ -1142,6 +1159,8 @@ def build_deal(product, live_offer=None, require_live_offer=False):
     if prime_offer_candidate:
         candidates.append(prime_offer_candidate)
     for track in PRICE_TRACKS:
+        if REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE and track["type"] not in {"amazon", "new_fba_prime"}:
+            continue
         candidate = build_deal_candidate(product, track)
         if candidate:
             candidates.append(candidate)
@@ -1431,7 +1450,8 @@ def main():
             "keepa_product_params": {"stats": 7, "history": 1},
             "live_buy_box_source": "Amazon Creators API offers_v2 listings",
             "requires_live_offer": require_live_offer,
-            "shipping_filter_mode": "informational_only",
+            "shipping_filter_mode": "require_amazon_or_fba_prime_price_track",
+            "requires_prime_or_amazon_price_source": REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE,
             "live_offer_debug_sample_limit": LIVE_OFFER_DEBUG_SAMPLE_LIMIT,
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
