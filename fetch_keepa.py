@@ -953,8 +953,8 @@ def qualification_for_prices(current_price, avg_7_price, avg_30_price, best_pric
     qualification_reasons = []
     if drop_30_percent >= 5:
         qualification_reasons.append("5%+ below 30-day average")
-    if drop_percent >= 7 and drop_30_percent >= 7:
-        qualification_reasons.append("7%+ below both 7-day and 30-day averages")
+    if drop_percent >= 5 and drop_30_percent >= 5:
+        qualification_reasons.append("5%+ below both 7-day and 30-day averages")
     if best_price_days >= 90:
         qualification_reasons.append("best price in 90+ days")
     if drop_30_percent < MIN_DROP_PERCENT and not qualification_reasons:
@@ -1415,7 +1415,7 @@ def main():
     output_payload = {
         "updated_at": iso_now(),
         "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
-        "comparison_window": "Deals qualify when Keepa Amazon, New FBA/Prime, or Prime Exclusive offer pricing is at least 5% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
+        "comparison_window": "Deals qualify when Keepa Amazon, New FBA/Prime, or Prime Exclusive offer pricing is at least 5% below the 30-day average, at least 5% below both the 7-day and 30-day averages, or at a best price in 90+ days",
         "deal_ttl_hours": DEAL_TTL_HOURS,
         "deal_count": len(all_deals),
         "new_scan_deal_count": len(scan_deals),
