@@ -57,6 +57,8 @@ PRICE_TRACKS = [
     {"type": "new_fba_prime", "label": "New FBA / Prime price", "index": 10, "source_suffix": "new_fba_prime"},
     {"type": "buy_box", "label": "Buy Box price", "index": 18, "source_suffix": "buy_box"},
 ]
+QUALIFYING_PRICE_TRACK_TYPES = {"amazon", "new_fba_prime"}
+QUALIFYING_DEAL_PRICE_TYPES = QUALIFYING_PRICE_TRACK_TYPES | {"prime_exclusive_offer"}
 
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
@@ -1148,18 +1150,12 @@ def deal_rank(deal):
 
 
 def build_deal(product, live_offer=None, require_live_offer=False):
-    if require_live_offer and not live_offer:
-        return None
-
     candidates = []
-    live_candidate = build_live_buy_box_candidate(product, live_offer)
-    if live_candidate:
-        candidates.append(live_candidate)
     prime_offer_candidate = build_prime_exclusive_offer_candidate(product)
     if prime_offer_candidate:
         candidates.append(prime_offer_candidate)
     for track in PRICE_TRACKS:
-        if REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE and track["type"] not in {"amazon", "new_fba_prime"}:
+        if track["type"] not in QUALIFYING_PRICE_TRACK_TYPES:
             continue
         candidate = build_deal_candidate(product, track)
         if candidate:
@@ -1167,6 +1163,17 @@ def build_deal(product, live_offer=None, require_live_offer=False):
     if not candidates:
         return None
     return max(candidates, key=deal_rank)
+
+
+def keep_only_qualifying_price_types(memory):
+    kept = {}
+    removed = 0
+    for asin, deal in memory.items():
+        if deal.get("price_type") in QUALIFYING_DEAL_PRICE_TYPES:
+            kept[asin] = deal
+        else:
+            removed += 1
+    return kept, removed
 
 
 def normalize_commission(value):
@@ -1366,12 +1373,11 @@ def main():
     print(f"Fetched {len(products)} products from Keepa")
     price_track_scan_summary = build_track_presence_summary(products)
     keepa_raw_diagnostics = raw_keepa_diagnostics(products)
-    live_offer_by_asin = fetch_creator_live_offers([str(product.get("asin") or "").upper() for product in products if product.get("asin")])
+    live_offer_by_asin = {}
     live_prime_offer_count = sum(1 for offer in live_offer_by_asin.values() if offer and not offer.get("shipping_rejected"))
-    print(f"Fetched {live_prime_offer_count} live Prime/free-shipping Buy Box prices from Amazon Creators API")
-    print("Shipping evidence is tracked but not used as a hard filter")
-    require_live_offer = bool(AmazonCreatorsApi and Country and GetItemsResource and CREATORS_CREDENTIAL_ID and CREATORS_CREDENTIAL_SECRET)
-    print(f"Require live offer before showing regular dashboard deals: {require_live_offer}")
+    print("Amazon Creators API live Buy Box pricing is not used for deal qualification")
+    print("Deal qualification uses Keepa Amazon, Keepa New FBA/Prime, and Keepa Prime Exclusive offer pricing")
+    require_live_offer = False
 
     scan_deals = []
     skipped = 0
@@ -1398,6 +1404,7 @@ def main():
             scan_deals.append(deal)
 
     memory, added_count, updated_count = merge_deals_with_memory(memory, scan_deals)
+    memory, disallowed_price_type_removed_count = keep_only_qualifying_price_types(memory)
     creator_campaign_deal_count = apply_creator_campaigns(memory, campaign_by_asin)
     all_deals = list(memory.values())
     creator_image_update_count = enrich_deal_images_with_creator_api(all_deals)
@@ -1408,13 +1415,14 @@ def main():
     output_payload = {
         "updated_at": iso_now(),
         "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
-        "comparison_window": "Deals qualify when Amazon, New, FBA/Prime, Buy Box, or Prime Exclusive offer pricing is at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
+        "comparison_window": "Deals qualify when Keepa Amazon, New FBA/Prime, or Prime Exclusive offer pricing is at least 10% below the 30-day average, at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days",
         "deal_ttl_hours": DEAL_TTL_HOURS,
         "deal_count": len(all_deals),
         "new_scan_deal_count": len(scan_deals),
         "new_deals_added": added_count,
         "existing_deals_updated": updated_count,
         "expired_deals_removed": expired_count,
+        "disallowed_price_type_deals_removed": disallowed_price_type_removed_count,
         "skipped_count": skipped,
         "missing_image_count": missing_images,
         "non_amazon_scan_deal_count": non_amazon_scan_deals,
@@ -1448,10 +1456,11 @@ def main():
             "deal_ttl_hours": DEAL_TTL_HOURS,
             "keepa_stats_days": 7,
             "keepa_product_params": {"stats": 7, "history": 1},
-            "live_buy_box_source": "Amazon Creators API offers_v2 listings",
+            "live_buy_box_source": "disabled_for_deal_qualification",
             "requires_live_offer": require_live_offer,
-            "shipping_filter_mode": "shipping_unverified_volume_mode",
-            "requires_prime_or_amazon_price_source": REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE,
+            "shipping_filter_mode": "keepa_amazon_fba_prime_or_prime_exclusive_only",
+            "requires_prime_or_amazon_price_source": True,
+            "qualifying_price_types": ["amazon", "new_fba_prime", "prime_exclusive_offer"],
             "live_offer_debug_sample_limit": LIVE_OFFER_DEBUG_SAMPLE_LIMIT,
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
