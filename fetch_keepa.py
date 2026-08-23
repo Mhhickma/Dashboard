@@ -41,7 +41,7 @@ SCAN_RUNS_PER_DAY = max(1, int(os.getenv("SCAN_RUNS_PER_DAY", "48")))
 SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", "10")))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 LIVE_OFFER_DEBUG_SAMPLE_LIMIT = int(os.getenv("LIVE_OFFER_DEBUG_SAMPLE_LIMIT", "8"))
-REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE = os.getenv("REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE", "true").strip().lower() not in {"0", "false", "no"}
+REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE = os.getenv("REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE", "false").strip().lower() not in {"0", "false", "no"}
 
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/influencer-prospects")
 CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "creator-connections")
@@ -1450,7 +1450,7 @@ def main():
             "keepa_product_params": {"stats": 7, "history": 1},
             "live_buy_box_source": "Amazon Creators API offers_v2 listings",
             "requires_live_offer": require_live_offer,
-            "shipping_filter_mode": "require_amazon_or_fba_prime_price_track",
+            "shipping_filter_mode": "shipping_unverified_volume_mode",
             "requires_prime_or_amazon_price_source": REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE,
             "live_offer_debug_sample_limit": LIVE_OFFER_DEBUG_SAMPLE_LIMIT,
             "keepa_price_tracks": [
