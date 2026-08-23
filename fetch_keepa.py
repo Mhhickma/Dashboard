@@ -42,6 +42,7 @@ SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", 
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 LIVE_OFFER_DEBUG_SAMPLE_LIMIT = int(os.getenv("LIVE_OFFER_DEBUG_SAMPLE_LIMIT", "8"))
 REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE = os.getenv("REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE", "false").strip().lower() not in {"0", "false", "no"}
+KEEPA_OFFERS_LIMIT = int(os.getenv("KEEPA_OFFERS_LIMIT", "10"))
 
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/influencer-prospects")
 CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "creator-connections")
@@ -58,7 +59,7 @@ PRICE_TRACKS = [
     {"type": "buy_box", "label": "Buy Box price", "index": 18, "source_suffix": "buy_box"},
 ]
 QUALIFYING_PRICE_TRACK_TYPES = {"amazon", "new_fba_prime"}
-QUALIFYING_DEAL_PRICE_TYPES = QUALIFYING_PRICE_TRACK_TYPES | {"prime_exclusive_offer"}
+QUALIFYING_DEAL_PRICE_TYPES = QUALIFYING_PRICE_TRACK_TYPES | {"keepa_preferred_offer", "prime_exclusive_offer"}
 
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
@@ -69,6 +70,7 @@ ASIN_RE = re.compile(r"\bB[0-9A-Z]{9}\b")
 KEEPA_EPOCH = datetime(2011, 1, 1, tzinfo=timezone.utc)
 NON_AMAZON_PRICE_TYPES = {track["type"] for track in PRICE_TRACKS if track["type"] != "amazon"}
 NON_AMAZON_PRICE_TYPES.add("prime_exclusive_offer")
+NON_AMAZON_PRICE_TYPES.add("keepa_preferred_offer")
 LIVE_OFFER_DEBUG_SAMPLES = []
 
 
@@ -667,6 +669,8 @@ def fetch_keepa_products(asins):
             "stats": 7,
             "history": 1,
         }
+        if KEEPA_OFFERS_LIMIT > 0:
+            params["offers"] = KEEPA_OFFERS_LIMIT
         payload = fetch_keepa_batch(url, params, batch_number)
         all_products.extend(payload.get("products", []))
         tokens_left = payload.get("tokensLeft")
@@ -821,6 +825,129 @@ def prime_exclusive_offer_points(product):
     return points
 
 
+def latest_offer_price_and_shipping(offer):
+    values = normalize_keepa_csv(offer.get("offerCSV"))
+    latest = None
+    for i in range(0, len(values) - 2, 3):
+        dt = keepa_minutes_to_datetime(values[i])
+        price_cents = values[i + 1]
+        shipping_cents = values[i + 2]
+        if not dt or not isinstance(price_cents, int) or price_cents <= 0:
+            continue
+        latest = (dt, round(price_cents / 100, 2), shipping_cents)
+
+    if latest:
+        return latest
+
+    price = keepa_to_dollars(offer.get("price"))
+    shipping = offer.get("shipping")
+    if price:
+        return utc_now(), price, shipping if isinstance(shipping, int) else None
+    return None, None, None
+
+
+def preferred_keepa_offer_candidates(product):
+    offers = product.get("offers") or []
+    if not isinstance(offers, list):
+        return []
+
+    candidates = []
+    for offer in offers:
+        if not isinstance(offer, dict):
+            continue
+
+        is_amazon = bool(offer.get("isAmazon"))
+        is_fba = bool(offer.get("isFBA"))
+        is_prime = bool(offer.get("isPrime")) or is_amazon or is_fba
+        if not (is_amazon or is_fba or is_prime):
+            continue
+
+        last_seen, price, shipping_cents = latest_offer_price_and_shipping(offer)
+        if not price:
+            continue
+        if isinstance(shipping_cents, int) and shipping_cents > 0:
+            continue
+
+        shipping_visible = isinstance(shipping_cents, int) and shipping_cents >= 0
+        price_index = 0 if is_amazon else 10
+        candidates.append({
+            "offer": offer,
+            "current_price": price,
+            "last_seen": last_seen,
+            "shipping_cents": shipping_cents,
+            "shipping_visible": shipping_visible,
+            "free_shipping_seen": shipping_visible and shipping_cents == 0,
+            "is_amazon": is_amazon,
+            "is_fba": is_fba,
+            "is_prime": is_prime,
+            "price_index": price_index,
+            "price_type_label": "Amazon offer" if is_amazon else "FBA / Prime offer",
+        })
+
+    candidates.sort(key=lambda item: (
+        0 if item["is_amazon"] else 1,
+        0 if item["free_shipping_seen"] else 1,
+        0 if item["is_fba"] else 1,
+        0 if item["is_prime"] else 1,
+        item["current_price"],
+    ))
+    return candidates
+
+
+def parse_coupon_value(raw_value, current_price):
+    if raw_value in (None, "", 0, -1):
+        return None
+    try:
+        value = int(raw_value)
+    except Exception:
+        return None
+
+    if value > 0:
+        amount = round(value / 100, 2)
+        return {
+            "type": "amount",
+            "value": value,
+            "amount": amount,
+            "label": f"${amount:g} coupon",
+        }
+
+    percent = abs(value)
+    amount = round((current_price * percent) / 100, 2) if current_price else None
+    return {
+        "type": "percent",
+        "value": value,
+        "percent": percent,
+        "amount": amount,
+        "label": f"{percent:g}% coupon",
+    }
+
+
+def coupon_for_product(product, current_price):
+    coupons = product.get("coupon")
+    if not isinstance(coupons, list):
+        return None
+
+    labels = ["one-time", "subscribe & save"]
+    for index, raw_value in enumerate(coupons[:2]):
+        coupon = parse_coupon_value(raw_value, current_price)
+        if coupon:
+            coupon["kind"] = labels[index] if index < len(labels) else "coupon"
+            if coupon.get("amount"):
+                coupon["effective_price"] = round(max(0, current_price - coupon["amount"]), 2)
+            return coupon
+    return None
+
+
+def apply_coupon_details(deal, product):
+    coupon = coupon_for_product(product, deal.get("current_price"))
+    if not coupon:
+        return deal
+    deal["coupon"] = coupon
+    deal["coupon_label"] = coupon["label"]
+    deal["after_coupon_price"] = coupon.get("effective_price")
+    return deal
+
+
 def build_track_presence_summary(products):
     summary = []
     for track in PRICE_TRACKS:
@@ -966,7 +1093,7 @@ def qualification_for_prices(current_price, avg_7_price, avg_30_price, best_pric
 
 def base_deal(product, asin, title, current_price, avg_7_price, min_7_price, avg_30_price, drop_percent, drop_30_percent, qualification_reasons, source, price_type, price_type_label, amazon_current_price, best_price_days, previous_price, previous_date, keepa_price_index=None):
     checked_at = iso_now()
-    return {
+    deal = {
         "asin": asin,
         "title": title,
         "current_price": current_price,
@@ -992,6 +1119,7 @@ def base_deal(product, asin, title, current_price, avg_7_price, min_7_price, avg
         "best_price_previous_date": previous_date,
         "qualification_reasons": qualification_reasons,
     }
+    return apply_coupon_details(deal, product)
 
 
 def build_deal_candidate(product, track):
@@ -1024,6 +1152,53 @@ def build_deal_candidate(product, track):
         track["type"], track["label"], amazon_current_price, best_price_days,
         previous_price, previous_date, price_index,
     )
+
+
+def build_preferred_keepa_offer_candidate(product):
+    asin = product.get("asin")
+    title = product.get("title") or asin
+    stats = product.get("stats") or {}
+
+    for offer_candidate in preferred_keepa_offer_candidates(product):
+        current_price = offer_candidate["current_price"]
+        price_index = offer_candidate["price_index"]
+        avg_7_price = price_from_stats_array(stats, "avg", price_index)
+        min_7_price = price_from_stats_array(stats, "minInInterval", price_index)
+        avg_30_price = price_from_stats_array(stats, "avg30", price_index)
+        amazon_current_price = price_from_stats_array(stats, "current", 0)
+
+        if not avg_7_price or not min_7_price or not avg_30_price:
+            continue
+        if current_price >= avg_30_price:
+            continue
+
+        best_price_days, previous_price, previous_date = best_price_days_for_track(product, price_index, current_price)
+        qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+        if not qualified:
+            continue
+        drop_percent, drop_30_percent, qualification_reasons = qualified
+
+        deal = base_deal(
+            product, asin, title, current_price, avg_7_price, min_7_price, avg_30_price,
+            drop_percent, drop_30_percent, qualification_reasons,
+            "keepa_preferred_offer_with_shipping_filter",
+            "keepa_preferred_offer", offer_candidate["price_type_label"], amazon_current_price, best_price_days,
+            previous_price, previous_date, price_index,
+        )
+        deal["keepa_offer"] = {
+            "is_amazon": offer_candidate["is_amazon"],
+            "is_fba": offer_candidate["is_fba"],
+            "is_prime": offer_candidate["is_prime"],
+            "shipping_cents": offer_candidate["shipping_cents"],
+            "shipping_visible": offer_candidate["shipping_visible"],
+            "free_shipping_seen": offer_candidate["free_shipping_seen"],
+            "last_seen": offer_candidate["last_seen"].isoformat() if offer_candidate.get("last_seen") else None,
+        }
+        if offer_candidate["free_shipping_seen"]:
+            deal["qualification_reasons"] = ["Keepa offer shows free shipping"] + deal["qualification_reasons"]
+        return deal
+
+    return None
 
 
 def build_prime_exclusive_offer_candidate(product):
@@ -1141,6 +1316,7 @@ def deal_rank(deal):
     savings_vs_amazon = max(0, amazon_current - current)
     return (
         3 if str(price_type or "").startswith("live_buy_box") else
+        3 if price_type == "keepa_preferred_offer" else
         2 if price_type == "prime_exclusive_offer" else 1 if price_type in NON_AMAZON_PRICE_TYPES else 0,
         savings_vs_amazon,
         float(deal.get("drop_30_percent") or 0),
@@ -1151,6 +1327,9 @@ def deal_rank(deal):
 
 def build_deal(product, live_offer=None, require_live_offer=False):
     candidates = []
+    preferred_offer_candidate = build_preferred_keepa_offer_candidate(product)
+    if preferred_offer_candidate:
+        candidates.append(preferred_offer_candidate)
     prime_offer_candidate = build_prime_exclusive_offer_candidate(product)
     if prime_offer_candidate:
         candidates.append(prime_offer_candidate)
@@ -1376,7 +1555,7 @@ def main():
     live_offer_by_asin = {}
     live_prime_offer_count = sum(1 for offer in live_offer_by_asin.values() if offer and not offer.get("shipping_rejected"))
     print("Amazon Creators API live Buy Box pricing is not used for deal qualification")
-    print("Deal qualification uses Keepa Amazon, Keepa New FBA/Prime, and Keepa Prime Exclusive offer pricing")
+    print("Deal qualification uses Keepa preferred offers, Amazon, New FBA/Prime, and Prime Exclusive offer pricing")
     require_live_offer = False
 
     scan_deals = []
@@ -1415,7 +1594,7 @@ def main():
     output_payload = {
         "updated_at": iso_now(),
         "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
-        "comparison_window": "Deals qualify when Keepa Amazon, New FBA/Prime, or Prime Exclusive offer pricing is at least 5% below the 30-day average, at least 5% below both the 7-day and 30-day averages, or at a best price in 90+ days",
+        "comparison_window": "Deals qualify when Keepa preferred offers, Amazon, New FBA/Prime, or Prime Exclusive offer pricing is at least 5% below the 30-day average, at least 5% below both the 7-day and 30-day averages, or at a best price in 90+ days",
         "deal_ttl_hours": DEAL_TTL_HOURS,
         "deal_count": len(all_deals),
         "new_scan_deal_count": len(scan_deals),
@@ -1455,12 +1634,12 @@ def main():
             "scan_limit_buffer_percent": SCAN_LIMIT_BUFFER_PERCENT,
             "deal_ttl_hours": DEAL_TTL_HOURS,
             "keepa_stats_days": 7,
-            "keepa_product_params": {"stats": 7, "history": 1},
+            "keepa_product_params": {"stats": 7, "history": 1, "offers": KEEPA_OFFERS_LIMIT},
             "live_buy_box_source": "disabled_for_deal_qualification",
             "requires_live_offer": require_live_offer,
-            "shipping_filter_mode": "keepa_amazon_fba_prime_or_prime_exclusive_only",
+            "shipping_filter_mode": "prefer Keepa isAmazon/isFBA/isPrime offers and skip visible shipping above $0",
             "requires_prime_or_amazon_price_source": True,
-            "qualifying_price_types": ["amazon", "new_fba_prime", "prime_exclusive_offer"],
+            "qualifying_price_types": ["keepa_preferred_offer", "amazon", "new_fba_prime", "prime_exclusive_offer"],
             "live_offer_debug_sample_limit": LIVE_OFFER_DEBUG_SAMPLE_LIMIT,
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}

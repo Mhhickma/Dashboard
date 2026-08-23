@@ -664,6 +664,28 @@ function livePriceNote(deal) {
   return `<div class="live-price-note">Amazon live price is below Keepa current (${money(keepaPrice)})</div>`;
 }
 
+function couponNote(deal) {
+  if (!deal || !deal.coupon_label) return "";
+  const afterCoupon = deal.after_coupon_price ? ` After coupon: ${money(deal.after_coupon_price)}.` : "";
+  return `<div class="coupon-note">${deal.coupon_label}.${afterCoupon}</div>`;
+}
+
+function keepaOfferNote(deal) {
+  if (!deal) return "";
+  const offer = deal.keepa_offer || {};
+  if (!deal.price_type_label && !offer.shipping_visible) return "";
+  const parts = [];
+  if (deal.price_type_label) parts.push(deal.price_type_label);
+  if (offer.free_shipping_seen) {
+    parts.push("free shipping shown");
+  } else if (offer.shipping_visible) {
+    parts.push("shipping shown as $0");
+  } else if (deal.price_type === "keepa_preferred_offer") {
+    parts.push("shipping not visible");
+  }
+  return `<div class="offer-note">${parts.join(" - ")}</div>`;
+}
+
 function formatDate(value) {
   if (!value) return "Not updated yet";
   return new Date(value).toLocaleString();
@@ -981,6 +1003,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
           <span>Current</span>
           <strong>${money(deal.current_price)}</strong>
           ${livePriceNote(deal)}
+          ${couponNote(deal)}
         </div>
         <div class="price-box">
           <span>7-Day Avg.</span>
@@ -1000,6 +1023,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
       <div class="price-box">
         <span>7-Day Low</span>
         <strong>${money(deal.min_7_price)}</strong>
+        ${keepaOfferNote(deal)}
       </div>
       ${selectedPostingTools}
       <a class="button" href="${deal.amazon_url}" target="_blank" rel="noopener noreferrer">Open on Amazon</a>
