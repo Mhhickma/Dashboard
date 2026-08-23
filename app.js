@@ -580,21 +580,6 @@ function affiliateUrlForTarget(deal, target) {
   }
 }
 
-function isShippingSafeForAutoPost(deal) {
-  const priceType = String((deal && deal.price_type) || "");
-  const shippingStatus = (deal && deal.shipping_status) || {};
-  if (shippingStatus.prime_or_free_shipping || shippingStatus.is_prime_eligible || shippingStatus.is_free_shipping_eligible) {
-    return true;
-  }
-  return ["amazon", "new_fba_prime", "prime_exclusive_offer"].includes(priceType);
-}
-
-function shippingSafetyNotice(deal) {
-  return isShippingSafeForAutoPost(deal)
-    ? `<span class="shipping-badge shipping-safe">Prime/free shipping likely</span>`
-    : `<span class="shipping-badge shipping-review">Check shipping before posting</span>`;
-}
-
 async function publishDeal(deal, target, delayMinutes, button) {
   const targetLabels = {
     woodworkingGroup: "Woodworking Page + Group",
@@ -606,11 +591,6 @@ async function publishDeal(deal, target, delayMinutes, button) {
   };
   const targetLabel = targetLabels[target] || target;
   const originalText = button ? button.textContent : "";
-
-  if (!isShippingSafeForAutoPost(deal)) {
-    alert(`${targetLabel} ${publishDelayLabel(delayMinutes)} blocked for ${deal.asin}: shipping is not verified. Open on Amazon and check delivery cost first.`);
-    return;
-  }
 
   if (button) {
     button.disabled = true;
@@ -940,24 +920,22 @@ function buildCard(deal, isSelected, isSelectedSection) {
   const hoursLeft = hoursUntil(expiresAt);
   const expiresText = hoursLeft === null ? "N/A" : `${hoursLeft.toFixed(1)} hrs left`;
   const dealJson = JSON.stringify(deal).replace(/</g, "\\u003c").replace(/'/g, "\\u0027");
-  const canAutoPost = isShippingSafeForAutoPost(deal);
-  const publishButtonAttrs = canAutoPost ? "" : `disabled title="Open on Amazon and check shipping before posting"`;
 
   const publishRows = dashboardMode === "best-sellers" ? `
       <div class="publish-tool-row">
         <span>Black Lab</span>
-        <button type="button" ${publishButtonAttrs} onclick='publishDeal(${dealJson}, "blackLabPage", 0, this)'>Now</button>
-        <button type="button" ${publishButtonAttrs} onclick='publishDeal(${dealJson}, "blackLabPage", 60, this)'>60</button>
-        <button type="button" ${publishButtonAttrs} onclick='publishDeal(${dealJson}, "blackLabPage", 90, this)'>90</button>
-        <button type="button" ${publishButtonAttrs} onclick='publishDeal(${dealJson}, "blackLabPage", 120, this)'>120</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "blackLabPage", 120, this)'>120</button>
       </div>
   ` : `
       <div class="publish-tool-row">
         <span>Wood Page</span>
-        <button type="button" ${publishButtonAttrs} onclick='publishDeal(${dealJson}, "woodworkingPage", 0, this)'>Now</button>
-        <button type="button" ${publishButtonAttrs} onclick='publishDeal(${dealJson}, "woodworkingPage", 60, this)'>60</button>
-        <button type="button" ${publishButtonAttrs} onclick='publishDeal(${dealJson}, "woodworkingPage", 90, this)'>90</button>
-        <button type="button" ${publishButtonAttrs} onclick='publishDeal(${dealJson}, "woodworkingPage", 120, this)'>120</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 0, this)'>Now</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 60, this)'>60</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 90, this)'>90</button>
+        <button type="button" onclick='publishDeal(${dealJson}, "woodworkingPage", 120, this)'>120</button>
       </div>
   `;
 
@@ -986,10 +964,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
     </a>
     <div class="card-body">
       <div class="card-top-row">
-        <div class="badge-stack">
-          <span class="badge">${deal.drop_30_percent}% below 30-day average</span>
-          ${shippingSafetyNotice(deal)}
-        </div>
+        <span class="badge">${deal.drop_30_percent}% below 30-day average</span>
         <div class="card-actions">
           <button class="hide-card" type="button" onclick="hideDeal('${deal.asin}')">Hide 24h</button>
           <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}')">Remove ASIN</button>

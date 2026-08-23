@@ -491,32 +491,6 @@ input[type="search"] {
   font-size: 0.9rem;
 }
 
-.badge-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: flex-start;
-}
-
-.shipping-badge {
-  display: inline-flex;
-  width: fit-content;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.shipping-safe {
-  background: #e0f2fe;
-  color: #075985;
-}
-
-.shipping-review {
-  background: #fff7ed;
-  color: #9a3412;
-}
-
 .deal-time {
   display: flex;
   justify-content: space-between;
@@ -628,7 +602,7 @@ button {
 }
 
 .publish-tool-row button:disabled {
-  cursor: not-allowed;
+  cursor: wait;
   opacity: 0.68;
 }
 
