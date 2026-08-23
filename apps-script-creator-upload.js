@@ -1,10 +1,10 @@
 // Add this upload action to the existing ASIN tools Google Apps Script web app.
 // Store a GitHub fine-grained token in Script Properties as GITHUB_TOKEN.
-// Token permissions: Contents read/write on Mhhickma/influencer-prospects.
+// Token permissions: Contents read/write on Mhhickma/Dashboard.
 
-const CREATOR_CONNECTIONS_REPO = "Mhhickma/influencer-prospects";
+const CREATOR_CONNECTIONS_REPO = "Mhhickma/Dashboard";
 const CREATOR_CONNECTIONS_BRANCH = "main";
-const CREATOR_CONNECTIONS_UPLOAD_PATH = "creator-connections/latest.csv";
+const CREATOR_CONNECTIONS_UPLOAD_PATH = "data/creator-connections/latest.csv";
 
 function normalizeCreatorCsv_(csvText) {
   return String(csvText || "")

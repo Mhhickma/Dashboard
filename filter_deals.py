@@ -4,12 +4,12 @@ from pathlib import Path
 DEALS_FILE = Path("data/deals.json")
 MEMORY_FILE = Path("data/deals_memory.json")
 
-MIN_30_DAY_DROP = 10.0
-MIN_COMBINED_DROP = 7.0
+MIN_30_DAY_DROP = 5.0
+MIN_COMBINED_DROP = 5.0
 MIN_RARE_PRICE_DAYS = 90
 QUALIFICATION_DESCRIPTION = (
-    "Deals qualify when they are at least 10% below the 30-day average, "
-    "at least 7% below both the 7-day and 30-day averages, or at a best price in 90+ days"
+    "Deals qualify when they are at least 5% below the 30-day average, "
+    "at least 5% below both the 7-day and 30-day averages, or at a best price in 90+ days"
 )
 
 
@@ -27,9 +27,9 @@ def qualification_reasons(deal):
     best_price_days = number(deal.get("best_price_days"))
 
     if drop_30 >= MIN_30_DAY_DROP:
-        reasons.append("10%+ below 30-day average")
+        reasons.append("5%+ below 30-day average")
     if drop_7 >= MIN_COMBINED_DROP and drop_30 >= MIN_COMBINED_DROP:
-        reasons.append("7%+ below both 7-day and 30-day averages")
+        reasons.append("5%+ below both 7-day and 30-day averages")
     if best_price_days >= MIN_RARE_PRICE_DAYS:
         reasons.append("best price in 90+ days")
 
