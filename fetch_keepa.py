@@ -672,7 +672,14 @@ def fetch_keepa_products(asins):
         if KEEPA_OFFERS_LIMIT > 0:
             params["offers"] = KEEPA_OFFERS_LIMIT
         payload = fetch_keepa_batch(url, params, batch_number)
-        all_products.extend(payload.get("products", []))
+        products = payload.get("products", [])
+        if not products and KEEPA_OFFERS_LIMIT > 0:
+            print(f"Keepa returned 0 products with offers={KEEPA_OFFERS_LIMIT} on batch {batch_number}; retrying batch without offers...")
+            fallback_params = dict(params)
+            fallback_params.pop("offers", None)
+            payload = fetch_keepa_batch(url, fallback_params, batch_number)
+            products = payload.get("products", [])
+        all_products.extend(products)
         tokens_left = payload.get("tokensLeft")
         refill_in = payload.get("refillIn")
         if tokens_left is not None:
@@ -1550,6 +1557,8 @@ def main():
 
     products = fetch_keepa_products(asins)
     print(f"Fetched {len(products)} products from Keepa")
+    if asins and not products:
+        raise RuntimeError("Keepa returned zero products for a non-empty scan window; keeping the previous dashboard data instead of writing an empty file.")
     price_track_scan_summary = build_track_presence_summary(products)
     keepa_raw_diagnostics = raw_keepa_diagnostics(products)
     live_offer_by_asin = {}
