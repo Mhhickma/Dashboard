@@ -44,6 +44,8 @@ LIVE_OFFER_DEBUG_SAMPLE_LIMIT = int(os.getenv("LIVE_OFFER_DEBUG_SAMPLE_LIMIT", "
 REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE = os.getenv("REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE", "false").strip().lower() not in {"0", "false", "no"}
 KEEPA_OFFERS_LIMIT = int(os.getenv("KEEPA_OFFERS_LIMIT", "10"))
 KEEPA_LIGHTNING_DEALS_ENABLED = os.getenv("KEEPA_LIGHTNING_DEALS_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
+KEEPA_LIGHTNING_DEAL_SCAN_LIMIT = max(0, int(os.getenv("KEEPA_LIGHTNING_DEAL_SCAN_LIMIT", "40")))
+KEEPA_LIGHTNING_DEAL_TIME_BUDGET_SECONDS = max(0, int(os.getenv("KEEPA_LIGHTNING_DEAL_TIME_BUDGET_SECONDS", "120")))
 
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/Dashboard")
 CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "data/creator-connections")
@@ -825,11 +827,17 @@ def fetch_keepa_lightning_deals(asins):
     url = "https://api.keepa.com/lightningdeal"
     deals = {}
     skipped_shipping = 0
+    started_at = time.monotonic()
+    checked = 0
 
-    for index, asin in enumerate(asins, start=1):
+    for index, asin in enumerate(asins[:KEEPA_LIGHTNING_DEAL_SCAN_LIMIT], start=1):
+        if KEEPA_LIGHTNING_DEAL_TIME_BUDGET_SECONDS and time.monotonic() - started_at >= KEEPA_LIGHTNING_DEAL_TIME_BUDGET_SECONDS:
+            print(f"Stopping Lightning Deal checks after {checked} ASINs to keep the scan inside the workflow time budget")
+            break
         asin = str(asin or "").upper()
         if not asin:
             continue
+        checked += 1
         params = {"key": KEEPA_API_KEY, "domain": DOMAIN_ID, "asin": asin, "state": "AVAILABLE"}
         try:
             payload = fetch_keepa_batch(url, params, f"lightning-deal-{index}")
@@ -855,7 +863,7 @@ def fetch_keepa_lightning_deals(asins):
             deals[asin] = item
             break
 
-    print(f"Keepa Lightning Deals matched scanned ASINs: {len(deals)}")
+    print(f"Keepa Lightning Deals checked {checked} ASINs and matched scanned ASINs: {len(deals)}")
     if skipped_shipping:
         print(f"Skipped {skipped_shipping} Lightning Deals without free/Prime/FBA shipping evidence")
     return deals
