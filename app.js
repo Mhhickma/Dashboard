@@ -673,10 +673,18 @@ function couponNote(deal) {
 function keepaOfferNote(deal) {
   if (!deal) return "";
   const offer = deal.keepa_offer || {};
-  if (!deal.price_type_label && !offer.shipping_visible) return "";
+  const lightning = deal.lightning_deal || {};
+  if (!deal.price_type_label && !offer.shipping_visible && deal.price_type !== "lightning_deal") return "";
   const parts = [];
   if (deal.price_type_label) parts.push(deal.price_type_label);
-  if (offer.free_shipping_seen) {
+  if (deal.price_type === "lightning_deal") {
+    const shipping = lightning.shipping_cents;
+    if (shipping === 0) {
+      parts.push("shipping shown as $0");
+    } else if (lightning.is_prime || lightning.is_fba || lightning.is_amazon) {
+      parts.push("Prime/FBA shipping signal");
+    }
+  } else if (offer.free_shipping_seen) {
     parts.push("free shipping shown");
   } else if (offer.shipping_visible) {
     parts.push("shipping shown as $0");
@@ -684,6 +692,13 @@ function keepaOfferNote(deal) {
     parts.push("shipping not visible");
   }
   return `<div class="offer-note">${parts.join(" - ")}</div>`;
+}
+
+function primaryDealBadge(deal) {
+  if (deal && deal.price_type === "lightning_deal") {
+    return `<span class="badge lightning">Lightning Deal</span>`;
+  }
+  return `<span class="badge">${deal.drop_30_percent}% below 30-day average</span>`;
 }
 
 function formatDate(value) {
@@ -986,7 +1001,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
     </a>
     <div class="card-body">
       <div class="card-top-row">
-        <span class="badge">${deal.drop_30_percent}% below 30-day average</span>
+        ${primaryDealBadge(deal)}
         <div class="card-actions">
           <button class="hide-card" type="button" onclick="hideDeal('${deal.asin}')">Hide 24h</button>
           <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}')">Remove ASIN</button>

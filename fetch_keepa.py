@@ -43,6 +43,7 @@ DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 LIVE_OFFER_DEBUG_SAMPLE_LIMIT = int(os.getenv("LIVE_OFFER_DEBUG_SAMPLE_LIMIT", "8"))
 REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE = os.getenv("REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE", "false").strip().lower() not in {"0", "false", "no"}
 KEEPA_OFFERS_LIMIT = int(os.getenv("KEEPA_OFFERS_LIMIT", "10"))
+KEEPA_LIGHTNING_DEALS_ENABLED = os.getenv("KEEPA_LIGHTNING_DEALS_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
 
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/Dashboard")
 CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "data/creator-connections")
@@ -59,7 +60,7 @@ PRICE_TRACKS = [
     {"type": "buy_box", "label": "Buy Box price", "index": 18, "source_suffix": "buy_box"},
 ]
 QUALIFYING_PRICE_TRACK_TYPES = {"amazon", "new_fba_prime"}
-QUALIFYING_DEAL_PRICE_TYPES = QUALIFYING_PRICE_TRACK_TYPES | {"keepa_preferred_offer", "prime_exclusive_offer"}
+QUALIFYING_DEAL_PRICE_TYPES = QUALIFYING_PRICE_TRACK_TYPES | {"keepa_preferred_offer", "prime_exclusive_offer", "lightning_deal"}
 
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
@@ -71,6 +72,7 @@ KEEPA_EPOCH = datetime(2011, 1, 1, tzinfo=timezone.utc)
 NON_AMAZON_PRICE_TYPES = {track["type"] for track in PRICE_TRACKS if track["type"] != "amazon"}
 NON_AMAZON_PRICE_TYPES.add("prime_exclusive_offer")
 NON_AMAZON_PRICE_TYPES.add("keepa_preferred_offer")
+NON_AMAZON_PRICE_TYPES.add("lightning_deal")
 LIVE_OFFER_DEBUG_SAMPLES = []
 
 
@@ -692,6 +694,173 @@ def fetch_keepa_products(asins):
     return all_products
 
 
+def extract_lightning_deal_items(payload):
+    if not payload:
+        return []
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if not isinstance(payload, dict):
+        return []
+
+    items = []
+    for key in ("lightningDeal", "lightningDeals", "lightning_deals", "deal", "deals", "value", "data", "items"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            items.extend(item for item in value if isinstance(item, dict))
+        elif isinstance(value, dict):
+            items.append(value)
+
+    if payload.get("asin") or payload.get("ASIN"):
+        items.append(payload)
+
+    seen = set()
+    unique_items = []
+    for item in items:
+        marker = json.dumps(item, sort_keys=True, default=str)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        unique_items.append(item)
+    return unique_items
+
+
+def parse_keepa_money_value(value):
+    if value in (None, "", -1, 0):
+        return None
+    if isinstance(value, list):
+        for item in reversed(value):
+            parsed = parse_keepa_money_value(item)
+            if parsed:
+                return parsed
+        return None
+    try:
+        numeric = float(value)
+    except Exception:
+        return None
+    if numeric <= 0:
+        return None
+    if isinstance(value, int) or (isinstance(value, str) and "." not in value):
+        return round(numeric / 100, 2)
+    return round(numeric, 2)
+
+
+def lightning_deal_price(item):
+    for key in ("dealPrice", "lightningDealPrice", "currentPrice", "price", "deal_price"):
+        price = parse_keepa_money_value(item.get(key))
+        if price:
+            return price
+    return None
+
+
+def lightning_deal_shipping_cents(item):
+    for key in ("shipping", "shippingCost", "shippingPrice", "shipping_cents", "deliveryPrice"):
+        value = item.get(key)
+        if value in (None, "", -1):
+            continue
+        try:
+            return int(float(value))
+        except Exception:
+            continue
+    return None
+
+
+def lightning_deal_time(item, *keys):
+    for key in keys:
+        value = item.get(key)
+        if value in (None, "", -1, 0):
+            continue
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except Exception:
+                continue
+        if isinstance(value, (int, float)):
+            if value > 10_000_000_000:
+                return datetime.fromtimestamp(value / 1000, tz=timezone.utc)
+            if value > 1_000_000_000:
+                return datetime.fromtimestamp(value, tz=timezone.utc)
+            return keepa_minutes_to_datetime(value)
+    return None
+
+
+def lightning_deal_is_active(item):
+    state = str(item.get("dealState") or item.get("state") or item.get("status") or "").strip().upper()
+    if state in {"AVAILABLE", "ACTIVE", "RUNNING", "LIVE"}:
+        return True
+    if state in {"UPCOMING", "EXPIRED", "ENDED", "CANCELED", "CANCELLED", "SOLDOUT", "SOLD_OUT"}:
+        return False
+    if item.get("isActive") is True:
+        return True
+    now = utc_now()
+    starts_at = lightning_deal_time(item, "startTime", "start", "startsAt", "startDate")
+    ends_at = lightning_deal_time(item, "endTime", "end", "endsAt", "endDate")
+    if starts_at and ends_at:
+        return starts_at <= now <= ends_at
+    return False
+
+
+def lightning_deal_has_free_shipping_signal(item):
+    shipping_cents = lightning_deal_shipping_cents(item)
+    if isinstance(shipping_cents, int) and shipping_cents > 0:
+        return False
+    if isinstance(shipping_cents, int) and shipping_cents == 0:
+        return True
+    return any(bool(item.get(key)) for key in (
+        "isAmazon",
+        "isFBA",
+        "isPrime",
+        "isPrimeEligible",
+        "primeEligible",
+        "isFulfilledByAmazon",
+        "fulfilledByAmazon",
+    ))
+
+
+def fetch_keepa_lightning_deals(asins):
+    if not KEEPA_LIGHTNING_DEALS_ENABLED or not asins:
+        return {}
+    if not KEEPA_API_KEY:
+        return {}
+
+    url = "https://api.keepa.com/lightningdeal"
+    deals = {}
+    skipped_shipping = 0
+
+    for index, asin in enumerate(asins, start=1):
+        asin = str(asin or "").upper()
+        if not asin:
+            continue
+        params = {"key": KEEPA_API_KEY, "domain": DOMAIN_ID, "asin": asin, "state": "AVAILABLE"}
+        try:
+            payload = fetch_keepa_batch(url, params, f"lightning-deal-{index}")
+        except Exception as exc:
+            print(f"Keepa Lightning Deal lookup failed for {asin}; continuing: {exc}")
+            continue
+
+        for item in extract_lightning_deal_items(payload):
+            item_asin = str(item.get("asin") or item.get("ASIN") or item.get("productAsin") or asin).upper()
+            if item_asin != asin:
+                continue
+            if not lightning_deal_is_active(item):
+                continue
+            price = lightning_deal_price(item)
+            if not price:
+                continue
+            if not lightning_deal_has_free_shipping_signal(item):
+                skipped_shipping += 1
+                continue
+            item = dict(item)
+            item["_current_price"] = price
+            item["_shipping_cents"] = lightning_deal_shipping_cents(item)
+            deals[asin] = item
+            break
+
+    print(f"Keepa Lightning Deals matched scanned ASINs: {len(deals)}")
+    if skipped_shipping:
+        print(f"Skipped {skipped_shipping} Lightning Deals without free/Prime/FBA shipping evidence")
+    return deals
+
+
 def keepa_minutes_to_datetime(minutes):
     if not isinstance(minutes, (int, float)):
         return None
@@ -1161,6 +1330,68 @@ def build_deal_candidate(product, track):
     )
 
 
+def comparison_track_for_lightning_deal(product):
+    stats = product.get("stats") or {}
+    for price_index, label, price_type in (
+        (0, "Amazon price", "amazon"),
+        (10, "New FBA / Prime price", "new_fba_prime"),
+    ):
+        avg_7_price = price_from_stats_array(stats, "avg", price_index)
+        min_7_price = price_from_stats_array(stats, "minInInterval", price_index)
+        avg_30_price = price_from_stats_array(stats, "avg30", price_index)
+        if avg_7_price and min_7_price and avg_30_price:
+            return price_index, label, price_type, avg_7_price, min_7_price, avg_30_price
+    return None
+
+
+def build_lightning_deal_candidate(product, lightning_deal):
+    if not lightning_deal:
+        return None
+
+    asin = product.get("asin")
+    title = product.get("title") or asin
+    current_price = lightning_deal.get("_current_price") or lightning_deal_price(lightning_deal)
+    if not current_price:
+        return None
+
+    comparison = comparison_track_for_lightning_deal(product)
+    if not comparison:
+        return None
+    price_index, comparison_label, comparison_type, avg_7_price, min_7_price, avg_30_price = comparison
+
+    best_price_days, previous_price, previous_date = best_price_days_for_track(product, price_index, current_price)
+    drop_percent = round(((avg_7_price - current_price) / avg_7_price) * 100, 1)
+    drop_30_percent = round(((avg_30_price - current_price) / avg_30_price) * 100, 1)
+    qualification_reasons = ["active Lightning Deal"]
+    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+    if qualified:
+        drop_percent, drop_30_percent, price_reasons = qualified
+        qualification_reasons.extend(price_reasons)
+
+    amazon_current_price = price_from_stats_array(product.get("stats") or {}, "current", 0)
+    deal = base_deal(
+        product, asin, title, current_price, avg_7_price, min_7_price, avg_30_price,
+        drop_percent, drop_30_percent, qualification_reasons,
+        f"keepa_lightningdeal_vs_{comparison_type}",
+        "lightning_deal", f"Lightning Deal vs {comparison_label}", amazon_current_price, best_price_days,
+        previous_price, previous_date, price_index,
+    )
+    deal["lightning_deal"] = {
+        "deal_state": lightning_deal.get("dealState") or lightning_deal.get("state") or lightning_deal.get("status"),
+        "shipping_cents": lightning_deal.get("_shipping_cents"),
+        "is_prime": bool(lightning_deal.get("isPrime") or lightning_deal.get("isPrimeEligible") or lightning_deal.get("primeEligible")),
+        "is_fba": bool(lightning_deal.get("isFBA") or lightning_deal.get("isFulfilledByAmazon") or lightning_deal.get("fulfilledByAmazon")),
+        "is_amazon": bool(lightning_deal.get("isAmazon")),
+        "starts_at": (lightning_deal_time(lightning_deal, "startTime", "start", "startsAt", "startDate") or None),
+        "ends_at": (lightning_deal_time(lightning_deal, "endTime", "end", "endsAt", "endDate") or None),
+    }
+    if deal["lightning_deal"]["starts_at"]:
+        deal["lightning_deal"]["starts_at"] = deal["lightning_deal"]["starts_at"].isoformat()
+    if deal["lightning_deal"]["ends_at"]:
+        deal["lightning_deal"]["ends_at"] = deal["lightning_deal"]["ends_at"].isoformat()
+    return deal
+
+
 def build_preferred_keepa_offer_candidate(product):
     asin = product.get("asin")
     title = product.get("title") or asin
@@ -1322,6 +1553,7 @@ def deal_rank(deal):
     amazon_current = float(deal.get("amazon_current_price") or current or 0)
     savings_vs_amazon = max(0, amazon_current - current)
     return (
+        4 if price_type == "lightning_deal" else
         3 if str(price_type or "").startswith("live_buy_box") else
         3 if price_type == "keepa_preferred_offer" else
         2 if price_type == "prime_exclusive_offer" else 1 if price_type in NON_AMAZON_PRICE_TYPES else 0,
@@ -1332,8 +1564,11 @@ def deal_rank(deal):
     )
 
 
-def build_deal(product, live_offer=None, require_live_offer=False):
+def build_deal(product, live_offer=None, require_live_offer=False, lightning_deal=None):
     candidates = []
+    lightning_deal_candidate = build_lightning_deal_candidate(product, lightning_deal)
+    if lightning_deal_candidate:
+        candidates.append(lightning_deal_candidate)
     preferred_offer_candidate = build_preferred_keepa_offer_candidate(product)
     if preferred_offer_candidate:
         candidates.append(preferred_offer_candidate)
@@ -1563,8 +1798,9 @@ def main():
     keepa_raw_diagnostics = raw_keepa_diagnostics(products)
     live_offer_by_asin = {}
     live_prime_offer_count = sum(1 for offer in live_offer_by_asin.values() if offer and not offer.get("shipping_rejected"))
+    lightning_deal_by_asin = fetch_keepa_lightning_deals(asins)
     print("Amazon Creators API live Buy Box pricing is not used for deal qualification")
-    print("Deal qualification uses Keepa preferred offers, Amazon, New FBA/Prime, and Prime Exclusive offer pricing")
+    print("Deal qualification uses Keepa Lightning Deals, preferred offers, Amazon, New FBA/Prime, and Prime Exclusive offer pricing")
     require_live_offer = False
 
     scan_deals = []
@@ -1572,11 +1808,17 @@ def main():
     missing_images = 0
     non_amazon_scan_deals = 0
     prime_exclusive_scan_deals = 0
+    lightning_deal_scan_deals = 0
 
     for product in products:
         try:
             asin = str(product.get("asin") or "").upper()
-            deal = build_deal(product, live_offer_by_asin.get(asin), require_live_offer=require_live_offer)
+            deal = build_deal(
+                product,
+                live_offer_by_asin.get(asin),
+                require_live_offer=require_live_offer,
+                lightning_deal=lightning_deal_by_asin.get(asin),
+            )
         except Exception as exc:
             skipped += 1
             print(f"Skipped {product.get('asin', 'unknown ASIN')}: {exc}")
@@ -1589,6 +1831,8 @@ def main():
                 non_amazon_scan_deals += 1
             if deal.get("price_type") == "prime_exclusive_offer":
                 prime_exclusive_scan_deals += 1
+            if deal.get("price_type") == "lightning_deal":
+                lightning_deal_scan_deals += 1
             scan_deals.append(deal)
 
     memory, added_count, updated_count = merge_deals_with_memory(memory, scan_deals)
@@ -1599,11 +1843,12 @@ def main():
     all_deals.sort(key=lambda item: item.get("posted_at") or item.get("checked_at") or "", reverse=True)
     non_amazon_active_deals = sum(1 for deal in all_deals if deal.get("price_type") in NON_AMAZON_PRICE_TYPES)
     prime_exclusive_active_deals = sum(1 for deal in all_deals if deal.get("price_type") == "prime_exclusive_offer")
+    lightning_deal_active_deals = sum(1 for deal in all_deals if deal.get("price_type") == "lightning_deal")
 
     output_payload = {
         "updated_at": iso_now(),
         "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
-        "comparison_window": "Deals qualify when Keepa preferred offers, Amazon, New FBA/Prime, or Prime Exclusive offer pricing is at least 5% below the 30-day average, at least 5% below both the 7-day and 30-day averages, or at a best price in 90+ days",
+        "comparison_window": "Deals qualify when active Keepa Lightning Deals are found with Prime/FBA/free-shipping evidence, or when Keepa preferred offers, Amazon, New FBA/Prime, or Prime Exclusive offer pricing is at least 5% below the 30-day average, at least 5% below both the 7-day and 30-day averages, or at a best price in 90+ days",
         "deal_ttl_hours": DEAL_TTL_HOURS,
         "deal_count": len(all_deals),
         "new_scan_deal_count": len(scan_deals),
@@ -1617,6 +1862,9 @@ def main():
         "non_amazon_active_deal_count": non_amazon_active_deals,
         "prime_exclusive_scan_deal_count": prime_exclusive_scan_deals,
         "prime_exclusive_active_deal_count": prime_exclusive_active_deals,
+        "lightning_deal_scan_deal_count": lightning_deal_scan_deals,
+        "lightning_deal_active_deal_count": lightning_deal_active_deals,
+        "lightning_deal_matches_in_scan": len(lightning_deal_by_asin),
         "creator_campaign_deal_count": creator_campaign_deal_count,
         "creator_image_update_count": creator_image_update_count,
         "creator_connections": {
@@ -1644,17 +1892,19 @@ def main():
             "deal_ttl_hours": DEAL_TTL_HOURS,
             "keepa_stats_days": 7,
             "keepa_product_params": {"stats": 7, "history": 1, "offers": KEEPA_OFFERS_LIMIT},
+            "keepa_lightning_deals_enabled": KEEPA_LIGHTNING_DEALS_ENABLED,
             "live_buy_box_source": "disabled_for_deal_qualification",
             "requires_live_offer": require_live_offer,
-            "shipping_filter_mode": "prefer Keepa isAmazon/isFBA/isPrime offers and skip visible shipping above $0",
+            "shipping_filter_mode": "prefer Keepa isAmazon/isFBA/isPrime offers, require Prime/FBA/free-shipping evidence for Lightning Deals, and skip visible shipping above $0",
             "requires_prime_or_amazon_price_source": True,
-            "qualifying_price_types": ["keepa_preferred_offer", "amazon", "new_fba_prime", "prime_exclusive_offer"],
+            "qualifying_price_types": ["lightning_deal", "keepa_preferred_offer", "amazon", "new_fba_prime", "prime_exclusive_offer"],
             "live_offer_debug_sample_limit": LIVE_OFFER_DEBUG_SAMPLE_LIMIT,
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
                 for track in PRICE_TRACKS
             ],
             "prime_exclusive_source": "offers[].isPrimeExcl + primeExclCSV",
+            "lightning_deal_source": "Keepa /lightningdeal endpoint",
         },
         "price_track_scan_summary": price_track_scan_summary,
         "live_buy_box_scan_summary": {
@@ -1677,6 +1927,8 @@ def main():
     print(f"Non-Amazon price source deals in this scan: {non_amazon_scan_deals}")
     print(f"Prime Exclusive offer deals in this scan: {prime_exclusive_scan_deals}")
     print(f"Prime Exclusive active deals: {prime_exclusive_active_deals}")
+    print(f"Lightning Deal matches in this scan: {len(lightning_deal_by_asin)}")
+    print(f"Lightning Deal active deals: {lightning_deal_active_deals}")
     print(f"Added {added_count} new deals and updated {updated_count} existing deals")
     print(f"Marked {creator_campaign_deal_count} active deals with Creator campaign commission data")
     print(f"Saved {len(all_deals)} active 24-hour deals to {OUTPUT_FILE}")
