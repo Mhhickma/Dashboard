@@ -46,6 +46,11 @@ KEEPA_OFFERS_LIMIT = int(os.getenv("KEEPA_OFFERS_LIMIT", "10"))
 KEEPA_LIGHTNING_DEALS_ENABLED = os.getenv("KEEPA_LIGHTNING_DEALS_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
 KEEPA_LIGHTNING_DEAL_SCAN_LIMIT = max(0, int(os.getenv("KEEPA_LIGHTNING_DEAL_SCAN_LIMIT", "40")))
 KEEPA_LIGHTNING_DEAL_TIME_BUDGET_SECONDS = max(0, int(os.getenv("KEEPA_LIGHTNING_DEAL_TIME_BUDGET_SECONDS", "120")))
+ASIN_TOOLS_WEB_APP_URL = os.getenv(
+    "ASIN_TOOLS_WEB_APP_URL",
+    "https://script.google.com/macros/s/AKfycbxU4HTktR6zH5Wfbk58V24X-HAE9kZYlzdlm1gqMp1NL_ZGzF7p-0VAL5VeGNfnAyxESA/exec",
+).strip()
+REMOVE_VISIBLE_SHIPPING_ASINS = os.getenv("REMOVE_VISIBLE_SHIPPING_ASINS", "true").strip().lower() not in {"0", "false", "no"}
 
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/Dashboard")
 CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "data/creator-connections")
@@ -76,6 +81,7 @@ NON_AMAZON_PRICE_TYPES.add("prime_exclusive_offer")
 NON_AMAZON_PRICE_TYPES.add("keepa_preferred_offer")
 NON_AMAZON_PRICE_TYPES.add("lightning_deal")
 LIVE_OFFER_DEBUG_SAMPLES = []
+VISIBLE_SHIPPING_ASINS = {}
 
 
 def utc_now():
@@ -855,6 +861,9 @@ def fetch_keepa_lightning_deals(asins):
             if not price:
                 continue
             if not lightning_deal_has_free_shipping_signal(item):
+                shipping_cents = lightning_deal_shipping_cents(item)
+                if isinstance(shipping_cents, int) and shipping_cents > 0:
+                    mark_visible_shipping_asin(asin, f"Lightning Deal shows separate shipping cost of ${shipping_cents / 100:.2f}", shipping_cents)
                 skipped_shipping += 1
                 continue
             item = dict(item)
@@ -1028,6 +1037,75 @@ def latest_offer_price_and_shipping(offer):
     if price:
         return utc_now(), price, shipping if isinstance(shipping, int) else None
     return None, None, None
+
+
+def offer_is_buy_box_candidate(offer):
+    return any(bool(offer.get(key)) for key in (
+        "isBuyBoxWinner",
+        "isBuyBox",
+        "buyBoxWinner",
+        "is_buy_box_winner",
+        "buy_box_winner",
+    ))
+
+
+def mark_visible_shipping_asin(asin, reason, shipping_cents=None):
+    asin = str(asin or "").upper()
+    if not ASIN_RE.fullmatch(asin):
+        return
+    VISIBLE_SHIPPING_ASINS.setdefault(asin, {
+        "asin": asin,
+        "reason": reason,
+        "shipping_cents": shipping_cents,
+    })
+
+
+def visible_shipping_removal_reason(product):
+    asin = str(product.get("asin") or "").upper()
+    offers = product.get("offers") or []
+    if not isinstance(offers, list):
+        return None
+
+    shipping_offers = []
+    for offer in offers:
+        if not isinstance(offer, dict):
+            continue
+
+        last_seen, price, shipping_cents = latest_offer_price_and_shipping(offer)
+        if not price or not isinstance(shipping_cents, int) or shipping_cents <= 0:
+            continue
+
+        is_amazon = bool(offer.get("isAmazon"))
+        is_fba = bool(offer.get("isFBA"))
+        is_prime = bool(offer.get("isPrime")) or is_amazon or is_fba
+        is_buy_box = offer_is_buy_box_candidate(offer)
+        if not (is_buy_box or is_amazon or is_fba or is_prime):
+            continue
+
+        shipping_offers.append({
+            "is_buy_box": is_buy_box,
+            "is_amazon": is_amazon,
+            "is_fba": is_fba,
+            "is_prime": is_prime,
+            "shipping_cents": shipping_cents,
+            "price": price,
+            "last_seen": last_seen,
+        })
+
+    if not shipping_offers:
+        return None
+
+    shipping_offers.sort(key=lambda item: (
+        0 if item["is_buy_box"] else 1,
+        0 if item["is_amazon"] else 1,
+        0 if item["is_fba"] else 1,
+        0 if item["is_prime"] else 1,
+        item["price"],
+    ))
+    selected = shipping_offers[0]
+    label = "Buy Box" if selected["is_buy_box"] else "Amazon/FBA/Prime offer"
+    reason = f"{label} shows separate shipping cost of ${selected['shipping_cents'] / 100:.2f}"
+    return {"asin": asin, "reason": reason, "shipping_cents": selected["shipping_cents"]}
 
 
 def preferred_keepa_offer_candidates(product):
@@ -1780,6 +1858,75 @@ def apply_creator_campaigns(memory, campaign_by_asin):
     return matched
 
 
+def call_asin_tools(action, params, timeout=60):
+    if not ASIN_TOOLS_WEB_APP_URL:
+        raise RuntimeError("Missing ASIN_TOOLS_WEB_APP_URL")
+    response = requests.get(
+        ASIN_TOOLS_WEB_APP_URL,
+        params={"action": action, **params},
+        timeout=timeout,
+    )
+    response.raise_for_status()
+    try:
+        return response.json()
+    except ValueError:
+        text = response.text.strip()
+        match = re.search(r"\((\{.*\})\)\s*;?\s*$", text)
+        if match:
+            return json.loads(match.group(1))
+        raise
+
+
+def remove_asins_from_source_sheet(asins, reason):
+    asins = sorted({str(asin or "").upper() for asin in asins if ASIN_RE.fullmatch(str(asin or "").upper())})
+    if not REMOVE_VISIBLE_SHIPPING_ASINS or not asins:
+        return {"attempted": False, "requested": len(asins), "removed": 0, "not_found": []}
+    if not ASIN_CSV_URL:
+        print("Visible-shipping ASIN removal skipped because the scan is using local asins.csv")
+        return {"attempted": False, "requested": len(asins), "removed": 0, "not_found": asins}
+
+    removed = []
+    not_found = []
+    failed = []
+    print(f"Removing {len(asins)} ASINs from source sheet because {reason}")
+
+    for index in range(0, len(asins), 50):
+        chunk = asins[index:index + 50]
+        try:
+            result = call_asin_tools("removeAsins", {"asins": "\n".join(chunk)})
+        except Exception as exc:
+            print(f"Bulk remove failed for {len(chunk)} ASINs; trying one at a time: {exc}")
+            result = {"ok": False, "error": "bulk_failed"}
+
+        if result and result.get("ok"):
+            removed.extend(result.get("removed_asins") or chunk)
+            not_found.extend(result.get("not_found") or [])
+            continue
+
+        if result and not re.search(r"unknown action|bulk_failed", str(result.get("error", "")), re.I):
+            print(f"Bulk remove returned an error: {result.get('error')}")
+
+        for asin in chunk:
+            try:
+                single = call_asin_tools("removeAsin", {"asin": asin})
+                if single and single.get("ok"):
+                    removed.append(asin)
+                else:
+                    not_found.append(asin)
+            except Exception as exc:
+                print(f"Could not remove {asin} from source sheet: {exc}")
+                failed.append(asin)
+
+    return {
+        "attempted": True,
+        "requested": len(asins),
+        "removed": len(set(removed)),
+        "removed_asins": sorted(set(removed)),
+        "not_found": sorted(set(not_found)),
+        "failed": sorted(set(failed)),
+    }
+
+
 def main():
     print("Starting Keepa price scan with stats fallback price tracks...")
 
@@ -1821,6 +1968,16 @@ def main():
     for product in products:
         try:
             asin = str(product.get("asin") or "").upper()
+            if asin in VISIBLE_SHIPPING_ASINS:
+                continue
+            shipping_removal = visible_shipping_removal_reason(product)
+            if shipping_removal:
+                mark_visible_shipping_asin(
+                    asin,
+                    shipping_removal["reason"],
+                    shipping_removal.get("shipping_cents"),
+                )
+                continue
             deal = build_deal(
                 product,
                 live_offer_by_asin.get(asin),
@@ -1842,6 +1999,23 @@ def main():
             if deal.get("price_type") == "lightning_deal":
                 lightning_deal_scan_deals += 1
             scan_deals.append(deal)
+
+    visible_shipping_asins = sorted(VISIBLE_SHIPPING_ASINS)
+    shipping_removal_summary = remove_asins_from_source_sheet(
+        visible_shipping_asins,
+        "Keepa showed a visible separate shipping cost",
+    )
+    if visible_shipping_asins:
+        before_memory_shipping_purge = len(memory)
+        memory = {
+            asin: deal for asin, deal in memory.items()
+            if str(asin).upper() not in VISIBLE_SHIPPING_ASINS
+        }
+        purged_shipping_memory_count = before_memory_shipping_purge - len(memory)
+        if purged_shipping_memory_count:
+            print(f"Removed {purged_shipping_memory_count} visible-shipping deals from 24-hour memory")
+    else:
+        purged_shipping_memory_count = 0
 
     memory, added_count, updated_count = merge_deals_with_memory(memory, scan_deals)
     memory, disallowed_price_type_removed_count = keep_only_qualifying_price_types(memory)
@@ -1873,6 +2047,9 @@ def main():
         "lightning_deal_scan_deal_count": lightning_deal_scan_deals,
         "lightning_deal_active_deal_count": lightning_deal_active_deals,
         "lightning_deal_matches_in_scan": len(lightning_deal_by_asin),
+        "visible_shipping_asins_removed_from_source": shipping_removal_summary,
+        "visible_shipping_asins_detected": list(VISIBLE_SHIPPING_ASINS.values()),
+        "visible_shipping_memory_deals_removed": purged_shipping_memory_count,
         "creator_campaign_deal_count": creator_campaign_deal_count,
         "creator_image_update_count": creator_image_update_count,
         "creator_connections": {
