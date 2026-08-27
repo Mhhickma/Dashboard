@@ -10,6 +10,9 @@ const sortSelect = document.getElementById("sortSelect");
 const asinAddForm = document.getElementById("asinAddForm");
 const asinAddInput = document.getElementById("asinAddInput");
 const asinAddStatus = document.getElementById("asinAddStatus");
+const asinBulkRemoveForm = document.getElementById("asinBulkRemoveForm");
+const asinBulkRemoveInput = document.getElementById("asinBulkRemoveInput");
+const asinBulkRemoveStatus = document.getElementById("asinBulkRemoveStatus");
 const creatorCsvUploadForm = document.getElementById("creatorCsvUploadForm");
 const creatorCsvFile = document.getElementById("creatorCsvFile");
 const creatorCsvFileName = document.getElementById("creatorCsvFileName");
@@ -26,6 +29,7 @@ const PUBLISH_STATUS_KEY = "keepa-dashboard-publish-status";
 const SHOW_ALL_DEALS_KEY = "keepa-dashboard-show-all-deals";
 const HIDE_FOR_HOURS = 24;
 const DEALS_PER_PAGE = 50;
+const BULK_REMOVE_CHUNK_SIZE = 50;
 const AFFILIATE_TAGS = {
   woodworkingPage: "page_page_page-20",
   blackLabPage: "blacklabdealsprime-20",
@@ -231,6 +235,19 @@ function hideDeal(asin) {
   applySearch(false);
 }
 
+function hideDealsLocally(asins) {
+  const hidden = activeHiddenMap();
+  const hideUntil = Date.now() + HIDE_FOR_HOURS * 60 * 60 * 1000;
+
+  asins.forEach((asin) => {
+    hidden[asin] = hideUntil;
+    removeFromSelectedForPosting(asin);
+  });
+
+  writeHiddenMap(hidden);
+  applySearch(false);
+}
+
 function callAsinScript(action, params = {}) {
   return new Promise((resolve, reject) => {
     if (!REMOVE_ASIN_WEB_APP_URL || REMOVE_ASIN_WEB_APP_URL.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
@@ -279,12 +296,68 @@ function removeAsinWithScript(asin) {
   return callAsinScript("removeAsin", { asin });
 }
 
+async function removeAsinsOneAtATime(asins) {
+  const removedAsins = [];
+  const notFound = [];
+
+  for (const asin of asins) {
+    const result = await removeAsinWithScript(asin);
+    if (result && result.ok) {
+      removedAsins.push(asin);
+    } else {
+      notFound.push(asin);
+    }
+  }
+
+  return {
+    ok: true,
+    requested: asins.length,
+    removed: removedAsins.length,
+    removed_asins: removedAsins,
+    not_found: notFound,
+  };
+}
+
+async function removeAsinsWithScript(asins) {
+  const summary = {
+    ok: true,
+    requested: asins.length,
+    removed: 0,
+    removed_asins: [],
+    not_found: [],
+  };
+
+  for (let index = 0; index < asins.length; index += BULK_REMOVE_CHUNK_SIZE) {
+    const chunk = asins.slice(index, index + BULK_REMOVE_CHUNK_SIZE);
+    const result = await callAsinScript("removeAsins", { asins: chunk.join("\n") });
+
+    if (result && result.ok) {
+      summary.removed += Number(result.removed || result.found || 0);
+      summary.removed_asins.push(...(result.removed_asins || chunk.filter((asin) => !(result.not_found || []).includes(asin))));
+      summary.not_found.push(...(result.not_found || []));
+      continue;
+    }
+
+    if (result && /unknown action/i.test(result.error || "")) {
+      return removeAsinsOneAtATime(asins);
+    }
+
+    throw new Error(result && result.error ? result.error : "The source sheet did not confirm bulk removal.");
+  }
+
+  return summary;
+}
+
 function parseAsinsFromText(value) {
   return [...new Set((String(value || "").toUpperCase().match(/\bB[0-9A-Z]{9}\b/g) || []))];
 }
 
 function setAsinAddStatus(message) {
   if (asinAddStatus) asinAddStatus.textContent = message;
+}
+
+function setAsinBulkRemoveStatus(message) {
+  if (asinBulkRemoveStatus) asinBulkRemoveStatus.textContent = message;
 }
 
 function initAsinAddForm() {
@@ -314,6 +387,50 @@ function initAsinAddForm() {
       setAsinAddStatus(`Added ${addedCount} new ASIN${addedCount === 1 ? "" : "s"} to ASIN_List. Skipped ${duplicateCount} duplicate${duplicateCount === 1 ? "" : "s"}.`);
     } catch (error) {
       setAsinAddStatus(`Could not add ASINs: ${error.message}`);
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+}
+
+function initAsinBulkRemoveForm() {
+  if (!asinBulkRemoveForm || !asinBulkRemoveInput) return;
+
+  asinBulkRemoveForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const asins = parseAsinsFromText(asinBulkRemoveInput.value);
+    const button = asinBulkRemoveForm.querySelector("button[type='submit']");
+
+    if (!asins.length) {
+      setAsinBulkRemoveStatus("Paste one or more valid ASINs first.");
+      return;
+    }
+
+    try {
+      if (button) button.disabled = true;
+      setAsinBulkRemoveStatus(`Removing ${asins.length} ASIN${asins.length === 1 ? "" : "s"} from the scan sheet...`);
+      const result = await removeAsinsWithScript(asins);
+
+      if (!result || !result.ok) {
+        throw new Error(result && result.error ? result.error : "Unknown bulk remove error.");
+      }
+
+      const removedAsins = result.removed_asins && result.removed_asins.length ? result.removed_asins : asins;
+      hideDealsLocally(removedAsins);
+      asinBulkRemoveInput.value = "";
+
+      const removedCount = Number(result.removed || removedAsins.length || 0);
+      const notFoundCount = (result.not_found || []).length;
+      setAsinBulkRemoveStatus(`Removed ${removedCount} ASIN${removedCount === 1 ? "" : "s"} from ASIN_List. ${notFoundCount ? `${notFoundCount} not found.` : "They are hidden here for 24 hours."}`);
+    } catch (error) {
+      const removeQueue = removeQueueAsins();
+      asins.forEach((asin) => {
+        removeQueue.add(asin);
+        removeFromSelectedForPosting(asin);
+      });
+      writeSet(REMOVE_QUEUE_KEY, removeQueue);
+      hideDealsLocally(asins);
+      setAsinBulkRemoveStatus(`${error.message} ${asins.length} ASIN${asins.length === 1 ? "" : "s"} queued locally. Use "Copy removals" if needed.`);
     } finally {
       if (button) button.disabled = false;
     }
@@ -1123,5 +1240,6 @@ async function loadDeals() {
 searchInput.addEventListener("input", () => applySearch());
 if (sortSelect) sortSelect.addEventListener("change", () => applySearch());
 initAsinAddForm();
+initAsinBulkRemoveForm();
 initCreatorCsvUpload();
 loadDeals();

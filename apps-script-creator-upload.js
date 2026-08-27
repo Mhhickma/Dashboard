@@ -2,9 +2,93 @@
 // Store a GitHub fine-grained token in Script Properties as GITHUB_TOKEN.
 // Token permissions: Contents read/write on Mhhickma/Dashboard.
 
+const SHEET_NAME = "ASIN_List";
+const START_ROW = 2;
+const ASIN_RE = /\bB[0-9A-Z]{9}\b/g;
 const CREATOR_CONNECTIONS_REPO = "Mhhickma/Dashboard";
 const CREATOR_CONNECTIONS_BRANCH = "main";
 const CREATOR_CONNECTIONS_UPLOAD_PATH = "data/creator-connections/latest.csv";
+
+function parseAsinsFromText_(value) {
+  const matches = String(value || "").toUpperCase().match(ASIN_RE) || [];
+  const seen = {};
+  const asins = [];
+
+  matches.forEach((asin) => {
+    if (seen[asin]) return;
+    seen[asin] = true;
+    asins.push(asin);
+  });
+
+  return asins;
+}
+
+function removeAsins_(asinText) {
+  const asins = parseAsinsFromText_(asinText);
+  if (!asins.length) {
+    throw new Error("Missing ASIN.");
+  }
+
+  const asinLookup = {};
+  asins.forEach((asin) => {
+    asinLookup[asin] = true;
+  });
+
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    throw new Error(`Missing sheet named ${SHEET_NAME}.`);
+  }
+
+  const lastRow = sheet.getLastRow();
+  const lastColumn = sheet.getLastColumn();
+  if (lastRow < START_ROW || lastColumn < 1) {
+    return {
+      ok: true,
+      requested: asins.length,
+      removed: 0,
+      removed_asins: [],
+      not_found: asins,
+    };
+  }
+
+  const range = sheet.getRange(START_ROW, 1, lastRow - START_ROW + 1, lastColumn);
+  const values = range.getValues();
+  const removedLookup = {};
+  let removedCells = 0;
+
+  values.forEach((row) => {
+    row.forEach((cell, columnIndex) => {
+      const cellAsins = parseAsinsFromText_(cell);
+      if (!cellAsins.length) return;
+
+      if (cellAsins.some((asin) => asinLookup[asin])) {
+        row[columnIndex] = "";
+        removedCells += 1;
+        cellAsins.forEach((asin) => {
+          if (asinLookup[asin]) removedLookup[asin] = true;
+        });
+      }
+    });
+  });
+
+  range.setValues(values);
+
+  const removedAsins = asins.filter((asin) => removedLookup[asin]);
+  const notFound = asins.filter((asin) => !removedLookup[asin]);
+
+  return {
+    ok: true,
+    requested: asins.length,
+    removed: removedAsins.length,
+    removed_cells: removedCells,
+    removed_asins: removedAsins,
+    not_found: notFound,
+  };
+}
+
+function removeAsin_(asinValue) {
+  return removeAsins_(asinValue);
+}
 
 function normalizeCreatorCsv_(csvText) {
   return String(csvText || "")
@@ -124,8 +208,53 @@ function doPost(e) {
     if (params.action === "uploadCreatorCsv") {
       return creatorUploadResponse_(uploadCreatorCsv_(params));
     }
+    if (params.action === "removeAsin") {
+      return creatorUploadResponse_(removeAsin_(params.asin));
+    }
+    if (params.action === "removeAsins") {
+      return creatorUploadResponse_(removeAsins_(params.asins || params.asin));
+    }
     return creatorUploadResponse_({ ok: false, error: "Unknown action." });
   } catch (error) {
     return creatorUploadResponse_({ ok: false, error: error.message });
+  }
+}
+
+function doGet(e) {
+  try {
+    const params = e.parameter || {};
+    const callback = String(params.callback || "").trim();
+    let payload;
+
+    if (params.action === "removeAsin") {
+      payload = removeAsin_(params.asin);
+    } else if (params.action === "removeAsins") {
+      payload = removeAsins_(params.asins || params.asin);
+    } else {
+      payload = { ok: false, error: "Unknown action." };
+    }
+
+    const json = JSON.stringify(payload);
+    if (callback) {
+      return ContentService
+        .createTextOutput(`${callback}(${json});`)
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+
+    return ContentService
+      .createTextOutput(json)
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    const callback = e && e.parameter ? String(e.parameter.callback || "").trim() : "";
+    const json = JSON.stringify({ ok: false, error: error.message });
+    if (callback) {
+      return ContentService
+        .createTextOutput(`${callback}(${json});`)
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+
+    return ContentService
+      .createTextOutput(json)
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
