@@ -195,6 +195,20 @@ def average(values, now, days):
     return (total + (now - prev) * value) / (days * DAY)
 
 
+def book_asin(asin):
+    # Amazon uses ISBN-10 identifiers for books. Validate the check digit.
+    value = str(asin).upper()
+    return bool(re.fullmatch(r"[0-9]{9}[0-9X]", value)) and sum(
+        (10-i)*(10 if c == "X" else int(c)) for i,c in enumerate(value)) % 11 == 0
+
+
+def books(p):
+    nodes = p.get("categoryTree") or []
+    return (book_asin(p.get("asin", "")) or str(p.get("rootCategory")) == "283155"
+        or any(isinstance(n, dict) and (str(n.get("catId")) == "283155" or str(n.get("name", "")).lower() == "books") for n in nodes)
+        or str(p.get("websiteDisplayGroup", "")).lower() in {"book", "books"})
+
+
 def apparel(p):
     nodes = [str(n.get("name", "")).lower() for n in (p.get("categoryTree") or []) if isinstance(n, dict)]
     detail = " ".join(nodes[1:] + [str(p.get(k) or "").lower() for k in ("productGroup", "type", "itemTypeKeyword", "title")])
@@ -256,7 +270,7 @@ def evaluate(p, campaigns, now, fetched, ttl_hours=24):
             break
     clothing = apparel(p)
     checks = {
-        "active_campaign_and_commission": bool(campaigns), "not_apparel": clothing is False,
+        "active_campaign_and_commission": bool(campaigns), "not_apparel": clothing is False, "not_books": not books(p),
         "merchant_video": merchant is True, "fewer_than_5_videos": total is not None and total < 5,
         "sales_growth": current is not None and avg is not None and avg > 0 and current * 10 >= 11 * avg,
         "fresh_cache": 0 <= now - fetched <= ttl_hours * 3600,
@@ -401,11 +415,15 @@ def main(argv=None):
             phase = "import_paused"
             return export(db, Path(args.output), args, api, phase)
         eligible_index(db, datetime.now(UTC).date().isoformat())
+        db.create_function("book_asin", 1, book_asin)
+        db.execute("CREATE TEMP TABLE excluded_books(asin TEXT PRIMARY KEY)")
+        db.executemany("INSERT OR IGNORE INTO excluded_books VALUES(?)", [(a,) for a,payload in db.execute("SELECT asin,payload FROM cache") if books(json.loads(payload))])
+        db.execute("DELETE FROM selected WHERE book_asin(asin) OR asin IN (SELECT asin FROM excluded_books)")
         count = db.execute("SELECT COUNT(*) FROM selected").fetchone()[0]
         if args.limit < count:
             raise ValueError("Limit is below the existing cohort; restore original limit or explicitly reset checkpoint")
         db.execute("""INSERT OR IGNORE INTO selected SELECT DISTINCT l.asin FROM links l
-          JOIN eligible e ON e.id=l.id WHERE l.asin NOT IN (SELECT asin FROM selected)
+          JOIN eligible e ON e.id=l.id WHERE l.asin NOT IN (SELECT asin FROM selected) AND NOT book_asin(l.asin) AND l.asin NOT IN (SELECT asin FROM excluded_books)
           ORDER BY l.asin LIMIT ?""", (args.limit-count,))
         db.commit()
         phase = "offline" if args.offline else "complete"

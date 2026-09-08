@@ -243,3 +243,13 @@ class CheckpointPauseTests(unittest.TestCase):
                 result=p.main(args)
             self.assertEqual(batches,asins[10:])
             self.assertEqual(result['counts']['evaluated'],30)
+
+
+class BookExclusionTests(unittest.TestCase):
+    def test_books_and_isbn_excluded(self):
+        self.assertTrue(p.book_asin('031022344X'))
+        self.assertFalse(p.book_asin('B000000001'))
+        value=product(); value['rootCategory']=283155
+        self.assertFalse(p.evaluate(value,[p.campaign(row())],NOW,NOW)['qualified'])
+        self.assertTrue(p.books({'categoryTree':[{'name':'Books'}]}))
+        self.assertFalse(p.books(product()))
