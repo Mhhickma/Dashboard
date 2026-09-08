@@ -253,3 +253,18 @@ class BookExclusionTests(unittest.TestCase):
         self.assertFalse(p.evaluate(value,[p.campaign(row())],NOW,NOW)['qualified'])
         self.assertTrue(p.books({'categoryTree':[{'name':'Books'}]}))
         self.assertFalse(p.books(product()))
+
+
+class NearMissTests(unittest.TestCase):
+    def test_only_five_six_with_main_and_other_rules(self):
+        for count in [4,5,6,7]:
+            value=product(); value['hasMainVideo']=True
+            value['videos']=[{'url':f'https://example.test/{i}', 'creator':'Seller'} for i in range(count)]
+            result=p.evaluate(value,[p.campaign(row())],NOW,NOW)
+            self.assertEqual(result['near_miss'],count in (5,6))
+            self.assertEqual(result['qualified'],count==4)
+        value['videos']=value['videos'][:6]
+        value.pop('hasMainVideo')
+        self.assertFalse(p.evaluate(value,[p.campaign(row())],NOW,NOW)['near_miss'])
+        value['hasMainVideo']=True; value.pop('monthlySoldHistory')
+        self.assertFalse(p.evaluate(value,[p.campaign(row())],NOW,NOW)['near_miss'])

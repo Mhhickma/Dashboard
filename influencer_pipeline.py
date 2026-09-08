@@ -253,6 +253,7 @@ def evaluate(p, campaigns, now, fetched, ttl_hours=24):
     total = len(unique) if video_known else None
     influencers = sum(v["creator"] == "Influencer" for v in unique.values()) if video_known else None
     community = sum(v["creator"] in {"Influencer", "Customer", "ThirdParty"} for v in unique.values()) if video_known else None
+    main_video = p.get("hasMainVideo") is True or any(v.get("creator") == "Main" for v in unique.values())
     rank = stat(3)
     csvs = p.get("csv") or []
     ranks = csvs[3] if len(csvs) > 3 else None
@@ -283,13 +284,14 @@ def evaluate(p, campaigns, now, fetched, ttl_hours=24):
         sales_trend="unavailable" if growth is None else "pass" if checks["sales_growth"] else "fail",
         bsr=rank, bsr30=(1-rank/bsr30)*100 if rank and bsr30 else None,
         bsr90=(1-rank/bsr90)*100 if rank and bsr90 else None,
-        merchant_video=merchant, total_videos=total, influencer_videos=influencers, community_videos=community,
+        main_video=True if main_video else None, merchant_video=merchant, total_videos=total, influencer_videos=influencers, community_videos=community,
         video_scope="Keepa observed carousel/community videos; not a guaranteed Amazon-wide total",
         budget_remaining=best.get("budget_remaining"), available_slots=best.get("available_slots"),
         campaigns=campaigns, qualifying_campaign_count=len(campaigns), recommended=any(c["recommended"] for c in campaigns),
         checks=checks, qualified=all(checks.values()), fetched_at=fetched,
         failed_filters=[k for k, v in checks.items() if not v], score=None,
         valid_until=min([fetched+ttl_hours*3600] + [datetime.fromisoformat(c["end"]).replace(tzinfo=UTC).timestamp()+DAY for c in campaigns]))
+    result["near_miss"] = (total in (5, 6) and main_video and all(v for k, v in checks.items() if k != "fewer_than_5_videos"))
     if result["qualified"]:
         result["score"] = round(25*min(math.log10(1+(current or 0))/4, 1) + 25*min(max(growth or 0, 0)/100, 1)
             + 20*(5-total)/5 + 15*min(best["commission"]/30, 1) + 5*min(price_value or 0, 200)/200

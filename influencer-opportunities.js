@@ -2,7 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const metrics = [['growth','Sales growth %'],['monthly_sold','Monthly sold'],['commission','Commission %'],['price','Price'],['bsr','BSR'],['total_videos','Total videos']];
-  const columns = [['asin','ASIN'],['title','Product title'],['brand','Brand'],['category','Category'],['price','Price'],['commission','CC commission'],['monthly_sold','Monthly sold'],['monthly_sold_90','90-day avg sold'],['growth','Sales growth %'],['bsr','Current BSR'],['bsr90','90-day BSR trend'],['merchant_video','Merchant video'],['total_videos','Total videos'],['influencer_videos','Influencer videos'],['budget_remaining','Budget remaining'],['available_slots','Available slots'],['score','Opportunity score'],['status','Status'],['campaigns','Campaigns']];
+  const columns = [['asin','ASIN'],['title','Product title'],['brand','Brand'],['category','Category'],['price','Price'],['commission','CC commission'],['monthly_sold','Monthly sold'],['monthly_sold_90','90-day avg sold'],['growth','Sales growth %'],['bsr','Current BSR'],['bsr90','90-day BSR trend'],['main_video','Main video'],['merchant_video','Merchant video'],['total_videos','Total videos'],['influencer_videos','Influencer videos'],['budget_remaining','Budget remaining'],['available_slots','Available slots'],['score','Opportunity score'],['status','Status'],['campaigns','Campaigns']];
   let rows = [], filtered = [], page = 0;
   function element(tag, text, className) { const node = document.createElement(tag); if (text != null) node.textContent = text; if (className) node.className = className; return node; }
   function format(key, value) {
@@ -20,7 +20,8 @@
     $('numericFilters').append(set);
   }
   function qualifies(row) { return row.qualified && row.valid_until > Date.now()/1000; }
-  function status(row) { return qualifies(row) ? 'Qualified' : (row.valid_until <= Date.now()/1000 ? 'Expired data — resume scan' : row.failed_filters.join(', ').replaceAll('_',' ')); }
+  function nearMiss(row) { return row.near_miss === true && row.valid_until > Date.now()/1000; }
+  function status(row) { return qualifies(row) ? 'Qualified' : nearMiss(row) ? `Near miss: ${row.total_videos} videos; main video confirmed` : (row.valid_until <= Date.now()/1000 ? 'Expired data — resume scan' : row.failed_filters.join(', ').replaceAll('_',' ')); }
   async function details(row) {
     $('campaignDetails').replaceChildren(element('p','Loading…')); $('campaignDialog').showModal();
     try {
@@ -38,7 +39,7 @@
   }
   function render() {
     const search = $('opportunitySearch').value.toLowerCase();
-    filtered = rows.filter(row => ($('showExcluded').checked || qualifies(row)) && (!$('categoryFilter').value || row.category === $('categoryFilter').value)
+    filtered = rows.filter(row => ($('showExcluded').checked || ($('resultView').value === 'near' ? nearMiss(row) : qualifies(row))) && (!$('categoryFilter').value || row.category === $('categoryFilter').value)
       && [row.asin,row.title,row.brand].some(v => String(v || '').toLowerCase().includes(search))
       && metrics.every(([key]) => ['min','max'].every(bound => { const input=$(`${key}-${bound}`); return input.value === '' || (row[key] != null && (bound === 'min' ? row[key]>=Number(input.value) : row[key]<=Number(input.value))); })));
     const key=$('opportunitySort').value, direction=$('sortDirection').value === 'asc' ? 1 : -1;
@@ -58,7 +59,7 @@
       $('resultBody').append(tr);
     }
     $('qualifiedCount').textContent=rows.filter(qualifies).length.toLocaleString();
-    $('resultCount').textContent=`${filtered.length.toLocaleString()} matching products · ${$('showExcluded').checked?'including diagnostic rows':'qualified products only'}`;
+    $('resultCount').textContent=`${filtered.length.toLocaleString()} matching products · ${$('showExcluded').checked?'including diagnostic rows':($('resultView').value === 'near'?'near misses only':'qualified products only')}`;
     $('emptyResults').hidden=filtered.length>0; $('pageLabel').textContent=`Page ${page+1} of ${pages}`;
     $('previousPage').disabled=page===0; $('nextPage').disabled=page===pages-1;
   }
