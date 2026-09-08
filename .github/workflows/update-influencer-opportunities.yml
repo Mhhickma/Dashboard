@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       limit:
-        description: Total ASIN cohort across resumes (start with 100; max 10000)
+        description: Finder candidates to match against CC (start with 100; max 10000)
         default: '100'
         required: true
       batch_size:
@@ -15,7 +15,7 @@ on:
         default: '100'
         required: true
       refresh_asins:
-        description: Optional FINAL paid video refresh — paste previously scanned ASINs, comma separated. Leave blank for cheap scan.
+        description: Optional FINAL paid video refresh - paste previously scanned ASINs, comma separated. Leave blank for cheap scan.
         default: ""
         required: false
       reset:
@@ -64,7 +64,7 @@ jobs:
           BATCH_SIZE: ${{ inputs.batch_size }}
           REFRESH_ASINS: ${{ inputs.refresh_asins }}
           TOKEN_BUDGET: ${{ inputs.token_budget }}
-        run: python influencer_pipeline.py --limit "$SCAN_LIMIT" --batch-size "$BATCH_SIZE" --token-budget "$TOKEN_BUDGET" --seconds 900 --refresh-asins "$REFRESH_ASINS"
+        run: python influencer_pipeline.py --finder --limit "$SCAN_LIMIT" --batch-size "$BATCH_SIZE" --token-budget "$TOKEN_BUDGET" --seconds 900 --refresh-asins "$REFRESH_ASINS"
       - name: Persist checkpoint even after scanner failure
         if: ${{ always() && steps.scan.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4

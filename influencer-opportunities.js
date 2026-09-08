@@ -20,6 +20,7 @@
     $('numericFilters').append(set);
   }
   function qualifies(row) { return row.qualified && row.valid_until > Date.now()/1000; }
+  function needsVerification(row) { return row.valid_until > Date.now()/1000 && (row.total_videos == null || row.merchant_video == null) && Object.entries(row.checks || {}).every(([key,value]) => ['merchant_video','fewer_than_5_videos'].includes(key) || value === true); }
   function nearMiss(row) { return row.near_miss === true && row.valid_until > Date.now()/1000; }
   function status(row) { return qualifies(row) ? 'Qualified' : nearMiss(row) ? `Near miss: ${row.total_videos} videos; main video confirmed` : (row.valid_until <= Date.now()/1000 ? 'Expired data — resume scan' : row.failed_filters.join(', ').replaceAll('_',' ')); }
   async function details(row) {
@@ -39,7 +40,7 @@
   }
   function render() {
     const search = $('opportunitySearch').value.toLowerCase();
-    filtered = rows.filter(row => ($('showExcluded').checked || ($('resultView').value === 'near' ? nearMiss(row) : qualifies(row))) && (!$('categoryFilter').value || row.category === $('categoryFilter').value)
+    filtered = rows.filter(row => ($('showExcluded').checked || ($('resultView').value === 'near' ? nearMiss(row) : $('resultView').value === 'verify' ? needsVerification(row) : qualifies(row))) && (!$('categoryFilter').value || row.category === $('categoryFilter').value)
       && [row.asin,row.title,row.brand].some(v => String(v || '').toLowerCase().includes(search))
       && metrics.every(([key]) => ['min','max'].every(bound => { const input=$(`${key}-${bound}`); return input.value === '' || (row[key] != null && (bound === 'min' ? row[key]>=Number(input.value) : row[key]<=Number(input.value))); })));
     const key=$('opportunitySort').value, direction=$('sortDirection').value === 'asc' ? 1 : -1;
@@ -59,7 +60,7 @@
       $('resultBody').append(tr);
     }
     $('qualifiedCount').textContent=rows.filter(qualifies).length.toLocaleString();
-    $('resultCount').textContent=`${filtered.length.toLocaleString()} matching products · ${$('showExcluded').checked?'including diagnostic rows':($('resultView').value === 'near'?'near misses only':'qualified products only')}`;
+    $('resultCount').textContent=`${filtered.length.toLocaleString()} matching products · ${$('showExcluded').checked?'including diagnostic rows':($('resultView').value === 'near'?'near misses only':$('resultView').value === 'verify'?'needs video verification':'qualified products only')}`;
     $('emptyResults').hidden=filtered.length>0; $('pageLabel').textContent=`Page ${page+1} of ${pages}`;
     $('previousPage').disabled=page===0; $('nextPage').disabled=page===pages-1;
   }
@@ -88,7 +89,7 @@
       $('evaluatedCount').textContent=`${data.counts?.evaluated ?? 0} / ${data.selected ?? 0}`;
       $('tokenCount').textContent=`${data.tokens_consumed ?? '—'} / ${data.tokens_left ?? '—'}`;
       $('unavailableCount').textContent=data.counts?.unavailable_sales_trend ?? '—';
-      $('scanStatus').textContent=`${data.phase.replaceAll('_',' ')} · Updated ${new Date(data.updated_at).toLocaleString()} · ${data.failed ?? 0} failed ASINs · ${data.tokens_reserved ?? 0} / ${data.token_budget ?? '—'} tokens reserved.${data.truncated?' Export capped at 10,000 rows. Full records are in the checkpoint.':''}`;
+      $('scanStatus').textContent=`${data.phase.replaceAll('_',' ')}${data.selection_mode==='finder' ? ` · Finder candidates: ${data.finder_candidates ?? '—'} · CC matches: ${data.selected ?? 0}` : ''} · Updated ${new Date(data.updated_at).toLocaleString()} · ${data.failed ?? 0} failed ASINs · ${data.tokens_reserved ?? 0} / ${data.token_budget ?? '—'} tokens reserved.${data.truncated?' Export capped at 10,000 rows. Full records are in the checkpoint.':''}`;
       render();
     } catch(error) { rows=[];render();$('scanStatus').textContent=error.message; }
   }

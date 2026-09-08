@@ -376,7 +376,7 @@ def export(db, output, args, api, phase):
         pages.append(name)
     failures = [dict(asin=a, code=c, attempts=n, last_at=t) for a,c,n,t in db.execute("SELECT * FROM failures LIMIT 10000")]
     atomic_json(output/"failures.json", failures)
-    status = dict(updated_at=datetime.now(UTC).isoformat(), phase=phase, pages=pages, counts=counts,
+    status = dict(selection_mode="finder" if args.finder else "cc", finder_candidates=getattr(args,"finder_candidates",None), updated_at=datetime.now(UTC).isoformat(), phase=phase, pages=pages, counts=counts,
         selected=db.execute("SELECT COUNT(*) FROM selected").fetchone()[0], limit=args.limit, batch_size=args.batch_size,
         tokens_consumed=api.consumed if api and not api.usage_unknown else None, tokens_reserved=api.reserved if api else 0,
         tokens_left=api.balance if api else None, refill_rate=api.refill if api else None,
@@ -397,6 +397,7 @@ def main(argv=None):
     parser.add_argument("--seconds", type=int, default=900)
     parser.add_argument("--cache-hours", type=int, default=24)
     parser.add_argument("--refresh-asins", default="", help="Explicit final refresh: only these previously scanned ASINs, comma separated")
+    parser.add_argument("--finder", action="store_true", help="Select Finder candidates before matching CC; reuse saved shortlist")
     parser.add_argument("--offline", action="store_true", help="Import/export only; never call Keepa")
     args = parser.parse_args(argv)
     if not 1 <= args.limit <= 10000 or not 1 <= args.batch_size <= 100 or args.token_budget < 1 or args.seconds < 1 or not 1 <= args.cache_hours <= 168:
@@ -421,19 +422,39 @@ def main(argv=None):
         db.execute("CREATE TEMP TABLE excluded_books(asin TEXT PRIMARY KEY)")
         db.executemany("INSERT OR IGNORE INTO excluded_books VALUES(?)", [(a,) for a,payload in db.execute("SELECT asin,payload FROM cache") if books(json.loads(payload))])
         db.execute("DELETE FROM selected WHERE book_asin(asin) OR asin IN (SELECT asin FROM excluded_books)")
-        count = db.execute("SELECT COUNT(*) FROM selected").fetchone()[0]
-        if args.limit < count:
-            raise ValueError("Limit is below the existing cohort; restore original limit or explicitly reset checkpoint")
-        db.execute("""INSERT OR IGNORE INTO selected SELECT DISTINCT l.asin FROM links l
-          JOIN eligible e ON e.id=l.id WHERE l.asin NOT IN (SELECT asin FROM selected) AND NOT book_asin(l.asin) AND l.asin NOT IN (SELECT asin FROM excluded_books)
-          ORDER BY l.asin LIMIT ?""", (args.limit-count,))
+        if args.finder and not refresh_asins:
+            from influencer_finder import shortlist
+            if args.offline:
+                return export(db, Path(args.output), args, None, "offline")
+            key = os.getenv("KEEPA_API_KEY")
+            if not key:
+                raise ValueError("Missing KEEPA_API_KEY environment variable")
+            api = Keepa(key, deadline, args.token_budget)
+            candidates, error = shortlist(db, api, args.limit)
+            if error:
+                return export(db, Path(args.output), args, api, error)
+            db.execute("CREATE TEMP TABLE finder_candidates(asin TEXT PRIMARY KEY)")
+            db.executemany("INSERT OR IGNORE INTO finder_candidates VALUES(?)", [(a,) for a in candidates])
+            # Replace only the cohort; retain all previously fetched product cache.
+            db.execute("DELETE FROM selected")
+            db.execute("""INSERT INTO selected SELECT DISTINCT f.asin FROM finder_candidates f
+              JOIN links l ON l.asin=f.asin JOIN eligible e ON e.id=l.id
+              WHERE NOT book_asin(f.asin) AND f.asin NOT IN (SELECT asin FROM excluded_books)""")
+            args.finder_candidates = len(candidates)
+        elif not refresh_asins:
+            count = db.execute("SELECT COUNT(*) FROM selected").fetchone()[0]
+            if args.limit < count:
+                raise ValueError("Limit is below the existing cohort; restore original limit or explicitly reset checkpoint")
+            db.execute("""INSERT OR IGNORE INTO selected SELECT DISTINCT l.asin FROM links l
+              JOIN eligible e ON e.id=l.id WHERE l.asin NOT IN (SELECT asin FROM selected) AND NOT book_asin(l.asin) AND l.asin NOT IN (SELECT asin FROM excluded_books)
+              ORDER BY l.asin LIMIT ?""", (args.limit-count,))
         db.commit()
         phase = "offline" if args.offline else "complete"
         if not args.offline:
             key = os.getenv("KEEPA_API_KEY")
             if not key:
                 raise ValueError("Missing KEEPA_API_KEY environment variable")
-            api = Keepa(key, deadline, args.token_budget, refresh=bool(refresh_asins))
+            api = api or Keepa(key, deadline, args.token_budget, refresh=bool(refresh_asins))
             cutoff = time.time() - args.cache_hours * 3600
             cursor = db.execute("""SELECT s.asin FROM selected s LEFT JOIN cache c ON c.asin=s.asin
               WHERE (c.asin IS NULL OR c.fetched<?) AND EXISTS

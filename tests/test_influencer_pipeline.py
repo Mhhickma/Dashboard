@@ -268,3 +268,33 @@ class NearMissTests(unittest.TestCase):
         self.assertFalse(p.evaluate(value,[p.campaign(row())],NOW,NOW)['near_miss'])
         value['hasMainVideo']=True; value.pop('monthlySoldHistory')
         self.assertFalse(p.evaluate(value,[p.campaign(row())],NOW,NOW)['near_miss'])
+
+
+class FinderFirstTests(unittest.TestCase):
+    def test_finder_budget_and_cached_shortlist(self):
+        from influencer_finder import shortlist
+        with tempfile.TemporaryDirectory() as temp:
+            db=p.connect(Path(temp)/'s.sqlite');session=Mock()
+            session.post.return_value.status_code=200
+            session.post.return_value.json.return_value={'asinList':['B000000001'],'tokensConsumed':11,'tokensLeft':30}
+            api=p.Keepa('test',time.monotonic()+1000,10,session)
+            self.assertTrue(shortlist(db,api,100)[1].startswith('paused'))
+            session.post.assert_not_called()
+            api.budget=100
+            self.assertEqual(shortlist(db,api,100),(['B000000001'],None))
+            self.assertEqual(shortlist(db,api,100),(['B000000001'],None))
+            self.assertEqual(session.post.call_count,1)
+            self.assertEqual(api.reserved,11)
+            db.close()
+
+    def test_only_cc_matches_get_product_requests(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);source=root/'input';source.mkdir()
+            r=row(**{'ASIN List':'B000000001,B000000002'})
+            with (source/'a.csv').open('w',newline='') as f:
+                w=csv.DictWriter(f,fieldnames=r);w.writeheader();w.writerow(r)
+            with patch.dict('os.environ',{'KEEPA_API_KEY':'test'}),patch('influencer_finder.shortlist',return_value=(['B000000002','B000000003'],None)),patch.object(p.Keepa,'fetch',return_value=([product('B000000002')],None)) as fetch:
+                result=p.main(['--finder','--input',str(source),'--state',str(root/'s.sqlite'),'--output',str(root/'out')])
+            fetch.assert_called_once_with(['B000000002'])
+            self.assertEqual(result['selected'],1)
+            self.assertEqual(result['finder_candidates'],2)

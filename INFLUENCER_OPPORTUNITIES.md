@@ -1,3 +1,8 @@
+## Finder-first workflow
+The dashboard workflow now uses --finder. The limit counts Finder candidates, not guaranteed CC matches or qualified products. Finder selects 1–6 videos, hasMainVideo, monthlySold >=1, standard products, excludes Books, sorts by monthlySold descending then BSR. Apparel is checked from product metadata to preserve functional gear/PPE. Main video does not establish merchant identity. Exact video counts and sales history must still be verified; missing fields remain unavailable.
+
+A single bounded Finder request costs 10 + ceil(candidate limit/100) tokens (minimum page size 50). This and retries share the same token budget as product checks. Shortlists are saved in SQLite and reused on resume; increasing the limit makes a new query and can return overlapping/different products. No automatic paging or search expansion. Reset discards the shortlist and product cache. Changing from the old CC cohort preserves cached products but replaces selection with Finder/CC matches. Explicit refresh bypasses Finder and queries only the named previously selected products. No paid API calls were made for deployment.
+
 ## Scan cost and final refresh
 Normal scans use stored video metadata at 1 token per requested ASIN, default budget 100. Cached products are reused. No automatic video refresh occurs.
 
