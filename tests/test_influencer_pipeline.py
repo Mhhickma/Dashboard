@@ -220,3 +220,26 @@ class ScanCostTests(unittest.TestCase):
     def test_stored_videos_do_not_require_refresh(self):
         value=product(); value.pop('offersSuccessful')
         self.assertTrue(p.evaluate(value, [p.campaign(row())], NOW, NOW, 24)['merchant_video'])
+
+
+class CheckpointPauseTests(unittest.TestCase):
+    def test_pause_with_unread_asins_exports_and_resumes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp); source=root/'input'; source.mkdir()
+            asins=['B'+str(i).zfill(9) for i in range(1,31)]
+            r=row(**{'ASIN List':','.join(asins)})
+            with (source/'a.csv').open('w',newline='') as f:
+                writer=csv.DictWriter(f,fieldnames=r); writer.writeheader(); writer.writerow(r)
+            args=['--input',str(source),'--state',str(root/'s.sqlite'),'--output',str(root/'out'),'--batch-size','10']
+            responses=[([product(a) for a in asins[:10]],None),(None,'paused_budget_or_time')]
+            with patch.dict('os.environ',{'KEEPA_API_KEY':'test'}),patch.object(p.Keepa,'fetch',side_effect=responses):
+                result=p.main(args)
+            self.assertEqual(result['phase'],'paused_budget_or_time')
+            self.assertEqual(result['counts']['evaluated'],10)
+            batches=[]
+            def fetch(batch):
+                batches.extend(batch); return [product(a) for a in batch],None
+            with patch.dict('os.environ',{'KEEPA_API_KEY':'test'}),patch.object(p.Keepa,'fetch',side_effect=fetch):
+                result=p.main(args)
+            self.assertEqual(batches,asins[10:])
+            self.assertEqual(result['counts']['evaluated'],30)

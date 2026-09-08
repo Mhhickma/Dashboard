@@ -419,6 +419,8 @@ def main(argv=None):
               WHERE (c.asin IS NULL OR c.fetched<?) AND EXISTS
               (SELECT 1 FROM links l JOIN eligible e ON e.id=l.id WHERE l.asin=s.asin)
               ORDER BY s.asin""", (cutoff,))
+            pending = [row[0] for row in cursor.fetchall()]
+            cursor.close()
             if refresh_asins:
                 # Explicit final step: never expand a paid refresh beyond the user's list.
                 for asin in refresh_asins:
@@ -426,11 +428,11 @@ def main(argv=None):
                         raise ValueError("Refresh ASIN must already have been scanned")
                 db.execute("CREATE TEMP TABLE refresh_requested(asin TEXT PRIMARY KEY)")
                 db.executemany("INSERT OR IGNORE INTO refresh_requested VALUES(?)", [(a,) for a in refresh_asins])
-                cursor = db.execute("SELECT asin FROM refresh_requested ORDER BY asin")
-            while True:
-                batch = [row[0] for row in cursor.fetchmany(args.batch_size)]
-                if not batch:
-                    break
+                pending = sorted(set(refresh_asins))
+            # Snapshot is bounded by the 10,000-ASIN cohort. No live query holds
+            # a table lock when a budget/time pause rebuilds eligibility for export.
+            for offset in range(0, len(pending), args.batch_size):
+                batch = pending[offset:offset + args.batch_size]
                 products, error = api.fetch(batch)
                 if error and error.startswith("paused"):
                     phase = error
