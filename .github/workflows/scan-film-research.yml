@@ -1,0 +1,59 @@
+name: Scan Film Research
+run-name: Film Research ${{ inputs.ticket }}
+on:
+  workflow_dispatch:
+    inputs:
+      ticket:
+        description: Unique dispatch identifier
+        required: true
+      request:
+        description: Bounded scan and funnel snapshot from Film Research
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: film-research-scan
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - name: Offline scanner checks
+        run: python -m unittest discover -s tests -q
+      - name: Restore durable shared cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python research_github.py
+      - name: Scan bounded CC cohort
+        id: scan
+        env:
+          KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+          SCAN_REQUEST: ${{ inputs.request }}
+        run: python research_scan.py
+      - name: Save checkpoint even after pause or failure
+        if: ${{ always() && steps.scan.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: film-research-checkpoint
+          path: .research-scan/checkpoint.sqlite
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
+      - name: Return scan results
+        if: ${{ always() && steps.scan.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: film-research-result
+          path: .research-scan/result/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 90

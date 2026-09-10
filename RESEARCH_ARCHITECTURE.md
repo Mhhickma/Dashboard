@@ -1,5 +1,7 @@
 # Local Film Research workspace
 
+On-demand scanning is now available. See [Scan on demand](SCAN_ON_DEMAND.md) for the current workflow, cost limits, and recovery rules. The saved-data architecture below describes the initial local implementation.
+
 ## Run on this PC
 
 Double-click `start-research.cmd`, keep its terminal open, then open http://127.0.0.1:8765. Close the terminal to stop. No hosting subscription or Keepa credentials are needed for this saved-data workspace. It is not available from other devices. Notes are stored in `.research/research.sqlite`, excluded from Git. Back up that file while the service is stopped. It is not encrypted; Windows account and disk access controls protect it.

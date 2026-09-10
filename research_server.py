@@ -36,6 +36,9 @@ class Store:
             CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY,asin TEXT,kind TEXT,payload TEXT,created REAL,delivered INTEGER DEFAULT 0);
             CREATE INDEX IF NOT EXISTS events_pending ON events(delivered,created);
             CREATE TABLE IF NOT EXISTS jobs(id INTEGER PRIMARY KEY,kind TEXT,state TEXT,created REAL,finished REAL,payload TEXT);
+            CREATE TABLE IF NOT EXISTS research_scan_results(job INTEGER,asin TEXT,passed INTEGER,reasons TEXT,PRIMARY KEY(job,asin));
+            CREATE INDEX IF NOT EXISTS research_scan_matches ON research_scan_results(job,passed);
+            INSERT OR IGNORE INTO schema_migrations VALUES(2,strftime('%s','now'));
             INSERT OR IGNORE INTO schema_migrations VALUES(1,strftime('%s','now'));
             ''')
             db.execute('INSERT OR IGNORE INTO settings VALUES(1,?)',( (ROOT/'research-config.json').read_text(encoding='utf-8'),))
@@ -108,6 +111,8 @@ class Store:
             where.append(sql)
             if v is not None:values.append(v)
         view=q.get('view','feed')
+        if q.get('scan_job'):
+            add('p.asin IN (SELECT asin FROM research_scan_results WHERE job=? AND passed=1)',int(q['scan_job']))
         workflow=view in ('shortlist','outreach','film','published')
         if workflow:
             add('p.asin IN (SELECT asin FROM shortlist)')
@@ -129,6 +134,9 @@ class Store:
             v=q.get(key,defaults.get(key))
             if v not in ('',None):add(f'p.{column}{operator}?',float(v))
         if q.get('merchant_required',str(defaults['merchant_required']).lower())=='true':add('p.merchant_video=1')
+        if q.get('main_required')=='true':add("json_extract(p.payload,'$.main_video')=1")
+        if q.get('growth_min') not in ('',None):add('p.growth>=?',float(q['growth_min']))
+        if q.get('total_videos_max') not in ('',None):add("json_extract(p.payload,'$.total_videos')<=?",float(q['total_videos_max']))
         if view=='low':add('p.influencer_videos<=?',cfg['thresholds']['primary_videos_max'])
         trend=q.get('trend','rising' if view=='trending' else '')
         band=cfg['thresholds']['stable_band']
@@ -191,6 +199,9 @@ def handler(store):
                 if url.path in ASSETS:
                     name=ASSETS[url.path];return self.send((ROOT/name).read_bytes(), 'text/html' if name.endswith('.html') else 'text/css' if name.endswith('.css') else 'text/javascript')
                 if url.path=='/api/settings':return self.send({'config':store.config(),'csrf':self.server.csrf,'stages':STAGES})
+                if url.path=='/api/scan':
+                    from research_jobs import status
+                    return self.send(status(store))
                 if url.path=='/api/products':return self.send(store.query(q))
                 if url.path.startswith('/api/products/'):return self.send(store.detail(url.path.rsplit('/',1)[-1]))
                 if url.path=='/api/export':
@@ -211,6 +222,9 @@ def handler(store):
                 size=int(self.headers.get('Content-Length',0))
                 if not 0<size<=100000:raise ValueError('Invalid request size')
                 data=json.loads(self.rfile.read(size))
+                if self.path=='/api/scan':
+                    from research_jobs import start
+                    return self.send(start(store,data))
                 if self.path=='/api/settings':store.save_settings(data)
                 elif self.path.startswith('/api/shortlist/'):store.save_shortlist(self.path.rsplit('/',1)[-1],data)
                 else:raise ValueError('Unknown action')
