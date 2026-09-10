@@ -4,11 +4,11 @@
 
 Double-click `start-research.cmd`, keep its terminal open, then open http://127.0.0.1:8765. Close the terminal to stop. No hosting subscription or Keepa credentials are needed for this saved-data workspace. It is not available from other devices. Notes are stored in `.research/research.sqlite`, excluded from Git. Back up that file while the service is stopped. It is not encrypted; Windows account and disk access controls protect it.
 
-The page currently imports 425 saved scanned products from `data/influencer/page-*.json` and campaign detail files. These are research candidates, **not all qualified products**. The old strict video-opportunity page remains unchanged. A research score never changes its hard filters.
+The page currently imports 425 saved scanned products from `data/influencer/page-*.json` and campaign detail files. These are research candidates, **not all qualified products**. The old Video Opportunities page and its scanner workflows have been retired. A research score never changes its hard filters.
 
 Restart after updating the repository's saved scan files to import newer results. This does not synchronize GitHub automatically, run a scan, or refresh Keepa. Existing private shortlist records survive imports. The complete CC dataset remains in the existing import/checkpoint storage; the local feed initially contains only previously enriched ASINs.
 
-For richer existing cached data, run `python research_server.py --checkpoint PATH_TO_EXISTING_SQLITE_CHECKPOINT`. This opens the source read-only, imports raw Keepa cache and matching campaigns, and reuses existing trend calculations. It requires the existing pipeline's `requests` dependency but makes no network requests. Do not place checkpoint files in publicly served or tracked directories.
+For richer existing cached data, run `python research_server.py --checkpoint PATH_TO_EXISTING_SQLITE_CHECKPOINT`. This opens the source read-only, imports raw Keepa cache and matching campaigns, and reuses existing trend calculations. It uses the shared `research_keepa.py` normalizer and makes no network requests. Do not place checkpoint files in publicly served or tracked directories.
 
 ## Inspected architecture and integration
 
@@ -16,7 +16,7 @@ The existing frontend is static HTML, vanilla JavaScript and CSS, published on G
 
 The existing pipeline's SQLite checkpoint uses `sources`, `campaigns`, `links`, `cache`, `selected`, `failures` and `finder_shortlists`. Its public output is paginated JSON plus ASIN campaign details. There was no general application backend or private notes database. Existing strict rules include active campaigns at least 10%, apparel/books exclusions, observed merchant video, fewer than five videos, and current monthly sold at least 110% of its 90-day average; BSR does not substitute for unavailable sales history.
 
-Keepa's `KEEPA_API_KEY` stays in the existing GitHub Actions secret. Apps Script's GitHub credential stays in Script Properties. This service neither retrieves nor requires either credential. Existing `/query` Product Finder and `/product` batch scanner remain responsible for paid data collection, caching, checkpoints and manual final refresh. Research browsing performs no Keepa requests.
+Keepa's `KEEPA_API_KEY` stays in the existing GitHub Actions secret. Apps Script's GitHub credential stays in Script Properties. This service neither retrieves nor requires either credential. The retired video-specific Product Finder and batch scanner have been removed; no replacement paid scan is enabled here. Research browsing performs no Keepa requests.
 
 The extension adds `research_server.py` (standard-library loopback HTTP service), `research_model.py` (normalization, provider contract and score), `research.html`, `research.js`, `research.css`, `research-config.json`, and the local launcher. It reuses existing saved data and calculations without replacing working pages or deployment.
 
@@ -56,3 +56,5 @@ Raw checkpoint import can expose Keepa statistics (price averages, BSR averages,
 Phase 1 provides the research feed, CC matching, configurable filters/scoring, saved Keepa enrichment, honest video interfaces, details, private shortlist and filtered CSV export. Low Competition and Trending are filtered views. Outreach, Film and Published views use local shortlist states; they do not send communications. Launch, Seasonal and Deals are explicitly marked future-provider sections; target brands and event/job tables prepare for later integration. Automatic refresh, launch discovery and alerts are not enabled.
 
 Validation: offline unit tests cover commission boundaries, pagination, shortlist persistence, unknown video handling, score coverage, settings rollback and SQL parameterization; existing pipeline tests are retained. Browser verification checks the actual saved-data feed and detail panel. Local notes and databases must never be committed or deployed to Pages.
+
+Retirement: the dedicated Video Opportunities page, CSS/JavaScript, scanner, Finder, checkpoint transfer helper, workflows, old documentation and page-specific tests were removed. Saved product pages and campaign details in data/influencer remain shared Film Research inputs. Creator Connection uploads, price scanning and private shortlist data are preserved.

@@ -1,8 +1,8 @@
 # Keepa Price Dashboard
 
-## Creator Connections video opportunities
+## Film Research
 
-The existing **Video Opportunities** page now supports strict campaign, commission, apparel, video and sales-growth qualification, with a resumable 100-ASIN test workflow. See [setup, data limitations and operating instructions](INFLUENCER_OPPORTUNITIES.md). The Apps Script upload action must be added to the existing deployed web app before using the new upload controller.
+The local Film Research workspace replaces the retired Video Opportunities page. See [local setup and scoring](RESEARCH_ARCHITECTURE.md).
 
 A personal Amazon deal dashboard that scans ASINs with Keepa, keeps recent price drops active for 24 hours, and displays clickable deal cards in a static web page.
 

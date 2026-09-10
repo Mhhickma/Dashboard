@@ -8,6 +8,8 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 from research_model import KeepaVideos,score
 from research_server import Store,ROOT,handler
+from research_keepa import evaluate
+import time
 
 class ResearchTests(unittest.TestCase):
     def setUp(self):
@@ -29,6 +31,12 @@ class ResearchTests(unittest.TestCase):
         self.assertIsNone(KeepaVideos().normalize({})['influencer_videos'])
         self.assertIsNone(KeepaVideos().normalize({'videos':[{'url':'x','creator':'Main'}]})['influencer_videos'])
         self.assertIsNone(KeepaVideos().normalize({'videos':[],'offersSuccessful':False})['total_videos'])
+    def test_shared_normalizer_still_supports_checkpoint_import(self):
+        now=time.time()
+        result=evaluate({'asin':'B000000001','title':'Saved product'},[],now,now)
+        self.assertEqual(result['asin'],'B000000001')
+        self.assertIsNone(result['growth'])
+        self.assertIsNone(result['influencer_videos'])
     def test_score_unknown_coverage(self):
         points,components,coverage=score({},self.cfg)
         self.assertEqual((points,coverage),(0,0));self.assertIsNone(components['competition']['points'])

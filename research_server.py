@@ -69,7 +69,7 @@ class Store:
         return count
     def import_checkpoint(self,path):
         # Source is read-only; source campaign records and product caches stay intact.
-        from influencer_pipeline import evaluate
+        from research_keepa import evaluate
         cfg=self.config();source=sqlite3.connect(Path(path).resolve().as_uri()+'?mode=ro',uri=True);count=0
         try:
             source.execute('''CREATE TEMP TABLE latest AS SELECT id,source,payload FROM (
