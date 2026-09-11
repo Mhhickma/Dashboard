@@ -14,12 +14,27 @@ class KeepaClient:
         import requests
         self.session=session or requests.Session();self.key=key;self.budget=budget;self.deadline=deadline
         self.reserved=0;self.consumed=0;self.balance=None;self.unknown=False
+    def wait_for_tokens(self,needed):
+        import requests
+        while self.balance is not None and self.balance<needed:
+            if time.monotonic()+75>=self.deadline:return 'paused_tokens'
+            time.sleep(10)
+            try:
+                response=self.session.get('https://api.keepa.com/token',params={'key':self.key},timeout=(10,50))
+                payload=response.json()
+                balance=payload.get('tokensLeft')
+                if response.status_code!=200 or not isinstance(balance,(int,float)):return 'paused_tokens'
+                self.balance=balance
+            except (requests.RequestException,ValueError,TypeError,AttributeError):return 'paused_tokens'
+        return None
+
     def fetch(self,asins):
         import requests
         for attempt in range(4):
             if self.reserved+len(asins)>self.budget:return None,'paused_budget'
             if time.monotonic()+65>=self.deadline:return None,'paused_time'
-            if self.balance is not None and self.balance<len(asins):return None,'paused_tokens'
+            token_error=self.wait_for_tokens(len(asins))
+            if token_error:return None,token_error
             self.reserved+=len(asins);wait=2**(attempt+1)
             try:
                 response=self.session.get('https://api.keepa.com/product',params={'key':self.key,'domain':1,'asin':','.join(asins),'history':1,'stats':90,'videos':1,'update':-1},timeout=(10,50))

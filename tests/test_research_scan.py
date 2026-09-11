@@ -62,6 +62,22 @@ class ScanTests(unittest.TestCase):
         with patch('research_scan.time.sleep'):
             _,error=client.fetch(['B000000001'])
         self.assertEqual(error,'paused_budget');self.assertEqual(session.get.call_count,2);self.assertTrue(client.unknown)
+    def test_wait_rechecks_balance_without_product_request(self):
+        session=Mock();response=Mock();response.status_code=200
+        response.json.side_effect=[{'tokensLeft':-1},{'tokensLeft':10}]
+        session.get.return_value=response
+        client=KeepaClient('secret',100,time.monotonic()+300,session);client.balance=-10
+        with patch('research_scan.time.sleep'):
+            self.assertIsNone(client.wait_for_tokens(10))
+        self.assertEqual(client.balance,10)
+        self.assertEqual(client.reserved,0)
+        self.assertTrue(all(c.args[0].endswith('/token') for c in session.get.call_args_list))
+
+    def test_wait_stops_at_deadline(self):
+        session=Mock();client=KeepaClient('secret',100,time.monotonic()+30,session);client.balance=-10
+        self.assertEqual(client.wait_for_tokens(10),'paused_tokens')
+        session.get.assert_not_called()
+
     def test_dispatch_is_explicit_and_duplicate_protected(self):
         store=Store(Path('local.sqlite'))
         with patch('research_jobs.github.api',return_value={}) as api:
