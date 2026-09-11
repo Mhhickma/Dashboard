@@ -449,8 +449,15 @@ async function cleanSourceSheet() {
   }
 }
 
-async function queueRemoveDeal(asin) {
+async function queueRemoveDeal(asin, button) {
+  const originalText = button ? button.textContent : "";
+
   try {
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Removing...";
+    }
+
     const result = await removeAsinWithScript(asin);
 
     if (!result || !result.ok) {
@@ -459,7 +466,15 @@ async function queueRemoveDeal(asin) {
       return;
     }
 
+    const removedAsins = result.removed_asins || [];
+    const removedCount = Number(result.removed || 0);
+    if (removedCount < 1 && !removedAsins.includes(asin)) {
+      alert(`${asin} was not found in the ASIN sheet, so it was not removed.`);
+      return;
+    }
+
     hideDeal(asin);
+    alert(`Removed ${asin} from the ASIN sheet.`);
   } catch (error) {
     const removeQueue = removeQueueAsins();
     removeQueue.add(asin);
@@ -468,6 +483,11 @@ async function queueRemoveDeal(asin) {
     applySearch(false);
 
     alert(`${error.message} ${asin} was queued locally instead. Use "Copy removals" at the top of the dashboard if you need to remove it manually.`);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
   }
 }
 
@@ -972,7 +992,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
         ${primaryDealBadge(deal)}
         <div class="card-actions">
           <button class="hide-card" type="button" onclick="hideDeal('${deal.asin}')">Hide 24h</button>
-          <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}')">Remove ASIN</button>
+          <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}', this)">Remove ASIN</button>
         </div>
       </div>
       <div class="deal-time">
