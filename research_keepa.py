@@ -239,21 +239,14 @@ def evaluate(p, campaigns, now, fetched, ttl_hours=24):
     sold_fresh = last_sold is not None and 0 <= now - (EPOCH + last_sold * 60) <= 30 * DAY
     avg = average(p.get("monthlySoldHistory"), now, 90) if sold_fresh else None
     growth = (current / avg - 1) * 100 if current is not None and avg is not None and avg > 0 else None
-    videos = p.get("videos")
-    # Live refresh must have succeeded. Missing metadata is not zero videos.
-    video_known = isinstance(videos, list) and p.get("offersSuccessful") is not False
-    unique = {}
-    if video_known:
-        for video in videos:
-            if not isinstance(video, dict) or not video.get("url") or not video.get("creator"):
-                video_known = False
-                break
-            unique[video["url"]] = video
-    merchant = any(v["creator"] in {"Seller", "Merchant", "Brand", "Vendor"} for v in unique.values()) if video_known else None
-    total = len(unique) if video_known else None
-    influencers = sum(v["creator"] == "Influencer" for v in unique.values()) if video_known else None
-    community = sum(v["creator"] in {"Influencer", "Customer", "ThirdParty"} for v in unique.values()) if video_known else None
-    main_video = p.get("hasMainVideo") is True or any(v.get("creator") == "Main" for v in unique.values())
+    # Video metadata is independent of whether seller offers were retrieved.
+    from research_model import KeepaVideos
+    video = KeepaVideos().normalize(p)
+    merchant = video['merchant_video']
+    total = video['total_videos']
+    influencers = video['influencer_videos']
+    community = None
+    main_video = p.get("hasMainVideo") is True or video['main_video'] is True
     rank = stat(3)
     csvs = p.get("csv") or []
     ranks = csvs[3] if len(csvs) > 3 else None

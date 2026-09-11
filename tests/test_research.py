@@ -30,7 +30,11 @@ class ResearchTests(unittest.TestCase):
     def test_missing_video_not_zero(self):
         self.assertIsNone(KeepaVideos().normalize({})['influencer_videos'])
         self.assertIsNone(KeepaVideos().normalize({'videos':[{'url':'x','creator':'Main'}]})['influencer_videos'])
-        self.assertIsNone(KeepaVideos().normalize({'videos':[],'offersSuccessful':False})['total_videos'])
+        self.assertEqual(KeepaVideos().normalize({'videos':[],'offersSuccessful':False})['total_videos'],0)
+        result=KeepaVideos().normalize({'offersSuccessful':False,'videos':[{'url':'a','creator':'Main'},{'url':'b','creator':'Seller'},{'url':'c'}]})
+        self.assertEqual(result['total_videos'],3)
+        self.assertTrue(result['merchant_video'])
+        self.assertIsNone(result['influencer_videos'])
     def test_shared_normalizer_still_supports_checkpoint_import(self):
         now=time.time()
         result=evaluate({'asin':'B000000001','title':'Saved product'},[],now,now)

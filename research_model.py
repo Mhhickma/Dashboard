@@ -21,7 +21,7 @@ def timestamp(v):
 
 class KeepaVideos:
     def normalize(self,p):
-        videos=p.get('videos'); valid=isinstance(videos,list) and p.get('offersSuccessful') is not False
+        videos=p.get('videos'); valid=isinstance(videos,list)
         unique={v['url']:v for v in videos or [] if isinstance(v,dict) and isinstance(v.get('url'),str)} if valid else {}
         complete=valid and len(unique)==len({v.get('url') for v in videos if isinstance(v,dict)}) and all(isinstance(v,dict) and v.get('url') for v in videos)
         typed=complete and all(v.get('creator') in {'Main','Customer','Seller','Influencer','Vendor','ThirdParty','Amazon','Merchant','Brand'} for v in unique.values())

@@ -149,11 +149,12 @@ class Store:
         if q.get('expires_before'):add('p.campaign_end<=?',q['expires_before'])
         if q.get('expires_after'):add('p.campaign_end>=?',q['expires_after'])
         clause=' AND '.join(where) or '1=1'
-        allowed={'film_score','price','monthly_sold','commission','growth','bsr90','influencer_videos','title','asin'}
+        allowed={'film_score','price','monthly_sold','commission','growth','bsr90','influencer_videos','title','asin','fetched_at'}
         sort=q.get('sort','film_score');sort=sort if sort in allowed else 'film_score'
+        sort_expression="CASE WHEN json_extract(p.payload,'$.fetched_at')>0 THEN CAST(json_extract(p.payload,'$.fetched_at') AS REAL) END" if sort=='fetched_at' else f'p.{sort}'
         direction='ASC' if q.get('direction')=='asc' else 'DESC'
         page=max(1,int(q.get('page',1)));size=min(100,max(1,int(q.get('size',50))))
-        sql=f'SELECT p.payload,s.payload AS shortlist FROM products p LEFT JOIN shortlist s ON s.asin=p.asin WHERE {clause} ORDER BY p.{sort} IS NULL,p.{sort} {direction},p.asin'
+        sql=f'SELECT p.payload,s.payload AS shortlist FROM products p LEFT JOIN shortlist s ON s.asin=p.asin WHERE {clause} ORDER BY {sort_expression} IS NULL,{sort_expression} {direction},p.asin'
         with self.db() as db:
             total=db.execute(f'SELECT COUNT(*) FROM products p WHERE {clause}',values).fetchone()[0]
             if not export:sql+=' LIMIT ? OFFSET ?';values += [size,(page-1)*size]
