@@ -90,6 +90,52 @@ function removeAsin_(asinValue) {
   return removeAsins_(asinValue);
 }
 
+function addAsins_(asinText) {
+  const asins = parseAsinsFromText_(asinText);
+  if (!asins.length) {
+    throw new Error("Missing ASIN.");
+  }
+
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    throw new Error(`Missing sheet named ${SHEET_NAME}.`);
+  }
+
+  const lastRow = sheet.getLastRow();
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const existingLookup = {};
+
+  if (lastRow >= START_ROW) {
+    const values = sheet.getRange(START_ROW, 1, lastRow - START_ROW + 1, lastColumn).getValues();
+    values.forEach((row) => {
+      row.forEach((cell) => {
+        parseAsinsFromText_(cell).forEach((asin) => {
+          existingLookup[asin] = true;
+        });
+      });
+    });
+  }
+
+  const addedAsins = asins.filter((asin) => !existingLookup[asin]);
+  const duplicateAsins = asins.filter((asin) => existingLookup[asin]);
+
+  if (addedAsins.length) {
+    const appendStartRow = Math.max(lastRow + 1, START_ROW);
+    sheet.getRange(appendStartRow, 1, addedAsins.length, 1).setValues(addedAsins.map((asin) => [asin]));
+  }
+
+  return {
+    ok: true,
+    requested: asins.length,
+    added: addedAsins.length,
+    addedCount: addedAsins.length,
+    duplicate: duplicateAsins.length,
+    duplicateCount: duplicateAsins.length,
+    added_asins: addedAsins,
+    duplicate_asins: duplicateAsins,
+  };
+}
+
 function normalizeCreatorCsv_(csvText) {
   return String(csvText || "")
     .replace(/^\uFEFF/, "")
@@ -217,6 +263,9 @@ function doPost(e) {
     if (params.action === "removeAsins") {
       return creatorUploadResponse_(removeAsins_(params.asins || params.asin));
     }
+    if (params.action === "addAsins") {
+      return creatorUploadResponse_(addAsins_(params.asins || params.asin));
+    }
     return creatorUploadResponse_({ ok: false, error: "Unknown action." });
   } catch (error) {
     return creatorUploadResponse_({ ok: false, error: error.message });
@@ -265,6 +314,8 @@ function doGet(e) {
       payload = removeAsin_(params.asin);
     } else if (params.action === "removeAsins") {
       payload = removeAsins_(params.asins || params.asin);
+    } else if (params.action === "addAsins") {
+      payload = addAsins_(params.asins || params.asin);
     } else {
       payload = { ok: false, error: "Unknown action." };
     }
