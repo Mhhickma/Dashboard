@@ -79,3 +79,8 @@ columnHead.addEventListener('dragend',()=>{dragColumn=null;});
 columnHead.addEventListener('keydown',e=>{if(!e.altKey||!['ArrowLeft','ArrowRight'].includes(e.key))return;const th=e.target.closest('th');if(!th)return;e.preventDefault();const index=columnOrder.indexOf(th.dataset.column),next=index+(e.key==='ArrowLeft'?-1:1);if(next>=0&&next<columnOrder.length){moveColumn(th.dataset.column,columnOrder[next]);th.focus();}});
 $('reset-columns').onclick=()=>{columnOrder=defaultColumns.slice();applyColumnOrder();try{localStorage.removeItem('film-research-column-order');}catch{}$('column-feedback').textContent='Default column order restored.';};
 applyColumnOrder();
+
+let customScanBudget=false;
+function scanSpendSummary(){$('scan-spend-summary').textContent='Spending limit: '+$('scan-budget').value+' Keepa tokens for this run.';}
+$('scan-limit').addEventListener('input',()=>{if(!customScanBudget){const count=Number($('scan-limit').value);if(Number.isInteger(count)&&count>=1&&count<=1000)$('scan-budget').value=count;}scanSpendSummary();});
+$('scan-budget').addEventListener('input',()=>{customScanBudget=true;scanSpendSummary();});
