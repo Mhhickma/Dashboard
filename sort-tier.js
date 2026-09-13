@@ -2,8 +2,7 @@
 (function () {
   var tierRank = {
     "Post Now": 3,
-    Review: 2,
-    Skip: 1
+    Review: 2
   };
 
   function num(value) {
@@ -68,7 +67,7 @@
 
     if (dealScore >= 80 || (days >= 90 && drop >= 10)) return "Post Now";
     if (dealScore >= 50 || days >= 30 || (days >= 90 && drop >= 6)) return "Review";
-    return "Skip";
+    return "Review";
   }
 
   window.dealPostingTier = tierLabel;

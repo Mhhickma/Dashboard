@@ -291,7 +291,7 @@
 
     if (score >= 80 || (days >= 90 && drop >= 10)) return "Post Now";
     if (score >= 50 || days >= 30 || (days >= 90 && drop >= 6)) return "Review";
-    return "Skip";
+    return "Review";
   }
 
   function qualityClass(label) {
