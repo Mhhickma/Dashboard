@@ -632,7 +632,7 @@ function visibleDeals() {
   const removeQueue = removeQueueAsins();
   return allDeals.filter((deal) => {
     const postingTier = typeof window.dealPostingTier === "function" ? window.dealPostingTier(deal) : "";
-    return !hidden.has(deal.asin) && !removeQueue.has(deal.asin) && (showAllDealsEnabled() || postingTier !== "Skip");
+    return !hidden.has(deal.asin) && !removeQueue.has(deal.asin) && (postingTier === "Post Now" || postingTier === "Review");
   });
 }
 
@@ -919,8 +919,6 @@ function updateCounts(renderedCount, selectedCount, totalMatchingCount) {
   if (totalCount !== totalMatchingCount) {
     dealCountEl.innerHTML += ` <span class="count-note">${totalCount} total active</span>`;
   }
-
-  dealCountEl.innerHTML += ` <button class="reset-hidden" type="button" onclick="toggleShowAllDeals()">${showAllDealsEnabled() ? "Show posting candidates" : "Show all deals"}</button>`;
 
   if (hiddenCount > 0) {
     dealCountEl.innerHTML += ` <button class="reset-hidden" type="button" onclick="resetHiddenDeals()">Show hidden (${hiddenCount})</button>`;

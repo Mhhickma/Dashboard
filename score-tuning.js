@@ -101,16 +101,10 @@
       var card = originalBuildCard(deal, isSelected, isSelectedSection);
       var label = tunedQualityLabel(deal);
       var qualityBadge = card.querySelector(".quality-badge");
-      var scoreBadge = card.querySelector(".score-badge");
 
       if (qualityBadge) {
         qualityBadge.className = "quality-badge quality-" + qualityClass(label);
         qualityBadge.textContent = label;
-      }
-
-      if (scoreBadge) {
-        scoreBadge.title = "100-point score: 25 points for 7-day drop, 25 for 30-day drop, 30 for dollar savings, 15 for best-price age, and 5 for freshness.";
-        scoreBadge.textContent = "Deal score " + tunedDealScore(deal).toFixed(1);
       }
 
       highlightDropBox(card);
