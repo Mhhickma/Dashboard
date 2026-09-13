@@ -30,6 +30,7 @@ class Store:
             CREATE INDEX IF NOT EXISTS products_category ON products(category);
             CREATE TABLE IF NOT EXISTS product_campaigns(asin TEXT,id TEXT,payload TEXT,PRIMARY KEY(asin,id));
             CREATE INDEX IF NOT EXISTS product_campaigns_asin ON product_campaigns(asin);
+            CREATE TABLE IF NOT EXISTS hidden_products(asin TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS shortlist(asin TEXT PRIMARY KEY,payload TEXT,added REAL,updated REAL);
             CREATE TABLE IF NOT EXISTS settings(id INTEGER PRIMARY KEY CHECK(id=1),payload TEXT);
             CREATE TABLE IF NOT EXISTS target_brands(brand TEXT PRIMARY KEY,enabled INTEGER DEFAULT 1);
@@ -110,6 +111,7 @@ class Store:
         def add(sql,v=None):
             where.append(sql)
             if v is not None:values.append(v)
+        if q.get('show_hidden')!='true':add('p.asin NOT IN (SELECT asin FROM hidden_products)')
         view=q.get('view','feed')
         if q.get('scan_job'):
             add('p.asin IN (SELECT asin FROM research_scan_results WHERE job=? AND passed=1)',int(q['scan_job']))
@@ -160,9 +162,15 @@ class Store:
             if not export:sql+=' LIMIT ? OFFSET ?';values += [size,(page-1)*size]
             rows=[]
             for item in db.execute(sql,values):
-                row=json.loads(item['payload']);row.pop('history',None);row.pop('campaigns',None);row['shortlist']=json.loads(item['shortlist']) if item['shortlist'] else None;rows.append(row)
+                row=json.loads(item['payload']);row['hidden']=db.execute('SELECT 1 FROM hidden_products WHERE asin=?',(row['asin'],)).fetchone() is not None;row.pop('history',None);row.pop('campaigns',None);row['shortlist']=json.loads(item['shortlist']) if item['shortlist'] else None;rows.append(row)
             categories=[r[0] for r in db.execute('SELECT DISTINCT category FROM products WHERE category IS NOT NULL ORDER BY category')]
         return dict(rows=rows,total=total,page=page,size=size,categories=categories)
+    def hide(self,asin,hidden):
+        if type(hidden) is not bool:raise ValueError('Invalid hidden value')
+        self.detail(asin)
+        with self.db() as db:
+            if hidden:db.execute('INSERT OR IGNORE INTO hidden_products VALUES(?)',(asin,))
+            else:db.execute('DELETE FROM hidden_products WHERE asin=?',(asin,))
     def detail(self,asin):
         with self.db() as db:
             r=db.execute('SELECT payload FROM products WHERE asin=?',(asin,)).fetchone()
@@ -227,6 +235,7 @@ def handler(store):
                     from research_jobs import start
                     return self.send(start(store,data))
                 if self.path=='/api/settings':store.save_settings(data)
+                elif self.path.startswith('/api/hidden/'):store.hide(self.path.rsplit('/',1)[-1],data.get('hidden'))
                 elif self.path.startswith('/api/shortlist/'):store.save_shortlist(self.path.rsplit('/',1)[-1],data)
                 else:raise ValueError('Unknown action')
                 self.send({'ok':True})
