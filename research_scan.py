@@ -1,3 +1,4 @@
+from cc_batches import active_csv_files
 """Bounded CC-first GitHub worker. All paid requests use the Actions secret."""
 import json
 import os
@@ -75,7 +76,7 @@ def run(db,request,client,deadline,output):
     identity=json.dumps({'config':config,'filters':f,'limit':limit},sort_keys=True)
     if existing and existing[0]!=identity:raise ValueError('Resume must retain its original funnel and cohort size')
     db.execute('INSERT OR IGNORE INTO scan_jobs VALUES(?,?)',(job,identity));db.commit()
-    paths=sorted(Path('data/creator-connections').glob('*.csv'))
+    paths=active_csv_files('data/creator-connections')
     if not paths:raise ValueError('No uploaded CC CSV files found')
     phase='complete'
     if not import_sources(db,paths,deadline):phase='paused_import'
@@ -87,6 +88,10 @@ def run(db,request,client,deadline,output):
             exclude_books='books' in [s.strip().lower() for s in f.get('exclude_categories','').split(',')]
             query='''SELECT DISTINCT l.asin FROM links l JOIN scan_campaigns c ON c.id=l.id AND c.source=l.source WHERE NOT EXISTS(SELECT 1 FROM scan_members m WHERE m.asin=l.asin) AND NOT EXISTS(SELECT 1 FROM cache k WHERE k.asin=l.asin) AND (?=0 OR is_book_asin(l.asin)=0) ORDER BY l.asin LIMIT ?'''
             db.executemany('INSERT INTO scan_members(job,asin) VALUES(?,?)',[(job,r[0]) for r in db.execute(query,(int(exclude_books),limit))]);db.commit()
+        # Pending products removed by a replacement upload must not consume tokens.
+        db.execute("""UPDATE scan_members SET state='excluded_cc' WHERE job=? AND state='pending'
+            AND NOT EXISTS(SELECT 1 FROM links l JOIN scan_campaigns c ON c.id=l.id AND c.source=l.source WHERE l.asin=scan_members.asin)""",(job,))
+        db.commit()
         while True:
             asins=[r[0] for r in db.execute("SELECT asin FROM scan_members WHERE job=? AND state='pending' ORDER BY asin LIMIT ?",(job,batch))]
             if not asins:break

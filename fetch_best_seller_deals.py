@@ -1,3 +1,4 @@
+from cc_batches import active_csv_files
 """
 Best Seller Deals Fetcher
 -------------------------
@@ -194,7 +195,7 @@ def find_creator_campaigns_for_asins(target_asins):
     if not target_asins:
         return {}, {"files_scanned": 0, "rows_scanned": 0, "asins_matched": 0}
 
-    csv_files = sorted(CREATOR_CONNECTIONS_PATH.glob("*.csv")) if CREATOR_CONNECTIONS_PATH.exists() else []
+    csv_files = active_csv_files(CREATOR_CONNECTIONS_PATH) if CREATOR_CONNECTIONS_PATH.exists() else []
     today = utc_now().date()
     matches = {}
     rows_scanned = 0

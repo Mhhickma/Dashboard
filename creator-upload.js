@@ -79,21 +79,23 @@
     if (!files.length || files.some(f => !/\.csv$/i.test(f.name))) { status.textContent = 'Choose one or more CSV files.'; return; }
     const button = form.querySelector('button[type="submit"]');
     button.disabled = true; input.disabled = true;
-    let confirmed = 0;
-    const session = new Date().toISOString().replace(/[-:.]/g, '') + '-' + crypto.randomUUID();
+    let confirmed = 0; const batchFiles = [];
+    const session = new Date().toISOString().replace(/[-:.]/g, '') + '-' + crypto.randomUUID() + '-replacement';
     try {
       for (let index = 0; index < files.length; index++) {
         let part = 0;
         for await (const text of chunks(files[index])) {
           const name = `${session}-${String(index).padStart(4,'0')}-${String(part++).padStart(6,'0')}.csv`;
           status.textContent = `Uploading ${files[index].name}, part ${part}… ${confirmed} confirmed.`;
-          await post(text, name); confirmed++;
+          await post(text, name); batchFiles.push(name); confirmed++;
         }
         if (!part) throw new Error(`${files[index].name} contains no campaign rows.`);
       }
-      status.textContent = `${confirmed} CSV parts confirmed. Run “Update Influencer Opportunities” to process the 100-ASIN test cohort.`;
+      status.textContent = 'Activating the complete replacement CC batch…';
+      await post('ASIN List,Batch file\n'+batchFiles.map(name=>','+name).join('\n')+'\n',session+'-complete.csv');
+      status.textContent = `${confirmed} CSV parts uploaded. This batch replaces the previous CC list for the next scans.`;
       form.reset(); label.textContent = 'Choose CSV files';
-    } catch (error) { status.textContent = `${error.message} ${confirmed} parts already saved; reruns deduplicate campaigns. Complete the upload before starting a scan.`; }
+    } catch (error) { status.textContent = `${error.message} ${confirmed} parts staged. The previous completed CC list stays active until the new batch is fully confirmed.`; }
     finally { button.disabled = false; input.disabled = false; }
   });
 })();

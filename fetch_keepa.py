@@ -1,3 +1,4 @@
+from cc_batches import active_csv_files
 import csv
 import io
 import json
@@ -1754,7 +1755,7 @@ def creator_connection_file_urls():
     # Both dashboards consume the same checkout of uploaded CSV parts.
     shared = Path(CREATOR_CONNECTIONS_PATH)
     if shared.is_dir():
-        files = [{"name": path.name, "local_path": path} for path in sorted(shared.glob("*.csv"), reverse=True)]
+        files = [{"name": path.name, "local_path": path} for path in reversed(active_csv_files(shared))]
         return files, {"files_available": len(files), "files_selected": len(files),
                        "latest_csv_file": files[0]["name"] if files else "",
                        "latest_csv_updated_at": "", "source": "shared_uploads"}
