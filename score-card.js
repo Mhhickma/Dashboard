@@ -444,14 +444,6 @@
         metrics.insertBefore(qualityBadge, metrics.firstChild);
       }
 
-      if (!card.querySelector(".score-badge")) {
-        const scoreBadge = document.createElement("span");
-        scoreBadge.className = "score-badge";
-        scoreBadge.title = "Best deal score uses discount, dollar savings, freshness, and best-price age.";
-        scoreBadge.innerHTML = `Deal score <strong>${formatDealScore(deal)}</strong>`;
-        metrics.appendChild(scoreBadge);
-      }
-
       const bestPrice = bestPriceText(deal);
       if (bestPrice && !card.querySelector(".best-price-badge")) {
         const bestPriceBadge = document.createElement("span");
