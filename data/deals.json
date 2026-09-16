@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-09-16T02:03:16.613663+00:00",
+  "updated_at": "2026-09-16T02:32:58.903570+00:00",
   "asin_source": "Google Sheet CSV",
   "comparison_window": "Deals qualify when they are at least 5% below the 30-day average, at least 5% below both the 7-day and 30-day averages, or at a best price in 90+ days",
   "deal_ttl_hours": 24,
-  "deal_count": 5,
-  "new_scan_deal_count": 5,
-  "new_deals_added": 5,
+  "deal_count": 3,
+  "new_scan_deal_count": 3,
+  "new_deals_added": 3,
   "existing_deals_updated": 0,
   "expired_deals_removed": 5,
   "disallowed_price_type_deals_removed": 0,
@@ -27,14 +27,14 @@
   "visible_shipping_asins_detected": [],
   "visible_shipping_memory_deals_removed": 0,
   "creator_campaign_deal_count": 0,
-  "creator_image_update_count": 5,
+  "creator_image_update_count": 3,
   "creator_connections": {
     "repo": "Mhhickma/Dashboard",
     "path": "data/creator-connections",
     "ref": "main",
     "files_scanned": 195,
     "rows_scanned": 857394,
-    "asins_matched": 13,
+    "asins_matched": 10,
     "files_available": 195,
     "files_selected": 195,
     "latest_csv_file": "20260907T133206393Z-c68e8759-1116-4102-bde7-55fde0e1bd48-0011-000014.csv",
@@ -43,10 +43,10 @@
   },
   "scan_window": {
     "total_asins": 16501,
-    "start_index": 15915,
-    "start_sheet_row": 15917,
-    "next_start_index": 16294,
-    "next_start_sheet_row": 16296,
+    "start_index": 16294,
+    "start_sheet_row": 16296,
+    "next_start_index": 172,
+    "next_start_sheet_row": 174,
     "scan_count": 379
   },
   "settings": {
@@ -107,34 +107,34 @@
       "price_type": "amazon",
       "label": "Amazon price",
       "keepa_price_index": 0,
-      "products_with_current_price": 64,
-      "products_with_avg30_price": 72,
+      "products_with_current_price": 28,
+      "products_with_avg30_price": 32,
       "products_lower_than_amazon_current": 0,
       "sample_current_prices": [
         {
-          "asin": "B01KG5DCSU",
-          "current_price": 13.99,
-          "amazon_current_price": 13.99
+          "asin": "B0CSD3WD5N",
+          "current_price": 65.9,
+          "amazon_current_price": 65.9
         },
         {
-          "asin": "B081KGLZBB",
-          "current_price": 71.99,
-          "amazon_current_price": 71.99
+          "asin": "B0CKLZMBSD",
+          "current_price": 209.0,
+          "amazon_current_price": 209.0
         },
         {
-          "asin": "B000244Y60",
-          "current_price": 35.22,
-          "amazon_current_price": 35.22
+          "asin": "B0CNR7V3Y4",
+          "current_price": 55.49,
+          "amazon_current_price": 55.49
         },
         {
-          "asin": "B00982Y3NQ",
-          "current_price": 60.06,
-          "amazon_current_price": 60.06
+          "asin": "B09S5BDQXJ",
+          "current_price": 8.79,
+          "amazon_current_price": 8.79
         },
         {
-          "asin": "B0FW5S61YK",
-          "current_price": 194.82,
-          "amazon_current_price": 194.82
+          "asin": "B00AEXKR4C",
+          "current_price": 9.54,
+          "amazon_current_price": 9.54
         }
       ]
     },
@@ -142,33 +142,33 @@
       "price_type": "new",
       "label": "New price",
       "keepa_price_index": 1,
-      "products_with_current_price": 335,
-      "products_with_avg30_price": 344,
-      "products_lower_than_amazon_current": 14,
+      "products_with_current_price": 304,
+      "products_with_avg30_price": 324,
+      "products_lower_than_amazon_current": 3,
       "sample_current_prices": [
         {
-          "asin": "B0CH2TYCVN",
-          "current_price": 24.99,
+          "asin": "B0DS622GKN",
+          "current_price": 39.99,
           "amazon_current_price": null
         },
         {
-          "asin": "B0BZTTFMTG",
-          "current_price": 89.98,
+          "asin": "B0DXDWHK13",
+          "current_price": 84.99,
           "amazon_current_price": null
         },
         {
-          "asin": "B000J43A7W",
-          "current_price": 34.0,
-          "amazon_current_price": null
-        },
-        {
-          "asin": "B0DW435LWC",
-          "current_price": 16.99,
-          "amazon_current_price": null
-        },
-        {
-          "asin": "B09JFFKN9L",
+          "asin": "B0GFHYLPMY",
           "current_price": 13.99,
+          "amazon_current_price": null
+        },
+        {
+          "asin": "B0FWXTN5FX",
+          "current_price": 42.29,
+          "amazon_current_price": null
+        },
+        {
+          "asin": "B0H5C5YVJJ",
+          "current_price": 32.99,
           "amazon_current_price": null
         }
       ]
@@ -217,7 +217,7 @@
     "products_with_prime_exclusive_offer": 0,
     "sample_products": [
       {
-        "asin": "B0DGNHMJFW",
+        "asin": "B0DS622GKN",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
@@ -225,77 +225,28 @@
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
           "0": -1,
-          "1": -1,
+          "1": 3999,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
           "0": -1,
-          "1": -1,
+          "1": 4033,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
           "0": -1,
-          "1": -1,
+          "1": 4355,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
           2,
-          12,
-          2,
-          1324,
-          4,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          20,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B0CH2TYCVN",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 2499,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": -1,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": -1,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2,
-          156,
-          10,
-          3920,
-          148,
+          68,
+          36,
+          3388,
+          34,
           0,
           0,
           0,
@@ -303,6 +254,47 @@
           0,
           0,
           18,
+          12,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B0DXDWHK13",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 8499,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 8468,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 8108,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          24,
+          18,
+          1258,
           8,
           0,
           0,
@@ -310,159 +302,20 @@
           0,
           0,
           0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B0BZTTFMTG",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 8998,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 8998,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": 8998,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2,
-          914,
-          278,
-          7762,
-          106,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          22,
-          326,
-          2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B000J43A7W",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 3400,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": 3399,
-          "1": 3400,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": 3399,
-          "1": 3400,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2468,
-          6458,
-          3094,
-          72314,
-          166,
-          0,
-          4,
-          0,
-          4,
-          0,
-          0,
-          12128,
-          2834,
+          14,
           4,
           0,
           0,
           0,
           0,
           0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B0DW435LWC",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 1699,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 1854,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": 1766,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2,
-          118,
-          2,
-          2324,
-          16,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          22,
-          0,
-          2,
-          0,
-          0,
-          0,
-          0,
           0,
           0
         ],
         "offer_count": 0
       },
       {
-        "asin": "B09JFFKN9L",
+        "asin": "B0GFHYLPMY",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
@@ -476,79 +329,79 @@
         },
         "raw_avg_indexes": {
           "0": -1,
-          "1": 1333,
+          "1": 1399,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
           "0": -1,
-          "1": 1335,
+          "1": 1399,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
           2,
-          206,
-          46,
-          10714,
-          98,
+          6,
+          2,
+          308,
+          2,
           0,
           0,
           0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B0FWXTN5FX",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 4229,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 4271,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 4684,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          36,
+          6,
+          1850,
           4,
           0,
           0,
+          0,
+          0,
+          0,
+          0,
           10,
-          20,
-          2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "offer_count": 0
-      },
-      {
-        "asin": "B0BYV7YX2K",
-        "has_stats": true,
-        "has_csv": true,
-        "has_offers": false,
-        "has_images_csv": false,
-        "has_prime_exclusive_offer": false,
-        "raw_current_indexes": {
-          "0": -1,
-          "1": 3869,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg_indexes": {
-          "0": -1,
-          "1": 4031,
-          "10": -1,
-          "18": -1
-        },
-        "raw_avg30_indexes": {
-          "0": -1,
-          "1": 4050,
-          "10": -1,
-          "18": -1
-        },
-        "csv_track_lengths": [
-          2,
-          264,
-          44,
-          12442,
-          44,
-          0,
-          0,
-          0,
-          52,
-          0,
-          0,
-          12,
-          32,
+          4,
           0,
           0,
           0,
@@ -560,7 +413,7 @@
         "offer_count": 0
       },
       {
-        "asin": "B0GQVTLL2J",
+        "asin": "B0H5C5YVJJ",
         "has_stats": true,
         "has_csv": true,
         "has_offers": false,
@@ -568,27 +421,27 @@
         "has_prime_exclusive_offer": false,
         "raw_current_indexes": {
           "0": -1,
-          "1": -1,
+          "1": 3299,
           "10": -1,
           "18": -1
         },
         "raw_avg_indexes": {
           "0": -1,
-          "1": 4138,
+          "1": 3299,
           "10": -1,
           "18": -1
         },
         "raw_avg30_indexes": {
           "0": -1,
-          "1": 4139,
+          "1": 3299,
           "10": -1,
           "18": -1
         },
         "csv_track_lengths": [
           2,
-          12,
-          10,
-          762,
+          2,
+          2,
+          2,
           2,
           0,
           0,
@@ -596,8 +449,155 @@
           0,
           0,
           0,
-          18,
-          8,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B0FD9KGK4G",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 3099,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 3099,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 3099,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          34,
+          10,
+          1692,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          40,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B0FK5GXZ9Y",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 4999,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 5001,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 4785,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          26,
+          92,
+          2826,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          16,
+          130,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "offer_count": 0
+      },
+      {
+        "asin": "B0H4ZFYLTX",
+        "has_stats": true,
+        "has_csv": true,
+        "has_offers": false,
+        "has_images_csv": false,
+        "has_prime_exclusive_offer": false,
+        "raw_current_indexes": {
+          "0": -1,
+          "1": 3999,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg_indexes": {
+          "0": -1,
+          "1": 3999,
+          "10": -1,
+          "18": -1
+        },
+        "raw_avg30_indexes": {
+          "0": -1,
+          "1": 3999,
+          "10": -1,
+          "18": -1
+        },
+        "csv_track_lengths": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
           0,
           0,
           0,
@@ -612,176 +612,106 @@
   },
   "deals": [
     {
-      "asin": "B000244Y60",
-      "title": "Makita 742321-1 4-Inch x 24-Inch Abrasive Sanding Belt, 60 Grit (10/Pk)",
-      "current_price": 35.22,
-      "avg_7_price": 35.22,
-      "min_7_price": 35.22,
-      "avg_30_price": 42.66,
+      "asin": "B07MT7PK82",
+      "title": "ZFE 1/2/3 Inch Random Orbital Air Sander, Mini Pneumatic Sander for Auto Body Work, High Speed Air Powered Polisher with 15 Polishing Buffing Pads,18 Sandpapers",
+      "current_price": 40.36,
+      "avg_7_price": 40.36,
+      "min_7_price": 40.36,
+      "avg_30_price": 44.16,
       "min_30_price": null,
       "drop_percent": 0.0,
-      "drop_30_percent": 17.4,
+      "drop_30_percent": 8.6,
       "price_stats_source": "keepa_stats_30_day_threshold_amazon",
-      "image": "https://m.media-amazon.com/images/I/41JlfWP+eiL._SL500_.jpg",
+      "image": "https://m.media-amazon.com/images/I/51OtSfpkQPL._SL500_.jpg",
       "image_candidates": [
-        "https://m.media-amazon.com/images/I/41JlfWP+eiL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B000244Y60.01._SL500_.jpg"
+        "https://m.media-amazon.com/images/I/51OtSfpkQPL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B07MT7PK82.01._SL500_.jpg"
       ],
-      "amazon_url": "https://www.amazon.com/dp/B000244Y60?tag=simplewoodsho-20",
-      "checked_at": "2026-09-16T02:03:15.484356+00:00",
-      "last_checked_at": "2026-09-16T02:03:15.521608+00:00",
+      "amazon_url": "https://www.amazon.com/dp/B07MT7PK82?tag=simplewoodsho-20",
+      "checked_at": "2026-09-16T02:32:58.038647+00:00",
+      "last_checked_at": "2026-09-16T02:32:58.058237+00:00",
       "price_type": "amazon",
       "price_type_label": "Amazon price",
       "keepa_price_index": 0,
-      "amazon_current_price": 35.22,
-      "best_price_days": 11,
-      "best_price_message": "best price in 11 days",
-      "best_price_previous_price": 35.22,
-      "best_price_previous_date": "2026-09-04",
+      "amazon_current_price": 40.36,
+      "best_price_days": 14,
+      "best_price_message": "best price in 14 days",
+      "best_price_previous_price": 40.36,
+      "best_price_previous_date": "2026-09-01",
       "qualification_reasons": [
         "5%+ below 30-day average"
       ],
-      "posted_at": "2026-09-16T02:03:15.521608+00:00",
-      "first_seen_at": "2026-09-16T02:03:15.521608+00:00",
-      "expires_at": "2026-09-17T02:03:15.521612+00:00"
+      "posted_at": "2026-09-16T02:32:58.058237+00:00",
+      "first_seen_at": "2026-09-16T02:32:58.058237+00:00",
+      "expires_at": "2026-09-17T02:32:58.058239+00:00"
     },
     {
-      "asin": "B00982Y3NQ",
-      "title": "KleenGuard\u2122 V30 Nemesis\u2122 Safety Glasses (25688), with Mirror Coating, Smoke Lenses, Black Frame, Unisex Sunglasses for Men and Women (Qty 12)",
-      "current_price": 60.06,
-      "avg_7_price": 62.45,
-      "min_7_price": 56.42,
-      "avg_30_price": 64.25,
+      "asin": "B011865TYG",
+      "title": "Trend 100pcs Beechwood Joining Biscuits Variety Pack (No. 0, 10, 20) for Woodworking, Joinery, and Furniture Framing, BSC/MIX/100",
+      "current_price": 10.29,
+      "avg_7_price": 10.29,
+      "min_7_price": 10.29,
+      "avg_30_price": 11.46,
       "min_30_price": null,
-      "drop_percent": 3.8,
-      "drop_30_percent": 6.5,
+      "drop_percent": 0.0,
+      "drop_30_percent": 10.2,
       "price_stats_source": "keepa_stats_30_day_threshold_amazon",
-      "image": "https://m.media-amazon.com/images/I/312eZN6htsL._SL500_.jpg",
+      "image": "https://m.media-amazon.com/images/I/51RitTzfPlL._SL500_.jpg",
       "image_candidates": [
-        "https://m.media-amazon.com/images/I/312eZN6htsL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B00982Y3NQ.01._SL500_.jpg"
+        "https://m.media-amazon.com/images/I/51RitTzfPlL._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B011865TYG.01._SL500_.jpg"
       ],
-      "amazon_url": "https://www.amazon.com/dp/B00982Y3NQ?tag=simplewoodsho-20",
-      "checked_at": "2026-09-16T02:03:15.496878+00:00",
-      "last_checked_at": "2026-09-16T02:03:15.521608+00:00",
+      "amazon_url": "https://www.amazon.com/dp/B011865TYG?tag=simplewoodsho-20",
+      "checked_at": "2026-09-16T02:32:58.038827+00:00",
+      "last_checked_at": "2026-09-16T02:32:58.058237+00:00",
       "price_type": "amazon",
       "price_type_label": "Amazon price",
       "keepa_price_index": 0,
-      "amazon_current_price": 60.06,
+      "amazon_current_price": 10.29,
+      "best_price_days": 23,
+      "best_price_message": "best price in 23 days",
+      "best_price_previous_price": 10.29,
+      "best_price_previous_date": "2026-08-23",
+      "qualification_reasons": [
+        "5%+ below 30-day average"
+      ],
+      "posted_at": "2026-09-16T02:32:58.058237+00:00",
+      "first_seen_at": "2026-09-16T02:32:58.058237+00:00",
+      "expires_at": "2026-09-17T02:32:58.058239+00:00"
+    },
+    {
+      "asin": "B098S75828",
+      "title": "3M Xtract Net Disc 710W, 150+, 6 in, Die 600Z",
+      "current_price": 40.25,
+      "avg_7_price": 40.13,
+      "min_7_price": 37.83,
+      "avg_30_price": 42.66,
+      "min_30_price": null,
+      "drop_percent": -0.3,
+      "drop_30_percent": 5.6,
+      "price_stats_source": "keepa_stats_30_day_threshold_amazon",
+      "image": "https://m.media-amazon.com/images/I/61nPAzWBerS._SL500_.jpg",
+      "image_candidates": [
+        "https://m.media-amazon.com/images/I/61nPAzWBerS._SL500_.jpg",
+        "https://m.media-amazon.com/images/P/B098S75828.01._SL500_.jpg"
+      ],
+      "amazon_url": "https://www.amazon.com/dp/B098S75828?tag=simplewoodsho-20",
+      "checked_at": "2026-09-16T02:32:58.058049+00:00",
+      "last_checked_at": "2026-09-16T02:32:58.058237+00:00",
+      "price_type": "amazon",
+      "price_type_label": "Amazon price",
+      "keepa_price_index": 0,
+      "amazon_current_price": 40.25,
       "best_price_days": 0,
       "best_price_message": "",
-      "best_price_previous_price": 60.06,
+      "best_price_previous_price": 40.25,
       "best_price_previous_date": "2026-09-15",
       "qualification_reasons": [
         "5%+ below 30-day average"
       ],
-      "posted_at": "2026-09-16T02:03:15.521608+00:00",
-      "first_seen_at": "2026-09-16T02:03:15.521608+00:00",
-      "expires_at": "2026-09-17T02:03:15.521612+00:00"
-    },
-    {
-      "asin": "B08NJ7VDT7",
-      "title": "VEVOR 1/2\" Drive Impact Socket Set 26-Piece, Metric (10-36mm) Sizes Standard Socket Set CR-V Material for High Durability Impact Wrench",
-      "current_price": 51.21,
-      "avg_7_price": 53.89,
-      "min_7_price": 51.21,
-      "avg_30_price": 53.89,
-      "min_30_price": null,
-      "drop_percent": 5.0,
-      "drop_30_percent": 5.0,
-      "price_stats_source": "keepa_stats_30_day_threshold_amazon",
-      "image": "https://m.media-amazon.com/images/I/41qkrMTB6eL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41qkrMTB6eL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B08NJ7VDT7.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B08NJ7VDT7?tag=simplewoodsho-20",
-      "checked_at": "2026-09-16T02:03:15.500158+00:00",
-      "last_checked_at": "2026-09-16T02:03:15.521608+00:00",
-      "price_type": "amazon",
-      "price_type_label": "Amazon price",
-      "keepa_price_index": 0,
-      "amazon_current_price": 51.21,
-      "best_price_days": 0,
-      "best_price_message": "",
-      "best_price_previous_price": 51.21,
-      "best_price_previous_date": "2026-09-16",
-      "qualification_reasons": [
-        "5%+ below 30-day average",
-        "5%+ below both 7-day and 30-day averages"
-      ],
-      "posted_at": "2026-09-16T02:03:15.521608+00:00",
-      "first_seen_at": "2026-09-16T02:03:15.521608+00:00",
-      "expires_at": "2026-09-17T02:03:15.521612+00:00"
-    },
-    {
-      "asin": "B0BWKFG3YS",
-      "title": "Titebond Speed Set Wood Glue 8 Oz. \u2013 Fast-Setting PVA Adhesive with 15-Minute Clamp Time \u2013 4363",
-      "current_price": 9.44,
-      "avg_7_price": 10.84,
-      "min_7_price": 9.44,
-      "avg_30_price": 11.53,
-      "min_30_price": null,
-      "drop_percent": 12.9,
-      "drop_30_percent": 18.1,
-      "price_stats_source": "keepa_stats_30_day_threshold_amazon",
-      "image": "https://m.media-amazon.com/images/I/41W-jEIeacL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/41W-jEIeacL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B0BWKFG3YS.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B0BWKFG3YS?tag=simplewoodsho-20",
-      "checked_at": "2026-09-16T02:03:15.502826+00:00",
-      "last_checked_at": "2026-09-16T02:03:15.521608+00:00",
-      "price_type": "amazon",
-      "price_type_label": "Amazon price",
-      "keepa_price_index": 0,
-      "amazon_current_price": 9.44,
-      "best_price_days": 2,
-      "best_price_message": "best price in 2 days",
-      "best_price_previous_price": 9.44,
-      "best_price_previous_date": "2026-09-13",
-      "qualification_reasons": [
-        "5%+ below 30-day average",
-        "5%+ below both 7-day and 30-day averages"
-      ],
-      "posted_at": "2026-09-16T02:03:15.521608+00:00",
-      "first_seen_at": "2026-09-16T02:03:15.521608+00:00",
-      "expires_at": "2026-09-17T02:03:15.521612+00:00"
-    },
-    {
-      "asin": "B000646VF8",
-      "title": "DEWALT DPG59 Reinforcer Rx-Bifocal High Performance Protective Eyeware with Rubber Temples and Protective Eyeglass Sleeve - Clear Lens, 1.5 Diopter",
-      "current_price": 16.02,
-      "avg_7_price": 15.46,
-      "min_7_price": 11.96,
-      "avg_30_price": 18.28,
-      "min_30_price": null,
-      "drop_percent": -3.6,
-      "drop_30_percent": 12.4,
-      "price_stats_source": "keepa_stats_30_day_threshold_amazon",
-      "image": "https://m.media-amazon.com/images/I/313PUQDdqjL._SL500_.jpg",
-      "image_candidates": [
-        "https://m.media-amazon.com/images/I/313PUQDdqjL._SL500_.jpg",
-        "https://m.media-amazon.com/images/P/B000646VF8.01._SL500_.jpg"
-      ],
-      "amazon_url": "https://www.amazon.com/dp/B000646VF8?tag=simplewoodsho-20",
-      "checked_at": "2026-09-16T02:03:15.506643+00:00",
-      "last_checked_at": "2026-09-16T02:03:15.521608+00:00",
-      "price_type": "amazon",
-      "price_type_label": "Amazon price",
-      "keepa_price_index": 0,
-      "amazon_current_price": 16.02,
-      "best_price_days": 0,
-      "best_price_message": "",
-      "best_price_previous_price": 16.02,
-      "best_price_previous_date": "2026-09-15",
-      "qualification_reasons": [
-        "5%+ below 30-day average"
-      ],
-      "posted_at": "2026-09-16T02:03:15.521608+00:00",
-      "first_seen_at": "2026-09-16T02:03:15.521608+00:00",
-      "expires_at": "2026-09-17T02:03:15.521612+00:00"
+      "posted_at": "2026-09-16T02:32:58.058237+00:00",
+      "first_seen_at": "2026-09-16T02:32:58.058237+00:00",
+      "expires_at": "2026-09-17T02:32:58.058239+00:00"
     }
   ],
   "qualification_rules": {
