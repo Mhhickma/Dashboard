@@ -136,6 +136,76 @@ function addAsins_(asinText) {
   };
 }
 
+function shuffleRows_(rows) {
+  for (let index = rows.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const current = rows[index];
+    rows[index] = rows[swapIndex];
+    rows[swapIndex] = current;
+  }
+}
+
+function cleanSheet_() {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    throw new Error(`Missing sheet named ${SHEET_NAME}.`);
+  }
+
+  const lastRow = sheet.getLastRow();
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  if (lastRow < START_ROW) {
+    return {
+      ok: true,
+      sheet: sheet.getName(),
+      duplicateRemovedCount: 0,
+      blankRemovedCount: 0,
+      remainingAsinCount: 0,
+      shuffledCount: 0,
+    };
+  }
+
+  const rowCount = lastRow - START_ROW + 1;
+  const range = sheet.getRange(START_ROW, 1, rowCount, lastColumn);
+  const values = range.getValues();
+  const seen = {};
+  const keptRows = [];
+  let duplicateRemovedCount = 0;
+  let blankRemovedCount = 0;
+
+  values.forEach((row) => {
+    const asins = parseAsinsFromText_(row[0]);
+    if (!asins.length) {
+      blankRemovedCount += 1;
+      return;
+    }
+
+    const asin = asins[0];
+    if (seen[asin]) {
+      duplicateRemovedCount += 1;
+      return;
+    }
+
+    seen[asin] = true;
+    row[0] = asin;
+    keptRows.push(row);
+  });
+
+  shuffleRows_(keptRows);
+  range.clearContent();
+  if (keptRows.length) {
+    sheet.getRange(START_ROW, 1, keptRows.length, lastColumn).setValues(keptRows);
+  }
+
+  return {
+    ok: true,
+    sheet: sheet.getName(),
+    duplicateRemovedCount,
+    blankRemovedCount,
+    remainingAsinCount: keptRows.length,
+    shuffledCount: keptRows.length,
+  };
+}
+
 function normalizeCreatorCsv_(csvText) {
   return String(csvText || "")
     .replace(/^\uFEFF/, "")
@@ -266,6 +336,9 @@ function doPost(e) {
     if (params.action === "addAsins") {
       return creatorUploadResponse_(addAsins_(params.asins || params.asin));
     }
+    if (params.action === "cleanSheet") {
+      return creatorUploadResponse_(cleanSheet_());
+    }
     return creatorUploadResponse_({ ok: false, error: "Unknown action." });
   } catch (error) {
     return creatorUploadResponse_({ ok: false, error: error.message });
@@ -316,6 +389,8 @@ function doGet(e) {
       payload = removeAsins_(params.asins || params.asin);
     } else if (params.action === "addAsins") {
       payload = addAsins_(params.asins || params.asin);
+    } else if (params.action === "cleanSheet") {
+      payload = cleanSheet_();
     } else {
       payload = { ok: false, error: "Unknown action." };
     }
