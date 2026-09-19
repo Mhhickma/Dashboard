@@ -168,32 +168,39 @@ function cleanSheet_() {
   const range = sheet.getRange(START_ROW, 1, rowCount, lastColumn);
   const values = range.getValues();
   const seen = {};
-  const keptRows = [];
+  const keptAsins = [];
   let duplicateRemovedCount = 0;
   let blankRemovedCount = 0;
 
   values.forEach((row) => {
-    const asins = parseAsinsFromText_(row[0]);
-    if (!asins.length) {
-      blankRemovedCount += 1;
-      return;
-    }
+    row.forEach((cell) => {
+      const asins = parseAsinsFromText_(cell);
+      if (!asins.length) {
+        blankRemovedCount += 1;
+        return;
+      }
 
-    const asin = asins[0];
-    if (seen[asin]) {
-      duplicateRemovedCount += 1;
-      return;
-    }
-
-    seen[asin] = true;
-    row[0] = asin;
-    keptRows.push(row);
+      asins.forEach((asin) => {
+        if (seen[asin]) {
+          duplicateRemovedCount += 1;
+          return;
+        }
+        seen[asin] = true;
+        keptAsins.push(asin);
+      });
+    });
   });
 
-  shuffleRows_(keptRows);
+  shuffleRows_(keptAsins);
   range.clearContent();
-  if (keptRows.length) {
-    sheet.getRange(START_ROW, 1, keptRows.length, lastColumn).setValues(keptRows);
+  if (keptAsins.length) {
+    const outputRows = [];
+    for (let index = 0; index < keptAsins.length; index += lastColumn) {
+      const row = keptAsins.slice(index, index + lastColumn);
+      while (row.length < lastColumn) row.push("");
+      outputRows.push(row);
+    }
+    sheet.getRange(START_ROW, 1, outputRows.length, lastColumn).setValues(outputRows);
   }
 
   return {
@@ -201,8 +208,8 @@ function cleanSheet_() {
     sheet: sheet.getName(),
     duplicateRemovedCount,
     blankRemovedCount,
-    remainingAsinCount: keptRows.length,
-    shuffledCount: keptRows.length,
+    remainingAsinCount: keptAsins.length,
+    shuffledCount: keptAsins.length,
   };
 }
 
