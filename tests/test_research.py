@@ -18,13 +18,18 @@ class ResearchTests(unittest.TestCase):
     def add(self,asin,commission=9.5):
         c={'campaign_id':'one','commission':commission,'start':'2020-01-01','end':'2099-01-01'}
         with self.store.db() as db:self.store.put(db,{'asin':asin,'title':'Product','price':50,'category':'Tools','monthly_sold':500,'merchant_video':True},[c],self.cfg)
-    def test_clear_results_preserves_shortlist_and_blocks_reimport(self):
-        self.add('B000000001');self.add('B000000002')
-        self.store.save_shortlist('B000000001',{'status':'Researching','priority':'Normal','notes':'Keep'})
-        self.assertEqual(self.store.clear_results()['cleared'],1)
-        self.assertEqual(self.store.detail('B000000001')['shortlist']['notes'],'Keep')
-        with self.assertRaises(KeyError):self.store.detail('B000000002')
-        self.assertEqual(self.store.import_saved(ROOT/'data/influencer'),0)
+    def test_clear_only_older_than_14_days(self):
+        from unittest.mock import patch
+        now=2000000000
+        dates=[now-15*86400,now-14*86400,now-86400,None,0,now-16*86400]
+        for i,stamp in enumerate(dates):
+            asin='B'+str(i).zfill(9)
+            with self.store.db() as db:self.store.put(db,{'asin':asin,'fetched_at':stamp},[],self.cfg)
+        self.store.save_shortlist('B000000005',{'status':'Researching','priority':'Normal','notes':'Keep'})
+        with patch('research_server.time.time',return_value=now):self.assertEqual(self.store.clear_results()['cleared'],1)
+        with self.assertRaises(KeyError):self.store.detail('B000000000')
+        for i in range(1,6):self.assertIsNotNone(self.store.detail('B'+str(i).zfill(9)))
+        self.assertEqual(self.store.detail('B000000005')['shortlist']['notes'],'Keep')
 
     def test_clear_blocked_during_scan(self):
         self.add('B000000001')

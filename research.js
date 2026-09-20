@@ -90,7 +90,7 @@ $('scan-source').onchange=updatePastedAsins;
 $('paste-asins').addEventListener('input',updatePastedAsins);
 
 $('clear-results').onclick=async()=>{
- if(!confirm('Clear saved scan results and local scan history? Shortlisted products and notes, CC CSVs, and the Keepa cache will be kept. This cannot be undone.'))return;
+ if(!confirm('Clear saved results last scanned more than 14 days ago? Recent results, unknown scan dates, shortlisted products, notes, CC CSVs and Keepa cache will stay.'))return;
  const button=$('clear-results');button.disabled=true;
- try{const result=await api('/api/clear-results',{confirm:'clear_saved_scans'});scanJob=null;lastScan=null;page=1;clearTimeout(scanTimer);renderScan({state:'idle'});$('scan-report').textContent='No report yet.';await load();$('scan-status').textContent=result.cleared+' saved results cleared. Shortlisted products and Keepa cache kept.';}catch(e){$('scan-status').textContent=e.message;}finally{button.disabled=false;}
+ try{const result=await api('/api/clear-results',{confirm:'clear_older_14_days'});page=1;await load();$('message').textContent=result.cleared+' results older than 14 days cleared.';}catch(e){$('message').textContent=e.message;}finally{button.disabled=false;}
 };

@@ -63,9 +63,12 @@ class Store:
     def import_saved(self,folder):
         cfg=self.config();count=0
         with self.db() as db:
-            if db.execute("SELECT 1 FROM research_local_state WHERE key='results_cleared'").fetchone():return 0
+            marker=db.execute("SELECT value FROM research_local_state WHERE key='cleared_before'").fetchone()
+            cleared_before=float(marker[0]) if marker else 0
             for page in sorted(Path(folder).glob('page-*.json')):
                 for row in json.loads(page.read_text(encoding='utf-8')):
+                    fetched=row.get('fetched_at')
+                    if isinstance(fetched,(int,float)) and 0<fetched<cleared_before and not db.execute('SELECT 1 FROM shortlist WHERE asin=?',(row['asin'],)).fetchone():continue
                     detail=Path(folder)/'details'/f"{row['asin']}.json"
                     campaigns=json.loads(detail.read_text(encoding='utf-8')).get('campaigns',[]) if detail.exists() else []
                     existing=db.execute('SELECT base,raw FROM products WHERE asin=?',(row['asin'],)).fetchone()
@@ -171,17 +174,16 @@ class Store:
         return dict(rows=rows,total=total,page=page,size=size,categories=categories)
     def clear_results(self):
         from research_jobs import LOCK,ACTIVE
+        cutoff=time.time()-14*86400
         with LOCK,self.db() as db:
             last=db.execute("SELECT state FROM jobs WHERE kind='scan' ORDER BY id DESC LIMIT 1").fetchone()
             if last and (last['state'] in ACTIVE or last['state']=='checkpoint_attention'):
                 raise ValueError('Wait for the current scan to finish and check its status before clearing results.')
-            count=db.execute('SELECT COUNT(*) FROM products WHERE asin NOT IN (SELECT asin FROM shortlist)').fetchone()[0]
-            db.execute('DELETE FROM products WHERE asin NOT IN (SELECT asin FROM shortlist)')
-            db.execute('DELETE FROM product_campaigns WHERE asin NOT IN (SELECT asin FROM products)')
-            db.execute('DELETE FROM hidden_products WHERE asin NOT IN (SELECT asin FROM products)')
-            db.execute('DELETE FROM research_scan_results')
-            db.execute("DELETE FROM jobs WHERE kind='scan'")
-            db.execute("INSERT OR REPLACE INTO research_local_state VALUES('results_cleared','1')")
+            db.execute("CREATE TEMP TABLE expired_results AS SELECT asin FROM products WHERE asin NOT IN (SELECT asin FROM shortlist) AND json_type(payload,'$.fetched_at') IN ('integer','real') AND json_extract(payload,'$.fetched_at')>0 AND json_extract(payload,'$.fetched_at')<?",(cutoff,))
+            count=db.execute('SELECT COUNT(*) FROM expired_results').fetchone()[0]
+            for table in ('products','product_campaigns','hidden_products','research_scan_results'):
+                db.execute(f'DELETE FROM {table} WHERE asin IN (SELECT asin FROM expired_results)')
+            db.execute("INSERT OR REPLACE INTO research_local_state VALUES('cleared_before',?)",(str(cutoff),))
             return {'cleared':count}
 
     def hide(self,asin,hidden):
@@ -254,7 +256,7 @@ def handler(store):
                     from research_jobs import start
                     return self.send(start(store,data))
                 if self.path=='/api/clear-results':
-                    if data.get('confirm')!='clear_saved_scans':raise ValueError('Confirmation required')
+                    if data.get('confirm')!='clear_older_14_days':raise ValueError('Confirmation required')
                     return self.send(store.clear_results())
                 if self.path=='/api/settings':store.save_settings(data)
                 elif self.path.startswith('/api/hidden/'):store.hide(self.path.rsplit('/',1)[-1],data.get('hidden'))
