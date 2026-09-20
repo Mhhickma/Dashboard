@@ -115,7 +115,7 @@ class ScanTests(unittest.TestCase):
         stream=io.BytesIO()
         with zipfile.ZipFile(stream,'w') as archive:
             archive.writestr('status.json',json.dumps({'job':job['request']['job'],'phase':'complete','matched':1}))
-            archive.writestr('products.jsonl',json.dumps({'base':{'asin':'B000000001','title':'Returned'},'campaigns':[],'raw':{},'passed':True,'failed_filters':[]})+'\n')
+            archive.writestr('products.jsonl',json.dumps({'base':{'asin':'B000000001','title':'Returned','merchant_video':True},'campaigns':[],'raw':{},'passed':True,'failed_filters':[]})+'\n')
         stream.seek(0)
         with patch('research_jobs.github.api',side_effect=[{'workflow_runs':[{'id':55,'display_title':'Film Research '+payload['ticket'],'html_url':'https://github.com/Mhhickma/Dashboard/actions/runs/55','status':'completed','conclusion':'success'}]},{'artifacts':[{'id':1,'name':'film-research-result','expired':False}]}]),patch('research_jobs.github.artifact',return_value=stream):
             result=research_jobs.status(store)
