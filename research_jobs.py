@@ -15,7 +15,11 @@ def start(store,data):
     with LOCK:
         limit=int(data.get('limit',100));batch=int(data.get('batch_size',10));budget=int(data.get('token_budget',100))
         if not 1<=limit<=1000 or not 1<=batch<=100 or not 1<=budget<=1000:raise ValueError('Use 1â€“1,000 ASINs/tokens and batch size 1â€“100')
+        refresh=data.get('refresh') is True
+        if refresh:
+            data={**data,'source':'paste','resume':False};limit=1;batch=1;budget=14
         pasted=parse_asins(data.get('asins','')) if data.get('source')=='paste' and not data.get('resume') else None
+        if refresh and (not pasted or len(pasted)!=1):raise ValueError('Refresh exactly one ASIN')
         if pasted:limit=len(pasted)
         # Verify deployment/access before recording any paid dispatch.
         github.api('/actions/workflows/'+github.WORKFLOW)
@@ -31,6 +35,7 @@ def start(store,data):
                 cfg=store.config();filters=normalize(data.get('filters',{}),cfg)
                 request={'job':uuid.uuid4().hex,'limit':limit,'batch_size':batch,'token_budget':budget,'filters':filters,'config':cfg}
                 if pasted:request['asins']=pasted
+                if refresh:request['refresh']=True
             ticket=uuid.uuid4().hex
             payload={'ticket':ticket,'request':request}
             cursor=db.execute("INSERT INTO jobs(kind,state,created,payload) VALUES('scan','dispatching',?,?)",(time.time(),json.dumps(payload)));job_id=cursor.lastrowid

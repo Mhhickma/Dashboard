@@ -11,9 +11,10 @@ from research_model import campaign_active,enrich
 from research_funnel import normalize,reasons
 
 class KeepaClient:
-    def __init__(self,key,budget,deadline,session=None):
+    def __init__(self,key,budget,deadline,session=None,refresh=False):
         import requests
         self.session=session or requests.Session();self.key=key;self.budget=budget;self.deadline=deadline
+        self.refresh=refresh
         self.reserved=0;self.consumed=0;self.balance=None;self.unknown=False
     def wait_for_tokens(self,needed):
         import requests
@@ -31,14 +32,15 @@ class KeepaClient:
 
     def fetch(self,asins):
         import requests
-        for attempt in range(4):
-            if self.reserved+len(asins)>self.budget:return None,'paused_budget'
+        cost=len(asins)*(14 if self.refresh else 1)
+        for attempt in range(1 if self.refresh else 4):
+            if self.reserved+cost>self.budget:return None,'paused_budget'
             if time.monotonic()+65>=self.deadline:return None,'paused_time'
-            token_error=self.wait_for_tokens(len(asins))
+            token_error=self.wait_for_tokens(cost)
             if token_error:return None,token_error
-            self.reserved+=len(asins);wait=2**(attempt+1)
+            self.reserved+=cost;wait=2**(attempt+1)
             try:
-                response=self.session.get('https://api.keepa.com/product',params={'key':self.key,'domain':1,'asin':','.join(asins),'history':1,'stats':90,'videos':1,'update':-1},timeout=(10,50))
+                response=self.session.get('https://api.keepa.com/product',params={'key':self.key,'domain':1,'asin':','.join(asins),'history':1,'stats':90,'videos':1,'update':0 if self.refresh else -1,**({'offers':20} if self.refresh else {})},timeout=(10,50))
                 payload=response.json();used=number(payload.get('tokensConsumed'))
                 if used is None:self.unknown=True
                 else:self.consumed+=used
@@ -80,6 +82,9 @@ def run(db,request,client,deadline,output):
         pasted=parse_asins(' '.join(pasted))
         if len(pasted)!=limit:raise ValueError('ASIN list count mismatch')
         identity_data['asins']=pasted
+    if request.get('refresh'):
+        if not pasted or len(pasted)!=1:raise ValueError('Refresh requires one ASIN')
+        identity_data['refresh']=True
     identity=json.dumps(identity_data,sort_keys=True)
     if existing:
         previous=json.loads(existing[0]);previous['filters']['merchant_required']=True
@@ -94,7 +99,8 @@ def run(db,request,client,deadline,output):
         db.create_function('is_book_asin',1,book_asin)
         if pasted:
             db.executemany('INSERT OR IGNORE INTO scan_members(job,asin) VALUES(?,?)',[(job,a) for a in pasted])
-            db.execute("UPDATE scan_members SET state='done' WHERE job=? AND asin IN (SELECT asin FROM cache)",(job,))
+            if not request.get("refresh"):
+                db.execute("UPDATE scan_members SET state='done' WHERE job=? AND asin IN (SELECT asin FROM cache)",(job,))
             db.commit()
         if not db.execute('SELECT 1 FROM scan_members WHERE job=?',(job,)).fetchone():
             # A new scan takes the next previously unscanned CC products, never random Amazon ASINs.
@@ -146,7 +152,7 @@ if __name__=='__main__':
         key=os.environ.get('KEEPA_API_KEY')
         if not key:raise ValueError('Keepa secret unavailable')
         db=connect(Path('.research-scan/checkpoint.sqlite'))
-        try:run(db,request,KeepaClient(key,int(request['token_budget']),deadline),deadline,Path('.research-scan/result'))
+        try:run(db,request,KeepaClient(key,int(request['token_budget']),deadline,refresh=request.get('refresh') is True),deadline,Path('.research-scan/result'))
         finally:db.close()
     except Exception:
         print('Scan stopped safely. See workflow stage and checkpoint; request details are not logged.')

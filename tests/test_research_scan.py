@@ -53,6 +53,27 @@ class ScanTests(unittest.TestCase):
         run(self.db,{**request,'job':'pasted-again'},client,time.monotonic()+60,Path('cached'))
         client.fetch.assert_not_called()
 
+    def test_refresh_bypasses_cache_only_for_selected_asin(self):
+        run(self.db,self.request,self.client(),time.monotonic()+60,Path('initial'))
+        request={**self.request,'job':'refresh','limit':1,'asins':['B000000001'],'refresh':True}
+        client=self.client()
+        run(self.db,request,client,time.monotonic()+60,Path('refresh'))
+        client.fetch.assert_called_once_with(['B000000001'])
+        client=self.client()
+        run(self.db,request,client,time.monotonic()+60,Path('resume'))
+        client.fetch.assert_not_called()
+
+    def test_refresh_budget_and_parameters(self):
+        session=Mock();session.get.return_value.status_code=200
+        session.get.return_value.json.return_value={'products':[],'tokensConsumed':12,'tokensLeft':100}
+        client=KeepaClient('test',14,time.monotonic()+120,session=session,refresh=True)
+        client.fetch(['B000000001'])
+        params=session.get.call_args.kwargs['params']
+        self.assertEqual(params['offers'],20);self.assertEqual(params['update'],0)
+        self.assertEqual(client.reserved,14)
+        self.assertEqual(client.fetch(['B000000001'])[1],'paused_budget')
+        self.assertEqual(session.get.call_count,1)
+
     def test_paste_validation(self):
         from research_asins import parse_asins
         self.assertEqual(parse_asins('b000000001, B000000001;B000000002'),['B000000001','B000000002'])
