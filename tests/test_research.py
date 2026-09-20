@@ -15,7 +15,7 @@ class ResearchTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.store=Store(Path(self.tmp.name)/'research.sqlite');self.cfg=self.store.config()
-    def add(self,asin,commission=9.5):
+    def add(self,asin,commission=10):
         c={'campaign_id':'one','commission':commission,'start':'2020-01-01','end':'2099-01-01'}
         with self.store.db() as db:self.store.put(db,{'asin':asin,'title':'Product','price':50,'category':'Tools','monthly_sold':500,'merchant_video':True},[c],self.cfg)
     def test_clear_only_older_than_14_days(self):
@@ -45,12 +45,12 @@ class ResearchTests(unittest.TestCase):
             self.assertIn('merchant_required',reasons({'merchant_video':v},{},self.cfg))
         self.add('B000000001')
         with self.store.db() as db:db.execute('UPDATE products SET merchant_video=NULL')
-        self.assertEqual(self.store.query({'merchant_required':'false'})['total'],0)
+        self.assertEqual(self.store.query({'merchant_required':'false'})['total'],1) # Missing evidence remains visible, not qualified
 
     def test_commission_strict_and_pagination(self):
         self.add('B000000001',9);self.add('B000000002');self.add('B000000003',10)
         result=self.store.query({'size':'1'});self.assertEqual(result['total'],2);self.assertEqual(len(result['rows']),1)
-        self.assertEqual(self.store.query({'commission_min':'0'})['total'],3)
+        self.assertEqual(self.store.query({'commission_min':'0'})['total'],2)
     def test_shortlist_survives_import_and_filters(self):
         self.add('B000000001');self.store.save_shortlist('B000000001',{'status':'Researching','priority':'High','notes':'My note'})
         self.add('B000000001',1)
@@ -72,7 +72,7 @@ class ResearchTests(unittest.TestCase):
         self.assertIsNone(result['influencer_videos'])
     def test_score_unknown_coverage(self):
         points,components,coverage=score({},self.cfg)
-        self.assertEqual((points,coverage),(0,0));self.assertIsNone(components['competition']['points'])
+        self.assertEqual((points,coverage),(0,0));self.assertIsNone(components['video_competition']['points'])
     def test_invalid_settings_rollback(self):
         cfg=self.store.config();cfg['weights']['competition']=999
         with self.assertRaises(ValueError):self.store.save_settings(cfg)

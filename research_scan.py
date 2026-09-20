@@ -60,7 +60,7 @@ def campaign_index(db,filters,today):
     for cid,source,payload in db.execute(query):
         c=json.loads(payload)
         if filters['cc_only'] and not campaign_active(c,today):continue
-        if 'commission_min' in filters and (c.get('commission') is None or c['commission']<=filters['commission_min']):continue
+        if 'commission_min' in filters and (c.get('commission') is None or c['commission']<filters['commission_min']):continue
         db.execute('INSERT INTO scan_campaigns VALUES(?,?,?)',(cid,source,payload))
     db.commit()
 

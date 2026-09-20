@@ -52,7 +52,7 @@ class Store:
         finally:db.close()
     def config(self):
         with self.db() as db:cfg=json.loads(db.execute('SELECT payload FROM settings WHERE id=1').fetchone()[0])
-        cfg['filters']['merchant_required']=True
+        cfg['filters'].update(merchant_required=True,commission_min=10,trend='',growth_min=None)
         return cfg
     def put(self,db,base,campaigns,cfg,raw=None):
         r=enrich(base,campaigns,cfg,raw)
@@ -121,7 +121,7 @@ class Store:
         if q.get('show_hidden')!='true':add('p.asin NOT IN (SELECT asin FROM hidden_products)')
         view=q.get('view','feed')
         if q.get('scan_job'):
-            add('p.asin IN (SELECT asin FROM research_scan_results WHERE job=? AND passed=1)',int(q['scan_job']))
+            add('p.asin IN (SELECT asin FROM research_scan_results WHERE job=?)',int(q['scan_job']))
         workflow=view in ('shortlist','outreach','film','published')
         if workflow:
             add('p.asin IN (SELECT asin FROM shortlist)')
@@ -131,7 +131,7 @@ class Store:
         else:
             if q.get('cc_only',str(defaults['cc_only']).lower())=='true' or view=='cc':add('p.cc_active=1')
             floor=q.get('commission_min',defaults['commission_min'])
-            if floor not in ('',None):add('p.commission>?',float(floor))
+            if floor not in ('',None):add('(p.commission>=? OR p.commission IS NULL)',float(floor))
             if q.get('exclude_apparel',str(defaults['exclude_apparel']).lower())=='true':add('p.apparel=0')
             exclusions=q.get('exclude_categories',','.join(defaults['exclude_categories']))
             for cat in str(exclusions).split(','):
@@ -142,7 +142,7 @@ class Store:
         for key,(column,operator) in ranges.items():
             v=q.get(key,defaults.get(key))
             if v not in ('',None):add(f'p.{column}{operator}?',float(v))
-        if not workflow:add('p.merchant_video=1')
+        if not workflow:add("json_extract(p.payload,'$.qualification') IN ('Qualified','Missing data')")
         if q.get('main_required')=='true':add("json_extract(p.payload,'$.main_video')=1")
         if q.get('growth_min') not in ('',None):add('p.growth>=?',float(q['growth_min']))
         if q.get('total_videos_max') not in ('',None):add("json_extract(p.payload,'$.total_videos')<=?",float(q['total_videos_max']))

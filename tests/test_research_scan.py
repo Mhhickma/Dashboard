@@ -23,13 +23,13 @@ class ScanTests(unittest.TestCase):
         folder=Path('data/creator-connections');folder.mkdir(parents=True)
         with (folder/'20260901T000000.csv').open('w',newline='') as f:
             w=csv.writer(f);w.writerow(['Campaign ID','Campaign Name','Brand','Commission','Start Date','End Date','ASIN List'])
-            w.writerow(['1','Eligible','Brand','9.5%','2020-01-01','2099-01-01','B000000001 B000000002 B000000003'])
+            w.writerow(['1','Eligible','Brand','10%','2020-01-01','2099-01-01','B000000001 B000000002 B000000003'])
             w.writerow(['2','Low','Brand','9%','2020-01-01','2099-01-01','B000000004'])
         self.db=connect(Path('state.sqlite'));self.addCleanup(self.db.close)
         self.request={'job':'one','limit':2,'batch_size':1,'token_budget':2,'config':self.cfg,'filters':{'exclude_apparel':False,'exclude_categories':'','price_min':20}}
     def client(self):
         c=Mock();c.reserved=0;c.consumed=0;c.balance=10;c.unknown=False
-        c.fetch.side_effect=lambda asins:([{'asin':a,'title':'Product','stats':{'current':[-1,3000]},'productType':0,'videos':[{'url':'seller-video','creator':'Seller'}]} for a in asins],None)
+        c.fetch.side_effect=lambda asins:([{'asin':a,'title':'Product','stats':{'current':[-1,3000]},'monthlySold':500,'categoryTree':[{'name':'Tools'}],'productType':0,'videos':[{'url':'seller-video','creator':'Seller'}]} for a in asins],None)
         return c
     def test_bounded_cc_funnel_and_new_cohort(self):
         client=self.client();result=run(self.db,self.request,client,time.monotonic()+60,Path('out'))
@@ -115,7 +115,7 @@ class ScanTests(unittest.TestCase):
         stream=io.BytesIO()
         with zipfile.ZipFile(stream,'w') as archive:
             archive.writestr('status.json',json.dumps({'job':job['request']['job'],'phase':'complete','matched':1}))
-            archive.writestr('products.jsonl',json.dumps({'base':{'asin':'B000000001','title':'Returned','merchant_video':True},'campaigns':[],'raw':{},'passed':True,'failed_filters':[]})+'\n')
+            archive.writestr('products.jsonl',json.dumps({'base':{'asin':'B000000001','title':'Returned','merchant_video':True},'campaigns':[{'campaign_id':'cc','commission':10,'start':'2020-01-01','end':'2099-01-01'}],'raw':{},'passed':True,'failed_filters':[]})+'\n')
         stream.seek(0)
         with patch('research_jobs.github.api',side_effect=[{'workflow_runs':[{'id':55,'display_title':'Film Research '+payload['ticket'],'html_url':'https://github.com/Mhhickma/Dashboard/actions/runs/55','status':'completed','conclusion':'success'}]},{'artifacts':[{'id':1,'name':'film-research-result','expired':False}]}]),patch('research_jobs.github.artifact',return_value=stream):
             result=research_jobs.status(store)

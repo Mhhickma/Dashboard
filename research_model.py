@@ -44,18 +44,47 @@ def trend_label(growth, cfg):
     band=cfg['stable_band']; fast=cfg['accelerating_growth']
     return 'Accelerating' if growth>=fast else 'Rising' if growth>band else 'Rapidly declining' if growth<=-fast else 'Declining' if growth < -band else 'Stable'
 
+def sales_minimum(price):
+    return max(25,300-(price-25)*250/75) if numeric(price) is not None and price>0 else None
+
+def qualification(row):
+    failures=[];missing=[]
+    def require(label,value,ok):
+        if value is None:missing.append(label)
+        elif not ok:failures.append(label)
+    minimum=sales_minimum(row.get('price'))
+    require('Active CC campaign',row.get('cc_active'),row.get('cc_active') is True)
+    require('Commission at least 10%',row.get('commission'),(row.get('commission') or 0)>=10)
+    require('Merchant video',row.get('merchant_video'),row.get('merchant_video') is True)
+    require('At most 10 total videos',row.get('total_videos'),(row.get('total_videos') or 0)<=10)
+    if minimum is None:missing.append('Price for sales minimum')
+    if row.get('monthly_sold') is None:missing.append('Monthly sales')
+    elif minimum is not None and row['monthly_sold']<minimum:failures.append('Price-based monthly sales minimum')
+    category=row.get('category')
+    if not category:missing.append('Category')
+    elif 'books' in category.lower() or row.get('apparel'):failures.append('Excluded category')
+    return minimum,failures,missing
+
 def score(row,cfg):
-    t=cfg['thresholds']; w=cfg['weights']
-    def ratio(value,full): return None if value is None else min(1,max(0,value/full))
-    v=row.get('influencer_videos')
-    competition=None if v is None else 1 if v<=t['primary_videos_max'] else .5 if v<=t['secondary_videos_max'] else 0
-    values={'sales_volume':ratio(row.get('monthly_sold'),t['monthly_sales_full']),
-        'sales_trend':ratio(row.get('growth'),t['growth_full']),'competition':competition,
-        'commission':ratio(row.get('commission') if row.get('cc_active') else None,t['commission_full']),
-        'merchant_video':None if row.get('merchant_video') is None else int(row['merchant_video']),
-        'earning_potential':ratio(row.get('estimated_commission_per_sale'),t['commission_per_sale_full'])}
-    components={k: {'points':None if values[k] is None else round(values[k]*w[k],2),'maximum':w[k]} for k in w}
-    return round(sum(c['points'] or 0 for c in components.values()),2),components,round(sum(w[k] for k,v in values.items() if v is not None),2)
+    minimum=sales_minimum(row.get('price'));sales=numeric(row.get('monthly_sold'))
+    videos=numeric(row.get('influencer_videos'))
+    estimated=videos is None and numeric(row.get('total_videos')) is not None
+    if videos is None:videos=numeric(row.get('total_videos'))
+    penalty=.12+.18*min(1,max(0,((row.get('price') or 50)-50)/50))
+    strength=sales/minimum if minimum and sales is not None else None
+    adjusted=strength/math.exp(penalty*videos) if strength is not None and videos is not None else None
+    sales_points=cfg['weights']['sales_volume']*adjusted/(1+adjusted) if adjusted is not None else None
+    video_points=cfg['weights']['competition']/(1+videos/5) if videos is not None else None
+    commission=numeric(row.get('commission'))
+    commission_points=cfg['weights']['commission']*min(commission/30,1) if commission is not None else None
+    components={
+        'sales_strength':{'points':round(sales_points,2) if sales_points is not None else None,'maximum':cfg['weights']['sales_volume'],'reason':f'{sales:g} monthly sales / {minimum:.1f} required; adjusted for video competition' if adjusted is not None else 'Price, sales or video count missing'},
+        'video_competition':{'points':round(video_points,2) if video_points is not None else None,'maximum':cfg['weights']['competition'],'reason':f'{videos:g} '+('total videos used as an estimate' if estimated else 'influencer videos') if videos is not None else 'Video count missing'},
+        'commission':{'points':round(commission_points,2) if commission_points is not None else None,'maximum':cfg['weights']['commission'],'reason':f'{commission:g}% CC commission' if commission is not None else 'Commission missing'}}
+    row['score_estimated']=estimated
+    row['score_version']='price-sales-v2'
+    row['score_explanation']='Sales strength contributes up to 80 points after a price-sensitive video penalty; fewer videos contribute 10 and commission 10. Sales growth does not affect this score.'
+    return round(sum(v['points'] or 0 for v in components.values()),2),components,sum(v['maximum'] for v in components.values() if v['points'] is not None)
 
 def campaign_active(c,today):
     return bool(c.get('start') and c.get('end') and c['start']<=today<=c['end'] and str(c.get('status','')).lower() not in {'inactive','paused','cancelled','canceled','ended','expired','closed','upcoming'})
@@ -91,6 +120,9 @@ def enrich(row,campaigns,cfg,raw=None):
         r['listed_since']=timestamp(raw.get('listedSince'))
         r['history']={'monthly_sold':raw.get('monthlySoldHistory'),'bsr':(raw.get('csv') or [None]*4)[3] if len(raw.get('csv') or [])>3 else None}
     r['sales_trend_direction']=trend_label(r.get('growth'),cfg['thresholds'])
+    r['apparel']=(r.get('checks') or {}).get('not_apparel') is False
+    minimum,failures,missing=qualification(r)
+    r.update(required_monthly_sales=minimum,qualification='Does not qualify' if failures else 'Missing data' if missing else 'Qualified',qualification_reasons=failures+missing)
     r['film_score'],r['score_components'],r['score_coverage']=score(r,cfg)
     r['sources']={'price':'Keepa','bsr':'Keepa','monthly_sold':'Amazon bought-in-past-month via Keepa (bracketed lower bound)','cc':'Creator Connection CSV import','video':r['video_count_source'],'growth':'Calculated from full 90-day time-weighted monthly-sold history; BSR is diagnostic only'}
     r['subcategory']=(r.get('category') or '').split(' > ')[-1] or None

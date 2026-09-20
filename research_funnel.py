@@ -27,13 +27,15 @@ def normalize(filters,config):
     return result
 
 def reasons(row,f,config):
-    failed=[]
+    from research_model import qualification
+    _,failures,missing=qualification(row)
+    failed=failures+missing
     def check(key,ok):
         if not ok:failed.append(key)
     check('merchant_required',row.get('merchant_video') is True)
     if f.get('cc_only'):check('active_cc',row.get('cc_active') is True)
     if f.get('exclude_apparel'):check('not_apparel',(row.get('checks') or {}).get('not_apparel') is True)
-    for key,field,op in [('commission_min','commission',lambda a,b:a>b),('commission_max','commission',lambda a,b:a<=b),('price_min','price',lambda a,b:a>=b),('price_max','price',lambda a,b:a<=b),('sales_min','monthly_sold',lambda a,b:a>=b),('influencer_max','influencer_videos',lambda a,b:a<=b),('total_videos_max','total_videos',lambda a,b:a<=b),('growth_min','growth',lambda a,b:a>=b),('score_min','film_score',lambda a,b:a>=b),('rating_min','rating',lambda a,b:a>=b),('reviews_min','review_count',lambda a,b:a>=b),('variants_max','variant_count',lambda a,b:a<=b),('sellers_max','seller_count',lambda a,b:a<=b)]:
+    for key,field,op in [('commission_min','commission',lambda a,b:a>=b),('commission_max','commission',lambda a,b:a<=b),('price_min','price',lambda a,b:a>=b),('price_max','price',lambda a,b:a<=b),('sales_min','monthly_sold',lambda a,b:a>=b),('influencer_max','influencer_videos',lambda a,b:a<=b),('total_videos_max','total_videos',lambda a,b:a<=b),('growth_min','growth',lambda a,b:a>=b),('score_min','film_score',lambda a,b:a>=b),('rating_min','rating',lambda a,b:a>=b),('reviews_min','review_count',lambda a,b:a>=b),('variants_max','variant_count',lambda a,b:a<=b),('sellers_max','seller_count',lambda a,b:a<=b)]:
         if key in f:check(key,row.get(field) is not None and op(row[field],f[key]))
     for key,field in [('merchant_required','merchant_video'),('main_required','main_video')]:
         if f.get(key):check(key,row.get(field) is True)
