@@ -50,7 +50,9 @@ class Store:
             with db:yield db
         finally:db.close()
     def config(self):
-        with self.db() as db:return json.loads(db.execute('SELECT payload FROM settings WHERE id=1').fetchone()[0])
+        with self.db() as db:cfg=json.loads(db.execute('SELECT payload FROM settings WHERE id=1').fetchone()[0])
+        cfg['filters']['merchant_required']=True
+        return cfg
     def put(self,db,base,campaigns,cfg,raw=None):
         r=enrich(base,campaigns,cfg,raw)
         columns=['asin','title','brand','category','price','monthly_sold','commission','cc_active','apparel','influencer_videos','merchant_video','rating','review_count','variant_count','seller_count','growth','bsr90','campaign_end','film_score']
@@ -135,7 +137,7 @@ class Store:
         for key,(column,operator) in ranges.items():
             v=q.get(key,defaults.get(key))
             if v not in ('',None):add(f'p.{column}{operator}?',float(v))
-        if q.get('merchant_required',str(defaults['merchant_required']).lower())=='true':add('p.merchant_video=1')
+        if not workflow:add('p.merchant_video=1')
         if q.get('main_required')=='true':add("json_extract(p.payload,'$.main_video')=1")
         if q.get('growth_min') not in ('',None):add('p.growth>=?',float(q['growth_min']))
         if q.get('total_videos_max') not in ('',None):add("json_extract(p.payload,'$.total_videos')<=?",float(q['total_videos_max']))

@@ -23,12 +23,14 @@ def normalize(filters,config):
     if filters.get('view')=='trending' and not result['trend']:result['trend']='rising'
     if filters.get('view')=='low':result['influencer_max']=min(result.get('influencer_max',float('inf')),config['thresholds']['primary_videos_max'])
     if result['trend'] not in ('','rising','flat','falling') or result['bsr_trend'] not in ('','improving','worsening'):raise ValueError('Invalid trend filter')
+    result['merchant_required']=True
     return result
 
 def reasons(row,f,config):
     failed=[]
     def check(key,ok):
         if not ok:failed.append(key)
+    check('merchant_required',row.get('merchant_video') is True)
     if f.get('cc_only'):check('active_cc',row.get('cc_active') is True)
     if f.get('exclude_apparel'):check('not_apparel',(row.get('checks') or {}).get('not_apparel') is True)
     for key,field,op in [('commission_min','commission',lambda a,b:a>b),('commission_max','commission',lambda a,b:a<=b),('price_min','price',lambda a,b:a>=b),('price_max','price',lambda a,b:a<=b),('sales_min','monthly_sold',lambda a,b:a>=b),('influencer_max','influencer_videos',lambda a,b:a<=b),('total_videos_max','total_videos',lambda a,b:a<=b),('growth_min','growth',lambda a,b:a>=b),('score_min','film_score',lambda a,b:a>=b),('rating_min','rating',lambda a,b:a>=b),('reviews_min','review_count',lambda a,b:a>=b),('variants_max','variant_count',lambda a,b:a<=b),('sellers_max','seller_count',lambda a,b:a<=b)]:

@@ -81,7 +81,9 @@ def run(db,request,client,deadline,output):
         if len(pasted)!=limit:raise ValueError('ASIN list count mismatch')
         identity_data['asins']=pasted
     identity=json.dumps(identity_data,sort_keys=True)
-    if existing and existing[0]!=identity:raise ValueError('Resume must retain its original funnel and cohort size')
+    if existing:
+        previous=json.loads(existing[0]);previous['filters']['merchant_required']=True
+        if previous!=identity_data:raise ValueError('Resume must retain its original funnel and cohort size')
     db.execute('INSERT OR IGNORE INTO scan_jobs VALUES(?,?)',(job,identity));db.commit()
     paths=active_csv_files('data/creator-connections')
     if not paths and not pasted:raise ValueError('No uploaded CC CSV files found')

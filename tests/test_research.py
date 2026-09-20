@@ -17,7 +17,17 @@ class ResearchTests(unittest.TestCase):
         self.store=Store(Path(self.tmp.name)/'research.sqlite');self.cfg=self.store.config()
     def add(self,asin,commission=9.5):
         c={'campaign_id':'one','commission':commission,'start':'2020-01-01','end':'2099-01-01'}
-        with self.store.db() as db:self.store.put(db,{'asin':asin,'title':'Product','price':50,'category':'Tools','monthly_sold':500},[c],self.cfg)
+        with self.store.db() as db:self.store.put(db,{'asin':asin,'title':'Product','price':50,'category':'Tools','monthly_sold':500,'merchant_video':True},[c],self.cfg)
+    def test_merchant_is_mandatory(self):
+        from research_funnel import normalize,reasons
+        f=normalize({'merchant_required':False},self.cfg)
+        self.assertTrue(f['merchant_required'])
+        for v in (False,None):
+            self.assertIn('merchant_required',reasons({'merchant_video':v},{},self.cfg))
+        self.add('B000000001')
+        with self.store.db() as db:db.execute('UPDATE products SET merchant_video=NULL')
+        self.assertEqual(self.store.query({'merchant_required':'false'})['total'],0)
+
     def test_commission_strict_and_pagination(self):
         self.add('B000000001',9);self.add('B000000002');self.add('B000000003',10)
         result=self.store.query({'size':'1'});self.assertEqual(result['total'],2);self.assertEqual(len(result['rows']),1)

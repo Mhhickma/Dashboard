@@ -29,7 +29,7 @@ class ScanTests(unittest.TestCase):
         self.request={'job':'one','limit':2,'batch_size':1,'token_budget':2,'config':self.cfg,'filters':{'exclude_apparel':False,'exclude_categories':'','price_min':20}}
     def client(self):
         c=Mock();c.reserved=0;c.consumed=0;c.balance=10;c.unknown=False
-        c.fetch.side_effect=lambda asins:([{'asin':a,'title':'Product','stats':{'current':[-1,3000]},'productType':0} for a in asins],None)
+        c.fetch.side_effect=lambda asins:([{'asin':a,'title':'Product','stats':{'current':[-1,3000]},'productType':0,'videos':[{'url':'seller-video','creator':'Seller'}]} for a in asins],None)
         return c
     def test_bounded_cc_funnel_and_new_cohort(self):
         client=self.client();result=run(self.db,self.request,client,time.monotonic()+60,Path('out'))
