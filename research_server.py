@@ -198,6 +198,12 @@ class Store:
             if not r:raise KeyError('Product not found')
             result=json.loads(r[0]);saved=db.execute('SELECT payload,added,updated FROM shortlist WHERE asin=?',(asin,)).fetchone()
             result['shortlist']=dict(json.loads(saved[0]),date_added=saved[1],last_updated=saved[2]) if saved else None
+            result['detailed_refresh_at']=None
+            for job in db.execute("SELECT j.payload,j.finished FROM jobs j JOIN research_scan_results r ON r.job=j.id WHERE r.asin=? AND j.state='complete' ORDER BY j.id DESC",(asin,)):
+                payload=json.loads(job['payload']);report=payload.get('report',{})
+                if payload.get('request',{}).get('refresh') and report.get('evaluated')==1 and not report.get('failed'):
+                    result['detailed_refresh_at']=job['finished'];break
+
             return result
     def save_shortlist(self,asin,data):
         self.detail(asin)
