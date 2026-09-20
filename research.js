@@ -55,7 +55,7 @@ let checkingScan=false;
 
 async function checkScan(){if(checkingScan)return;checkingScan=true;const button=$('check-scan');button.disabled=true;button.textContent='Checking…';try{const status=await api('/api/scan');renderScan(status);$('scan-status').textContent+=' · Last checked '+new Date().toLocaleTimeString();if(['queued','pending','waiting'].includes(status.state))$('scan-status').textContent+=' · Waiting for GitHub / another scan.';if(status.state==='in_progress')$('scan-status').textContent+=' · GitHub is running. Product counts update after results are saved.';}catch(e){$('scan-status').textContent='Status check failed: '+e.message;clearTimeout(scanTimer);scanTimer=setTimeout(checkScan,30000);}finally{checkingScan=false;button.disabled=false;button.textContent='Check status';}}
 
-async function startScan(resume){$('start-scan').disabled=true;$('resume-scan').disabled=true;try{const filters=Object.fromEntries(params());delete filters.scan_job;renderScan(await api('/api/scan',{limit:Number($('scan-limit').value),batch_size:Number($('scan-batch').value),token_budget:Number($('scan-budget').value),filters,resume}));$('scan-status').textContent+=' · Results will appear after GitHub saves the checkpoint.';}catch(e){$('scan-status').textContent=e.message;$('start-scan').disabled=false;}}
+async function startScan(resume){$('start-scan').disabled=true;$('resume-scan').disabled=true;try{const filters=Object.fromEntries(params());delete filters.scan_job;renderScan(await api('/api/scan',{limit:Number($('scan-limit').value),batch_size:Number($('scan-batch').value),token_budget:Number($('scan-budget').value),filters,resume,source:$('scan-source').value,asins:$('paste-asins').value}));$('scan-status').textContent+=' · Results will appear after GitHub saves the checkpoint.';}catch(e){$('scan-status').textContent=e.message;$('start-scan').disabled=false;}}
 
 $('start-scan').onclick=()=>startScan(false);$('resume-scan').onclick=()=>startScan(true);$('check-scan').onclick=checkScan;
 
@@ -84,3 +84,7 @@ let customScanBudget=false;
 function scanSpendSummary(){$('scan-spend-summary').textContent='Spending limit: '+$('scan-budget').value+' Keepa tokens for this run.';}
 $('scan-limit').addEventListener('input',()=>{if(!customScanBudget){const count=Number($('scan-limit').value);if(Number.isInteger(count)&&count>=1&&count<=1000)$('scan-budget').value=count;}scanSpendSummary();});
 $('scan-budget').addEventListener('input',()=>{customScanBudget=true;scanSpendSummary();});
+
+function updatePastedAsins(){const pasted=$('scan-source').value==='paste';$('paste-asins-panel').hidden=!pasted;$('scan-limit').disabled=pasted;if(pasted){const items=[...new Set($('paste-asins').value.toUpperCase().split(/[\s,;]+/).filter(Boolean))];$('scan-limit').value=items.length;if(!customScanBudget)$('scan-budget').value=Math.max(1,Math.min(1000,items.length));scanSpendSummary();}}
+$('scan-source').onchange=updatePastedAsins;
+$('paste-asins').addEventListener('input',updatePastedAsins);

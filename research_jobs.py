@@ -4,6 +4,7 @@ import time
 import uuid
 import zipfile
 import threading
+from research_asins import parse_asins
 from research_funnel import normalize
 import research_github as github
 
@@ -13,7 +14,9 @@ ACTIVE={'dispatching','queued','in_progress','waiting','requested','pending','di
 def start(store,data):
     with LOCK:
         limit=int(data.get('limit',100));batch=int(data.get('batch_size',10));budget=int(data.get('token_budget',100))
-        if not 1<=limit<=1000 or not 1<=batch<=100 or not 1<=budget<=1000:raise ValueError('Use 1–1,000 ASINs/tokens and batch size 1–100')
+        if not 1<=limit<=1000 or not 1<=batch<=100 or not 1<=budget<=1000:raise ValueError('Use 1â€“1,000 ASINs/tokens and batch size 1â€“100')
+        pasted=parse_asins(data.get('asins','')) if data.get('source')=='paste' and not data.get('resume') else None
+        if pasted:limit=len(pasted)
         # Verify deployment/access before recording any paid dispatch.
         github.api('/actions/workflows/'+github.WORKFLOW)
         with store.db() as db:
@@ -27,6 +30,7 @@ def start(store,data):
             else:
                 cfg=store.config();filters=normalize(data.get('filters',{}),cfg)
                 request={'job':uuid.uuid4().hex,'limit':limit,'batch_size':batch,'token_budget':budget,'filters':filters,'config':cfg}
+                if pasted:request['asins']=pasted
             ticket=uuid.uuid4().hex
             payload={'ticket':ticket,'request':request}
             cursor=db.execute("INSERT INTO jobs(kind,state,created,payload) VALUES('scan','dispatching',?,?)",(time.time(),json.dumps(payload)));job_id=cursor.lastrowid

@@ -43,6 +43,22 @@ class ScanTests(unittest.TestCase):
         result=run(self.db,self.request,client,time.monotonic()+60,Path('out'));self.assertEqual(result['phase'],'paused_tokens')
         client=self.client();result=run(self.db,self.request,client,time.monotonic()+60,Path('out'))
         self.assertEqual(client.fetch.call_args.args[0],['B000000002']);self.assertEqual(client.fetch.call_count,1);self.assertEqual(result['evaluated'],2)
+    def test_pasted_non_cc_and_cache_reuse(self):
+        request={**self.request,'asins':['B000000009','B000000008']}
+        client=self.client()
+        result=run(self.db,request,client,time.monotonic()+60,Path('pasted'))
+        self.assertEqual(result['evaluated'],2)
+        self.assertEqual(client.fetch.call_count,2)
+        client=self.client()
+        run(self.db,{**request,'job':'pasted-again'},client,time.monotonic()+60,Path('cached'))
+        client.fetch.assert_not_called()
+
+    def test_paste_validation(self):
+        from research_asins import parse_asins
+        self.assertEqual(parse_asins('b000000001, B000000001;B000000002'),['B000000001','B000000002'])
+        with self.assertRaises(ValueError):parse_asins('invalid')
+        with self.assertRaises(ValueError):parse_asins(' '.join('B'+str(i).zfill(9) for i in range(1001)))
+
     def test_missing_growth_cannot_pass_bsr(self):
         f=normalize({'growth_min':10,'exclude_apparel':False,'exclude_categories':''},self.cfg)
         self.assertIn('growth_min',reasons({'cc_active':True,'commission':10,'growth':None,'bsr90':80},f,self.cfg))

@@ -73,24 +73,35 @@ def run(db,request,client,deadline,output):
     config=request['config'];f=normalize(request['filters'],config);job=request['job'];limit=request['limit'];batch=request['batch_size']
     db.executescript('''CREATE TABLE IF NOT EXISTS scan_jobs(id TEXT PRIMARY KEY,request TEXT); CREATE TABLE IF NOT EXISTS scan_members(job TEXT,asin TEXT,state TEXT DEFAULT 'pending',PRIMARY KEY(job,asin)); CREATE INDEX IF NOT EXISTS scan_member_state ON scan_members(job,state); CREATE INDEX IF NOT EXISTS scan_member_asin ON scan_members(asin);''')
     existing=db.execute('SELECT request FROM scan_jobs WHERE id=?',(job,)).fetchone()
-    identity=json.dumps({'config':config,'filters':f,'limit':limit},sort_keys=True)
+    identity_data={'config':config,'filters':f,'limit':limit}
+    pasted=request.get('asins')
+    if pasted is not None:
+        from research_asins import parse_asins
+        pasted=parse_asins(' '.join(pasted))
+        if len(pasted)!=limit:raise ValueError('ASIN list count mismatch')
+        identity_data['asins']=pasted
+    identity=json.dumps(identity_data,sort_keys=True)
     if existing and existing[0]!=identity:raise ValueError('Resume must retain its original funnel and cohort size')
     db.execute('INSERT OR IGNORE INTO scan_jobs VALUES(?,?)',(job,identity));db.commit()
     paths=active_csv_files('data/creator-connections')
-    if not paths:raise ValueError('No uploaded CC CSV files found')
+    if not paths and not pasted:raise ValueError('No uploaded CC CSV files found')
     phase='complete'
     if not import_sources(db,paths,deadline):phase='paused_import'
     if phase=='complete':
         campaign_index(db,f,datetime.now(timezone.utc).date().isoformat())
         db.create_function('is_book_asin',1,book_asin)
+        if pasted:
+            db.executemany('INSERT OR IGNORE INTO scan_members(job,asin) VALUES(?,?)',[(job,a) for a in pasted])
+            db.execute("UPDATE scan_members SET state='done' WHERE job=? AND asin IN (SELECT asin FROM cache)",(job,))
+            db.commit()
         if not db.execute('SELECT 1 FROM scan_members WHERE job=?',(job,)).fetchone():
             # A new scan takes the next previously unscanned CC products, never random Amazon ASINs.
             exclude_books='books' in [s.strip().lower() for s in f.get('exclude_categories','').split(',')]
             query='''SELECT DISTINCT l.asin FROM links l JOIN scan_campaigns c ON c.id=l.id AND c.source=l.source WHERE NOT EXISTS(SELECT 1 FROM scan_members m WHERE m.asin=l.asin) AND NOT EXISTS(SELECT 1 FROM cache k WHERE k.asin=l.asin) AND (?=0 OR is_book_asin(l.asin)=0) ORDER BY l.asin LIMIT ?'''
             db.executemany('INSERT INTO scan_members(job,asin) VALUES(?,?)',[(job,r[0]) for r in db.execute(query,(int(exclude_books),limit))]);db.commit()
         # Pending products removed by a replacement upload must not consume tokens.
-        db.execute("""UPDATE scan_members SET state='excluded_cc' WHERE job=? AND state='pending'
-            AND NOT EXISTS(SELECT 1 FROM links l JOIN scan_campaigns c ON c.id=l.id AND c.source=l.source WHERE l.asin=scan_members.asin)""",(job,))
+        db.execute("""UPDATE scan_members SET state='excluded_cc' WHERE job=? AND state='pending' AND ?=0
+            AND NOT EXISTS(SELECT 1 FROM links l JOIN scan_campaigns c ON c.id=l.id AND c.source=l.source WHERE l.asin=scan_members.asin)""",(job,int(bool(pasted))))
         db.commit()
         while True:
             asins=[r[0] for r in db.execute("SELECT asin FROM scan_members WHERE job=? AND state='pending' ORDER BY asin LIMIT ?",(job,batch))]
