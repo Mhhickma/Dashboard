@@ -94,3 +94,15 @@ $('clear-results').onclick=async()=>{
  const button=$('clear-results');button.disabled=true;
  try{const result=await api('/api/clear-results',{confirm:'clear_older_14_days'});page=1;await load();$('message').textContent=result.cleared+' results older than 14 days cleared.';}catch(e){$('message').textContent=e.message;}finally{button.disabled=false;}
 };
+
+$('ideal-filters').onclick=()=>{
+ const f=$('filters');HTMLFormElement.prototype.reset.call(f);
+ for(const el of f.elements){if(el.type==='checkbox')el.checked=false;else if(['text','number','date','select-one','search'].includes(el.type))el.value='';}
+ f.elements.commission_min.value=10;f.elements.exclude_categories.value='Books';
+ for(const name of ['cc_only','exclude_apparel','merchant_required'])f.elements[name].checked=true;
+ // The qualification rules enforce the sliding sales minimum and video cap,
+ // while retaining unknown-data candidates as the user requested.
+ scanJob=null;$('show-hidden').checked=false;$('sort').value='film_score';$('direction').value='desc';
+ $('direction').options[0].textContent='Highest first';$('direction').options[1].textContent='Lowest first';
+ $('ideal-filter-note').hidden=false;funnelSummary();navigate('feed');
+};
