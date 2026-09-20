@@ -20,7 +20,7 @@ class ResearchTests(unittest.TestCase):
         with self.store.db() as db:self.store.put(db,{'asin':asin,'title':'Product','price':50,'category':'Tools','monthly_sold':500,'merchant_video':True},[c],self.cfg)
     def test_clear_results_preserves_shortlist_and_blocks_reimport(self):
         self.add('B000000001');self.add('B000000002')
-        self.store.save_shortlist('B000000001',{'status':'Researching','notes':'Keep'})
+        self.store.save_shortlist('B000000001',{'status':'Researching','priority':'Normal','notes':'Keep'})
         self.assertEqual(self.store.clear_results()['cleared'],1)
         self.assertEqual(self.store.detail('B000000001')['shortlist']['notes'],'Keep')
         with self.assertRaises(KeyError):self.store.detail('B000000002')
