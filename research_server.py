@@ -30,6 +30,7 @@ class Store:
             CREATE INDEX IF NOT EXISTS products_category ON products(category);
             CREATE TABLE IF NOT EXISTS product_campaigns(asin TEXT,id TEXT,payload TEXT,PRIMARY KEY(asin,id));
             CREATE INDEX IF NOT EXISTS product_campaigns_asin ON product_campaigns(asin);
+            CREATE TABLE IF NOT EXISTS research_local_state(key TEXT PRIMARY KEY,value TEXT);
             CREATE TABLE IF NOT EXISTS hidden_products(asin TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS shortlist(asin TEXT PRIMARY KEY,payload TEXT,added REAL,updated REAL);
             CREATE TABLE IF NOT EXISTS settings(id INTEGER PRIMARY KEY CHECK(id=1),payload TEXT);
@@ -62,6 +63,7 @@ class Store:
     def import_saved(self,folder):
         cfg=self.config();count=0
         with self.db() as db:
+            if db.execute("SELECT 1 FROM research_local_state WHERE key='results_cleared'").fetchone():return 0
             for page in sorted(Path(folder).glob('page-*.json')):
                 for row in json.loads(page.read_text(encoding='utf-8')):
                     detail=Path(folder)/'details'/f"{row['asin']}.json"
@@ -167,6 +169,21 @@ class Store:
                 row=json.loads(item['payload']);row['hidden']=db.execute('SELECT 1 FROM hidden_products WHERE asin=?',(row['asin'],)).fetchone() is not None;row.pop('history',None);row.pop('campaigns',None);row['shortlist']=json.loads(item['shortlist']) if item['shortlist'] else None;rows.append(row)
             categories=[r[0] for r in db.execute('SELECT DISTINCT category FROM products WHERE category IS NOT NULL ORDER BY category')]
         return dict(rows=rows,total=total,page=page,size=size,categories=categories)
+    def clear_results(self):
+        from research_jobs import LOCK,ACTIVE
+        with LOCK,self.db() as db:
+            last=db.execute("SELECT state FROM jobs WHERE kind='scan' ORDER BY id DESC LIMIT 1").fetchone()
+            if last and (last['state'] in ACTIVE or last['state']=='checkpoint_attention'):
+                raise ValueError('Wait for the current scan to finish and check its status before clearing results.')
+            count=db.execute('SELECT COUNT(*) FROM products WHERE asin NOT IN (SELECT asin FROM shortlist)').fetchone()[0]
+            db.execute('DELETE FROM products WHERE asin NOT IN (SELECT asin FROM shortlist)')
+            db.execute('DELETE FROM product_campaigns WHERE asin NOT IN (SELECT asin FROM products)')
+            db.execute('DELETE FROM hidden_products WHERE asin NOT IN (SELECT asin FROM products)')
+            db.execute('DELETE FROM research_scan_results')
+            db.execute("DELETE FROM jobs WHERE kind='scan'")
+            db.execute("INSERT OR REPLACE INTO research_local_state VALUES('results_cleared','1')")
+            return {'cleared':count}
+
     def hide(self,asin,hidden):
         if type(hidden) is not bool:raise ValueError('Invalid hidden value')
         self.detail(asin)
@@ -236,6 +253,9 @@ def handler(store):
                 if self.path=='/api/scan':
                     from research_jobs import start
                     return self.send(start(store,data))
+                if self.path=='/api/clear-results':
+                    if data.get('confirm')!='clear_saved_scans':raise ValueError('Confirmation required')
+                    return self.send(store.clear_results())
                 if self.path=='/api/settings':store.save_settings(data)
                 elif self.path.startswith('/api/hidden/'):store.hide(self.path.rsplit('/',1)[-1],data.get('hidden'))
                 elif self.path.startswith('/api/shortlist/'):store.save_shortlist(self.path.rsplit('/',1)[-1],data)

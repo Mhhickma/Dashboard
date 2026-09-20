@@ -18,6 +18,20 @@ class ResearchTests(unittest.TestCase):
     def add(self,asin,commission=9.5):
         c={'campaign_id':'one','commission':commission,'start':'2020-01-01','end':'2099-01-01'}
         with self.store.db() as db:self.store.put(db,{'asin':asin,'title':'Product','price':50,'category':'Tools','monthly_sold':500,'merchant_video':True},[c],self.cfg)
+    def test_clear_results_preserves_shortlist_and_blocks_reimport(self):
+        self.add('B000000001');self.add('B000000002')
+        self.store.save_shortlist('B000000001',{'status':'Researching','notes':'Keep'})
+        self.assertEqual(self.store.clear_results()['cleared'],1)
+        self.assertEqual(self.store.detail('B000000001')['shortlist']['notes'],'Keep')
+        with self.assertRaises(KeyError):self.store.detail('B000000002')
+        self.assertEqual(self.store.import_saved(ROOT/'data/influencer'),0)
+
+    def test_clear_blocked_during_scan(self):
+        self.add('B000000001')
+        with self.store.db() as db:db.execute("INSERT INTO jobs(kind,state,payload) VALUES('scan','in_progress','{}')")
+        with self.assertRaises(ValueError):self.store.clear_results()
+        self.assertIsNotNone(self.store.detail('B000000001'))
+
     def test_merchant_is_mandatory(self):
         from research_funnel import normalize,reasons
         f=normalize({'merchant_required':False},self.cfg)

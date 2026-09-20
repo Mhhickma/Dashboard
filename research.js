@@ -88,3 +88,9 @@ $('scan-budget').addEventListener('input',()=>{customScanBudget=true;scanSpendSu
 function updatePastedAsins(){const pasted=$('scan-source').value==='paste';$('paste-asins-panel').hidden=!pasted;$('scan-limit').disabled=pasted;if(pasted){const items=[...new Set($('paste-asins').value.toUpperCase().split(/[\s,;]+/).filter(Boolean))];$('scan-limit').value=items.length;if(!customScanBudget)$('scan-budget').value=Math.max(1,Math.min(1000,items.length));scanSpendSummary();}}
 $('scan-source').onchange=updatePastedAsins;
 $('paste-asins').addEventListener('input',updatePastedAsins);
+
+$('clear-results').onclick=async()=>{
+ if(!confirm('Clear saved scan results and local scan history? Shortlisted products and notes, CC CSVs, and the Keepa cache will be kept. This cannot be undone.'))return;
+ const button=$('clear-results');button.disabled=true;
+ try{const result=await api('/api/clear-results',{confirm:'clear_saved_scans'});scanJob=null;lastScan=null;page=1;clearTimeout(scanTimer);renderScan({state:'idle'});$('scan-report').textContent='No report yet.';await load();$('scan-status').textContent=result.cleared+' saved results cleared. Shortlisted products and Keepa cache kept.';}catch(e){$('scan-status').textContent=e.message;}finally{button.disabled=false;}
+};
