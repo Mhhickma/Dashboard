@@ -142,7 +142,9 @@ class Store:
         for key,(column,operator) in ranges.items():
             v=q.get(key,defaults.get(key))
             if v not in ('',None):add(f'p.{column}{operator}?',float(v))
-        if not workflow:add("json_extract(p.payload,'$.qualification') IN ('Qualified','Missing data')")
+        if not workflow:
+            if q.get('include_missing','true')=='true':add("json_extract(p.payload,'$.qualification') IN ('Qualified','Missing data')")
+            else:add("json_extract(p.payload,'$.qualification')='Qualified'")
         if q.get('main_required')=='true':add("json_extract(p.payload,'$.main_video')=1")
         if q.get('growth_min') not in ('',None):add('p.growth>=?',float(q['growth_min']))
         if q.get('total_videos_max') not in ('',None):add("json_extract(p.payload,'$.total_videos')<=?",float(q['total_videos_max']))
