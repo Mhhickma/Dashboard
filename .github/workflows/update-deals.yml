@@ -21,7 +21,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
+
+      - name: Sync latest scan state
+        run: git pull --ff-only origin main
 
       - name: Set up Python
         uses: actions/setup-python@v5
