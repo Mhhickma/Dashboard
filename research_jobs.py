@@ -14,7 +14,7 @@ ACTIVE={'dispatching','queued','in_progress','waiting','requested','pending','di
 def start(store,data):
     with LOCK:
         limit=int(data.get('limit',100));batch=int(data.get('batch_size',10));budget=int(data.get('token_budget',100))
-        if not 1<=limit<=1000 or not 1<=batch<=100 or not 1<=budget<=1000:raise ValueError('Use 1â€“1,000 ASINs/tokens and batch size 1â€“100')
+        if not 1<=limit<=1000 or not 1<=batch<=100 or not 1<=budget<=1000:raise ValueError('Please check your scan settings: ASINs to scan must be 1 to 1,000; token budget for this run must be 1 to 1,000; ASINs per batch must be 1 to 100. Your available token balance can be higher than 1,000.')
         refresh=data.get('refresh') is True
         if refresh:
             data={**data,'source':'paste','resume':False};limit=1;batch=1;budget=14
