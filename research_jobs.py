@@ -13,14 +13,16 @@ ACTIVE={'dispatching','queued','in_progress','waiting','requested','pending','di
 
 def start(store,data):
     with LOCK:
-        limit=int(data.get('limit',100));batch=int(data.get('batch_size',10));budget=int(data.get('token_budget',100))
-        if not 1<=limit<=1000 or not 1<=batch<=100 or not 1<=budget<=1000:raise ValueError('Please check your scan settings: ASINs to scan must be 1 to 1,000; token budget for this run must be 1 to 1,000; ASINs per batch must be 1 to 100. Your available token balance can be higher than 1,000.')
         refresh=data.get('refresh') is True
-        if refresh:
-            data={**data,'source':'paste','resume':False};limit=1;batch=1;budget=14
+        if refresh:data={**data,'source':'paste','resume':False}
         pasted=parse_asins(data.get('asins','')) if data.get('source')=='paste' and not data.get('resume') else None
         if refresh and (not pasted or len(pasted)!=1):raise ValueError('Refresh exactly one ASIN')
-        if pasted:limit=len(pasted)
+        if pasted:
+            limit=len(pasted);batch=min(100,limit);budget=limit
+            if refresh:batch=1;budget=14
+        else:
+            limit=int(data.get('limit',100));batch=int(data.get('batch_size',10));budget=int(data.get('token_budget',100))
+        if not 1<=limit<=1000 or not 1<=batch<=100 or not 1<=budget<=1000:raise ValueError('Please check your scan settings: ASINs to scan must be 1 to 1,000; token budget for this run must be 1 to 1,000; ASINs per batch must be 1 to 100. Your available token balance can be higher than 1,000.')
         # Verify deployment/access before recording any paid dispatch.
         github.api('/actions/workflows/'+github.WORKFLOW)
         with store.db() as db:

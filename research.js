@@ -86,7 +86,7 @@ function scanSpendSummary(){$('scan-spend-summary').textContent='Spending limit:
 $('scan-limit').addEventListener('input',()=>{if(!customScanBudget){const count=Number($('scan-limit').value);if(Number.isInteger(count)&&count>=1&&count<=1000)$('scan-budget').value=count;}scanSpendSummary();});
 $('scan-budget').addEventListener('input',()=>{customScanBudget=true;scanSpendSummary();});
 
-function updatePastedAsins(){const pasted=$('scan-source').value==='paste';$('paste-asins-panel').hidden=!pasted;$('scan-limit').disabled=pasted;if(pasted){const items=[...new Set($('paste-asins').value.toUpperCase().split(/[\s,;]+/).filter(Boolean))];$('scan-limit').value=items.length;if(!customScanBudget)$('scan-budget').value=Math.max(1,Math.min(1000,items.length));scanSpendSummary();}}
+function updatePastedAsins(){const pasted=$('scan-source').value==='paste';$('paste-asins-panel').hidden=!pasted;$('scan-limit').disabled=pasted;$('scan-budget').disabled=pasted;$('scan-batch').disabled=pasted;if(pasted){const items=[...new Set($('paste-asins').value.toUpperCase().split(/[\s,;]+/).filter(Boolean))];$('scan-limit').value=items.length;$('scan-budget').value=Math.max(1,Math.min(1000,items.length));$('scan-batch').value=Math.max(1,Math.min(100,items.length));scanSpendSummary();$('scan-spend-summary').textContent=items.length>1000?'Too many ASINs. Paste up to 1,000 unique ASINs at a time.':items.length+' unique ASINs. Automatic budget: '+$('scan-budget').value+' tokens; batches of '+$('scan-batch').value+'. Duplicates count once.';}}
 $('scan-source').onchange=updatePastedAsins;
 $('paste-asins').addEventListener('input',updatePastedAsins);
 
