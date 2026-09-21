@@ -44,11 +44,12 @@ class ScanTests(unittest.TestCase):
         client=self.client();result=run(self.db,self.request,client,time.monotonic()+60,Path('out'))
         self.assertEqual(client.fetch.call_args.args[0],['B000000002']);self.assertEqual(client.fetch.call_count,1);self.assertEqual(result['evaluated'],2)
     def test_pasted_non_cc_and_cache_reuse(self):
-        request={**self.request,'asins':['B000000009','B000000008']}
+        request={**self.request,'asins':['B000000001','B000000008']}
         client=self.client()
         result=run(self.db,request,client,time.monotonic()+60,Path('pasted'))
-        self.assertEqual(result['evaluated'],2)
-        self.assertEqual(client.fetch.call_count,2)
+        self.assertEqual(result['evaluated'],1)
+        self.assertEqual(result['skipped_cc'],['B000000008'])
+        client.fetch.assert_called_once_with(['B000000001'])
         client=self.client()
         run(self.db,{**request,'job':'pasted-again'},client,time.monotonic()+60,Path('cached'))
         client.fetch.assert_not_called()

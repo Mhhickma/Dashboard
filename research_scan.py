@@ -99,8 +99,10 @@ def run(db,request,client,deadline,output):
         db.create_function('is_book_asin',1,book_asin)
         if pasted:
             db.executemany('INSERT OR IGNORE INTO scan_members(job,asin) VALUES(?,?)',[(job,a) for a in pasted])
+            db.execute("""UPDATE scan_members SET state='excluded_cc' WHERE job=?
+                AND NOT EXISTS(SELECT 1 FROM links l JOIN latest_scan_campaigns c ON c.id=l.id AND c.source=l.source WHERE l.asin=scan_members.asin)""",(job,))
             if not request.get("refresh"):
-                db.execute("UPDATE scan_members SET state='done' WHERE job=? AND asin IN (SELECT asin FROM cache)",(job,))
+                db.execute("UPDATE scan_members SET state='done' WHERE job=? AND state='pending' AND asin IN (SELECT asin FROM cache)",(job,))
             db.commit()
         if not db.execute('SELECT 1 FROM scan_members WHERE job=?',(job,)).fetchone():
             # A new scan takes the next previously unscanned CC products, never random Amazon ASINs.
@@ -133,7 +135,7 @@ def run(db,request,client,deadline,output):
     if phase=='paused_import':latest_index(db)
     output.mkdir(parents=True,exist_ok=True);counts=Counter();matches=0;evaluated=0
     with (output/'products.jsonl').open('w',encoding='utf-8') as out:
-        for asin,fetched,payload in db.execute('SELECT k.asin,k.fetched,k.payload FROM cache k JOIN scan_members m ON m.asin=k.asin WHERE m.job=?',(job,)):
+        for asin,fetched,payload in db.execute('SELECT k.asin,k.fetched,k.payload FROM cache k JOIN scan_members m ON m.asin=k.asin WHERE m.job=? AND m.state!="excluded_cc"',(job,)):
             # Keep all latest campaigns for an ASIN; the funnel chooses the best live one.
             campaigns=[json.loads(r[0]) for r in db.execute('''SELECT c.payload FROM latest_scan_campaigns c JOIN links l ON l.source=c.source AND l.id=c.id WHERE l.asin=?''',(asin,))]
             latest={c['key']:c for c in campaigns};campaigns=list(latest.values());raw=json.loads(payload)
@@ -142,7 +144,8 @@ def run(db,request,client,deadline,output):
             out.write(json.dumps({'base':base,'campaigns':campaigns,'raw':raw,'passed':not failed,'failed_filters':failed})+'\n')
     selected=db.execute('SELECT COUNT(*) FROM scan_members WHERE job=?',(job,)).fetchone()[0]
     failed=[dict(asin=r[0],code=r[1],attempts=r[2]) for r in db.execute('SELECT f.asin,f.code,f.attempts FROM failures f JOIN scan_members m ON m.asin=f.asin WHERE m.job=?',(job,))]
-    status=dict(job=job,phase=phase,requested=limit,selected=selected,evaluated=evaluated,matched=matches,rejected=evaluated-matches,rejection_reasons=dict(counts),tokens_reserved=client.reserved,tokens_consumed=None if client.unknown else client.consumed,tokens_left=client.balance,failed=failed,filters=f)
+    skipped_cc=[r[0] for r in db.execute("SELECT asin FROM scan_members WHERE job=? AND state='excluded_cc' ORDER BY asin",(job,))]
+    status=dict(skipped_cc=skipped_cc,job=job,phase=phase,requested=limit,selected=selected,evaluated=evaluated,matched=matches,rejected=evaluated-matches,rejection_reasons=dict(counts),tokens_reserved=client.reserved,tokens_consumed=None if client.unknown else client.consumed,tokens_left=client.balance,failed=failed,filters=f)
     (output/'status.json').write_text(json.dumps(status),encoding='utf-8');print(json.dumps({k:v for k,v in status.items() if k not in ('filters','failed')}));return status
 
 if __name__=='__main__':
