@@ -15,7 +15,7 @@ from urllib.parse import parse_qs, urlparse
 from research_model import enrich, STAGES
 
 ROOT=Path(__file__).resolve().parent
-ASSETS={'/prime-match.html':'prime-match.html','/prime-match.js':'prime-match.js','/':'research.html','/research.html':'research.html','/research.js':'research.js','/research.css':'research.css'}
+ASSETS={'/early-cc.html':'early-cc.html','/early-cc.js':'early-cc.js','/prime-match.html':'prime-match.html','/prime-match.js':'prime-match.js','/':'research.html','/research.html':'research.html','/research.js':'research.js','/research.css':'research.css'}
 FIELDS=['asin','title','brand','category','price','monthly_sold','bsr','bsr30','bsr90','influencer_videos','merchant_video','cc_active','commission','estimated_commission_per_sale','film_score','score_coverage','video_count_source','video_count_last_checked']
 
 class Store:
@@ -236,6 +236,9 @@ def handler(store):
                 self.guard();url=urlparse(self.path);q={k:v[0] for k,v in parse_qs(url.query,keep_blank_values=True).items()}
                 if url.path in ASSETS:
                     name=ASSETS[url.path];return self.send((ROOT/name).read_bytes(), 'text/html' if name.endswith('.html') else 'text/css' if name.endswith('.css') else 'text/javascript')
+                if url.path=='/api/early-cc':
+                    from early_cc import upcoming
+                    return self.send(upcoming(ROOT/'data/creator-connections'))
                 if url.path=='/api/prime-match':
                     saved=ROOT/'.research/prime-match-result.json'
                     return self.send(json.loads(saved.read_text(encoding='utf-8')) if saved.exists() else None)
