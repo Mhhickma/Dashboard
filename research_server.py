@@ -15,7 +15,7 @@ from urllib.parse import parse_qs, urlparse
 from research_model import enrich, STAGES
 
 ROOT=Path(__file__).resolve().parent
-ASSETS={'/':'research.html','/research.html':'research.html','/research.js':'research.js','/research.css':'research.css'}
+ASSETS={'/prime-match.html':'prime-match.html','/prime-match.js':'prime-match.js','/':'research.html','/research.html':'research.html','/research.js':'research.js','/research.css':'research.css'}
 FIELDS=['asin','title','brand','category','price','monthly_sold','bsr','bsr30','bsr90','influencer_videos','merchant_video','cc_active','commission','estimated_commission_per_sale','film_score','score_coverage','video_count_source','video_count_last_checked']
 
 class Store:
@@ -258,7 +258,10 @@ def handler(store):
                 self.guard()
                 if not secrets.compare_digest(self.headers.get('X-Research-CSRF',''),self.server.csrf):raise PermissionError('Reload the page before saving')
                 size=int(self.headers.get('Content-Length',0))
-                if not 0<size<=100000:raise ValueError('Invalid request size')
+                if not 0<size<=(512*1024*1024 if self.path=='/api/prime-match' else 100000):raise ValueError('Invalid request size')
+                if self.path=='/api/prime-match':
+                    from prime_match import match
+                    return self.send(match(self.rfile.read(size).decode('utf-8-sig'),ROOT/'data/creator-connections'))
                 data=json.loads(self.rfile.read(size))
                 if self.path=='/api/scan':
                     from research_jobs import start
