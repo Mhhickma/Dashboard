@@ -73,6 +73,40 @@
     });
   }
 
+  const progressKey = 'creator-csv-upload-progress-v1';
+  async function contentHash(text) {
+    const bytes = encoder.encode(text);
+    const header = encoder.encode(`blob ${bytes.length}\0`);
+    const blob = new Uint8Array(header.length + bytes.length);
+    blob.set(header); blob.set(bytes, header.length);
+    return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-1', blob)), b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function uploadConfirmed(text, name, hash) {
+    let lastError;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try { await post(text, name); return; }
+      catch (error) {
+        lastError = error;
+        // A lost confirmation can still mean the immutable file was saved.
+        try {
+          const response = await fetch(`https://api.github.com/repos/Mhhickma/Dashboard/contents/data/creator-connections/${name}?ref=main`, {cache:'no-store', signal:AbortSignal.timeout(20000)});
+          if (response.ok) {
+            const saved = await response.json();
+            if (saved.sha === hash) return;
+            throw new Error('Saved upload part differs from the selected file. Select the original files to resume.');
+          }
+        } catch (verificationError) {
+          if (verificationError.message.startsWith('Saved upload part differs')) throw verificationError;
+        }
+        if (attempt < 3) {
+          status.textContent = `Connection interrupted. Retrying this part (${attempt+1} of 3). Confirmed progress is saved.`;
+          await new Promise(resolve => setTimeout(resolve, 5000 * (attempt+1)));
+        }
+      }
+    }
+    throw lastError;
+  }
+
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const files = [...input.files];
@@ -80,22 +114,36 @@
     const button = form.querySelector('button[type="submit"]');
     button.disabled = true; input.disabled = true;
     let confirmed = 0; const batchFiles = [];
-    const session = new Date().toISOString().replace(/[-:.]/g, '') + '-' + crypto.randomUUID() + '-replacement';
+    const signature = JSON.stringify(files.map(f => [f.name, f.size, f.lastModified]));
+    let progress;
+    try { progress = JSON.parse(localStorage.getItem(progressKey)); } catch {}
+    if (!progress || progress.signature !== signature) progress = {signature, session:new Date().toISOString().replace(/[-:.]/g, '') + '-' + crypto.randomUUID() + '-replacement', parts:{}};
+    const session = progress.session;
+    const saveProgress = () => localStorage.setItem(progressKey, JSON.stringify(progress));
     try {
+      saveProgress();
       for (let index = 0; index < files.length; index++) {
         let part = 0;
         for await (const text of chunks(files[index])) {
           const name = `${session}-${String(index).padStart(4,'0')}-${String(part++).padStart(6,'0')}.csv`;
           status.textContent = `Uploading ${files[index].name}, part ${part}… ${confirmed} confirmed.`;
-          await post(text, name); batchFiles.push(name); confirmed++;
+          const hash = await contentHash(text);
+          if (progress.parts[name] && progress.parts[name] !== hash) throw new Error('Selected file contents changed. Choose the original files to resume.');
+          if (!progress.parts[name]) {
+            await uploadConfirmed(text, name, hash);
+            progress.parts[name] = hash; saveProgress();
+          }
+          batchFiles.push(name); confirmed++;
         }
         if (!part) throw new Error(`${files[index].name} contains no campaign rows.`);
       }
       status.textContent = 'Activating the complete replacement CC batch…';
-      await post('ASIN List,Batch file\n'+batchFiles.map(name=>','+name).join('\n')+'\n',session+'-complete.csv');
+      const manifest = 'ASIN List,Batch file\n'+batchFiles.map(name=>','+name).join('\n')+'\n';
+      await uploadConfirmed(manifest,session+'-complete.csv',await contentHash(manifest));
+      localStorage.removeItem(progressKey);
       status.textContent = `${confirmed} CSV parts uploaded. This batch replaces the previous CC list for the next scans.`;
       form.reset(); label.textContent = 'Choose CSV files';
-    } catch (error) { status.textContent = `${error.message} ${confirmed} parts staged. The previous completed CC list stays active until the new batch is fully confirmed.`; }
+    } catch (error) { status.textContent = `${error.message} ${confirmed} parts confirmed and progress saved. Select these same files in the same order and click Replace CC list to resume. Your previous CC list remains active until completion.`; }
     finally { button.disabled = false; input.disabled = false; }
   });
 })();
