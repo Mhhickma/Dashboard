@@ -236,6 +236,9 @@ def handler(store):
                 self.guard();url=urlparse(self.path);q={k:v[0] for k,v in parse_qs(url.query,keep_blank_values=True).items()}
                 if url.path in ASSETS:
                     name=ASSETS[url.path];return self.send((ROOT/name).read_bytes(), 'text/html' if name.endswith('.html') else 'text/css' if name.endswith('.css') else 'text/javascript')
+                if url.path=='/api/prime-match':
+                    saved=ROOT/'.research/prime-match-result.json'
+                    return self.send(json.loads(saved.read_text(encoding='utf-8')) if saved.exists() else None)
                 if url.path=='/api/settings':return self.send({'config':store.config(),'csrf':self.server.csrf,'stages':STAGES})
                 if url.path=='/api/scan':
                     from research_jobs import status
@@ -261,7 +264,17 @@ def handler(store):
                 if not 0<size<=(512*1024*1024 if self.path=='/api/prime-match' else 100000):raise ValueError('Invalid request size')
                 if self.path=='/api/prime-match':
                     from prime_match import match
-                    return self.send(match(self.rfile.read(size).decode('utf-8-sig'),ROOT/'data/creator-connections'))
+                    result=match(self.rfile.read(size).decode('utf-8-sig'),ROOT/'data/creator-connections')
+                    result['saved_at']=datetime.now(timezone.utc).isoformat()
+                    saved=ROOT/'.research/prime-match-result.json'
+                    saved.parent.mkdir(parents=True,exist_ok=True)
+                    temporary=saved.with_suffix('.'+secrets.token_hex(8)+'.tmp')
+                    try:
+                        temporary.write_text(json.dumps(result,allow_nan=False),encoding='utf-8')
+                        temporary.replace(saved)
+                    finally:
+                        temporary.unlink(missing_ok=True)
+                    return self.send(result)
                 data=json.loads(self.rfile.read(size))
                 if self.path=='/api/scan':
                     from research_jobs import start
