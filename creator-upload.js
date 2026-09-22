@@ -7,6 +7,46 @@
   const status = document.getElementById('creatorCsvUploadStatus');
   const label = document.getElementById('creatorCsvFileName');
   const endpoint = 'https://script.google.com/macros/s/AKfycbxU4HTktR6zH5Wfbk58V24X-HAE9kZYlzdlm1gqMp1NL_ZGzF7p-0VAL5VeGNfnAyxESA/exec';
+  const reminder = document.createElement('p');
+  reminder.className = 'creator-upload-status';
+  reminder.setAttribute('role','status');
+  form.before(reminder);
+  const reminderKey = 'cc-last-completed-upload';
+  let completedAt = null;
+  function showCountdown() {
+    if (!completedAt) { reminder.textContent = 'CC update reminder: checking the latest completed upload...'; return; }
+    const due = completedAt + 15 * 86400000;
+    const left = due - Date.now();
+    const days = Math.ceil(Math.abs(left) / 86400000);
+    reminder.textContent = left > 0
+      ? `CC list update due in ${days} day${days===1?'':'s'} (${new Date(due).toLocaleDateString()}). Last completed upload: ${new Date(completedAt).toLocaleDateString()}.`
+      : `Reminder: upload your newest CC list. ${days ? days+' day'+(days===1?'':'s')+' overdue.' : 'Due today.'} Last completed upload: ${new Date(completedAt).toLocaleDateString()}.`;
+    reminder.style.fontWeight = '700';
+    reminder.style.color = left > 0 ? '#1d4ed8' : '#b45309';
+  }
+  function recordCompletedUpload(timestamp) {
+    completedAt = timestamp;
+    try { localStorage.setItem(reminderKey,String(timestamp)); } catch {}
+    showCountdown();
+  }
+  async function checkCompletedUpload() {
+    try { const cached=Number(localStorage.getItem(reminderKey)); if(cached>0 && Number.isFinite(cached))completedAt=cached; } catch {}
+    showCountdown();
+    try {
+      const response=await fetch('https://api.github.com/repos/Mhhickma/Dashboard/git/trees/main?recursive=1');
+      if(!response.ok)throw Error('GitHub unavailable');
+      const tree=await response.json();if(tree.truncated)throw Error('Incomplete listing');
+      const markers=tree.tree.filter(f=>/^data\/creator-connections\/.*-replacement-complete\.csv$/.test(f.path)).map(f=>f.path).sort();
+      if(!markers.length){reminder.textContent='Reminder: upload your newest CC list. No completed replacement upload found.';return;}
+      const commits=await fetch('https://api.github.com/repos/Mhhickma/Dashboard/commits?per_page=1&path='+encodeURIComponent(markers.at(-1)));
+      if(!commits.ok)throw Error('Upload date unavailable');
+      const rows=await commits.json();const timestamp=Date.parse(rows[0]?.commit?.committer?.date);
+      if(!Number.isFinite(timestamp))throw Error('Upload date unavailable');
+      recordCompletedUpload(timestamp);
+    } catch { if(!completedAt)reminder.textContent='CC update reminder unavailable. Could not verify the latest completed upload.';else reminder.textContent+=' Using the last verified upload date.'; }
+  }
+  checkCompletedUpload();
+  setInterval(showCountdown,60000);
   const encoder = new TextEncoder();
   const maxBytes = 2 * 1024 * 1024;
   input.multiple = true;
@@ -141,6 +181,7 @@
       const manifest = 'ASIN List,Batch file\n'+batchFiles.map(name=>','+name).join('\n')+'\n';
       await uploadConfirmed(manifest,session+'-complete.csv',await contentHash(manifest));
       localStorage.removeItem(progressKey);
+      recordCompletedUpload(Date.now());
       status.textContent = `${confirmed} CSV parts uploaded. This batch replaces the previous CC list for the next scans.`;
       form.reset(); label.textContent = 'Choose CSV files';
     } catch (error) { status.textContent = `${error.message} ${confirmed} parts confirmed and progress saved. Select these same files in the same order and click Replace CC list to resume. Your previous CC list remains active until completion.`; }
