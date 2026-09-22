@@ -4,3 +4,13 @@
 .detail-priority{grid-template-columns:repeat(5,minmax(0,1fr));background:#edf4ff;border:1px solid #cbdcf7;border-radius:10px;padding:18px;margin:0 0 24px}.detail-priority dd{font-size:18px}.detail-priority dt{color:#455773}@media(max-width:800px){.detail-priority{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .table-wrap th[draggable]{cursor:grab}.table-wrap th:focus-visible{outline:2px solid #2169df;outline-offset:-3px}
+
+/* Shared dashboard navigation on all local research views. */
+.site-header{display:block;background:linear-gradient(135deg,#111827,#1f3b73);color:white;padding:36px 24px}
+.site-header h1{margin:0;font-size:clamp(2rem,5vw,4rem)}
+.site-header .eyebrow{margin:0 0 8px;text-transform:uppercase;letter-spacing:.12em;font-size:.78rem;opacity:.75;color:white}
+.site-header .subtitle{margin:10px 0 0;color:#dbe7ff}
+.site-header .page-nav{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:1.1rem;overflow:visible}
+.site-header .page-nav a{border:1px solid #dce3ef;border-radius:999px;color:#66758c;background:rgba(255,255,255,.7);padding:.55rem .85rem;text-decoration:none;font-size:.9rem;font-weight:700;line-height:1}
+.site-header .page-nav a:hover,.site-header .page-nav a.active{color:#2680ff;border-color:rgba(37,99,235,.35);background:rgba(37,99,235,.08)}
+.site-header .page-nav a:focus-visible{outline:2px solid white;outline-offset:3px}
