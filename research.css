@@ -16,3 +16,18 @@
 .site-header .page-nav a:focus-visible{outline:2px solid white;outline-offset:3px}
 
 .campaign-batch{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.campaign-batch .check{font-size:14px;margin-right:8px}.campaign-batch input{width:auto}
+
+/* Compact Sales prep results; keep Film Research's wider table unchanged. */
+.sales-prep main{max-width:1100px;margin-right:auto}
+.sales-prep table{min-width:0;table-layout:fixed}
+.sales-prep th:first-child{width:44%}
+.sales-prep th:not(:first-child){width:14%}
+.sales-prep td,.sales-prep th{padding:12px 10px;overflow-wrap:anywhere;vertical-align:top}
+@media(max-width:600px){
+ .sales-prep th:first-child{width:36%}
+ .sales-prep th:not(:first-child){width:16%}
+ .sales-prep td,.sales-prep th{padding:9px 5px;font-size:11px}
+ .sales-prep .campaign-batch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:12px 0;border-bottom:1px solid #dce3ef}
+ .sales-prep .campaign-batch .check{grid-column:1/-1}
+ .sales-prep .campaign-batch button{padding:9px 5px;font-size:12px}
+}
