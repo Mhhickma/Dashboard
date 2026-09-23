@@ -10,7 +10,7 @@
   const reminder = document.createElement('p');
   reminder.className = 'creator-upload-status';
   reminder.setAttribute('role','status');
-  form.before(reminder);
+  if (form.dataset.showReminder !== 'false') form.before(reminder);
   const reminderKey = 'cc-last-completed-upload';
   let completedAt = null;
   function showCountdown() {

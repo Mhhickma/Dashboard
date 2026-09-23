@@ -15,7 +15,7 @@ from urllib.parse import parse_qs, urlparse
 from research_model import enrich, STAGES
 
 ROOT=Path(__file__).resolve().parent
-ASSETS={'/early-cc.html':'early-cc.html','/early-cc.js':'early-cc.js','/prime-match.html':'prime-match.html','/prime-match.js':'prime-match.js','/':'research.html','/research.html':'research.html','/research.js':'research.js','/research.css':'research.css'}
+ASSETS={'/early-cc.html':'early-cc.html','/early-cc.js':'early-cc.js','/creator-upload.js':'creator-upload.js','/prime-match.html':'prime-match.html','/prime-match.js':'prime-match.js','/':'research.html','/research.html':'research.html','/research.js':'research.js','/research.css':'research.css'}
 FIELDS=['asin','title','brand','category','price','monthly_sold','bsr','bsr30','bsr90','influencer_videos','merchant_video','cc_active','commission','estimated_commission_per_sale','film_score','score_coverage','video_count_source','video_count_last_checked']
 
 class Store:
@@ -230,7 +230,7 @@ def handler(store):
             if self.headers.get('Sec-Fetch-Site')=='cross-site' and not (self.command=='GET' and urlparse(self.path).path in ASSETS and self.headers.get('Sec-Fetch-Mode')=='navigate'):raise PermissionError('Cross-site access denied')
         def send(self,data,kind='application/json',status=200):
             body=json.dumps(data,allow_nan=False).encode() if kind=='application/json' else data
-            self.send_response(status);self.send_header('Content-Type',kind+'; charset=utf-8');self.send_header('Content-Length',str(len(body)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Security-Policy',"default-src 'self'; img-src 'self' https://m.media-amazon.com; style-src 'self'; script-src 'self'; frame-ancestors 'none'; connect-src 'self'");self.end_headers();self.wfile.write(body)
+            self.send_response(status);self.send_header('Content-Type',kind+'; charset=utf-8');self.send_header('Content-Length',str(len(body)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Security-Policy',"default-src 'self'; img-src 'self' https://m.media-amazon.com; style-src 'self'; script-src 'self'; frame-src https://script.google.com https://*.googleusercontent.com; form-action https://script.google.com; frame-ancestors 'none'; connect-src 'self' https://api.github.com");self.end_headers();self.wfile.write(body)
         def do_GET(self):
             try:
                 self.guard();url=urlparse(self.path);q={k:v[0] for k,v in parse_qs(url.query,keep_blank_values=True).items()}
