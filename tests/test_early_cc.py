@@ -22,13 +22,29 @@ class EarlyCcTests(unittest.TestCase):
             history = root / '.research' / 'accepted-cc.json'
             first = merge_accepted(history, 'Campaign ID\nC1\n')
             second = merge_accepted(history, 'campaign_id\nC1\nC3\n')
-            self.assertEqual(first, {'imported': 1, 'added': 1, 'accepted_total': 1})
-            self.assertEqual(second, {'imported': 2, 'added': 1, 'accepted_total': 2})
+            self.assertEqual({k: first[k] for k in ('imported', 'added', 'accepted_total')},
+                             {'imported': 1, 'added': 1, 'accepted_total': 1})
+            self.assertEqual({k: second[k] for k in ('imported', 'added', 'accepted_total')},
+                             {'imported': 2, 'added': 1, 'accepted_total': 2})
+            self.assertTrue(second['accepted_updated_at'].endswith('+00:00'))
             result = upcoming(cc, date(2026, 9, 23), history)
             self.assertEqual(result['campaign_ids'], ['C2'])
             self.assertEqual(result['accepted_total'], 2)
             self.assertEqual(result['accepted_excluded'], 1)
             self.assertEqual(result['upcoming_total'], 2)
+            self.assertEqual(result['accepted_updated_at'], second['accepted_updated_at'])
+
+    def test_legacy_history_uses_file_date_for_countdown(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cc = root / 'cc'
+            cc.mkdir()
+            (cc / 'campaigns.csv').write_text(
+                'Campaign Id,Campaign Start Date\nC1,2026-10-01\n', encoding='utf-8')
+            history = root / 'accepted.json'
+            history.write_text('{"campaign_ids":["C1"]}', encoding='utf-8')
+            result = upcoming(cc, date(2026, 9, 23), history)
+            self.assertIsNotNone(result['accepted_updated_at'])
 
 
 if __name__ == '__main__':

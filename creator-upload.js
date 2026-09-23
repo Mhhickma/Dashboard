@@ -15,7 +15,7 @@
   let completedAt = null;
   function showCountdown() {
     if (!completedAt) { reminder.textContent = 'CC update reminder: checking the latest completed upload...'; return; }
-    const due = completedAt + 15 * 86400000;
+    const due = completedAt + 14 * 86400000;
     const left = due - Date.now();
     const days = Math.ceil(Math.abs(left) / 86400000);
     reminder.textContent = left > 0
