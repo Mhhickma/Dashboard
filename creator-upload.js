@@ -113,6 +113,14 @@
     });
   }
 
+  window.recordAcceptedCcUpload = async () => {
+    const now = new Date();
+    const iso = now.toISOString();
+    const stamp = iso.slice(0,10).replaceAll('-','')+'T'+iso.slice(11,23).replaceAll(':','').replace('.','')+'Z';
+    await post(`Accepted history updated\n${iso}\n`, `${stamp}-${crypto.randomUUID()}-accepted-history.csv`);
+    return iso;
+  };
+
   const progressKey = 'creator-csv-upload-progress-v1';
   async function contentHash(text) {
     const bytes = encoder.encode(text);
