@@ -117,7 +117,7 @@
     const now = new Date();
     const iso = now.toISOString();
     const stamp = iso.slice(0,10).replaceAll('-','')+'T'+iso.slice(11,23).replaceAll(':','').replace('.','')+'Z';
-    await post(`Accepted history updated\n${iso}\n`, `${stamp}-${crypto.randomUUID()}-accepted-history.csv`);
+    await post(`ASIN List,Status\n,Accepted history updated ${iso}\n`, `${stamp}-${crypto.randomUUID()}-accepted-history.csv`);
     return iso;
   };
 

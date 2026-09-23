@@ -1,17 +1,8 @@
 (() => {
   'use strict';
   const interval = 14 * 86400000;
-  const endpoint = 'https://api.github.com/repos/Mhhickma/Dashboard/contents/data/creator-connections?ref=main';
+  const endpoint = `data/csv-reminders.json?ts=${Date.now()}`;
   const cacheKey = 'dashboard-csv-reminder-dates-v1';
-
-  function timestamp(name) {
-    const match = name.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(\d{3})Z-/);
-    return match ? Date.UTC(+match[1], +match[2]-1, +match[3], +match[4], +match[5], +match[6], +match[7]) : 0;
-  }
-
-  function latest(files, suffix) {
-    return Math.max(0, ...files.filter(file => file.name.endsWith(suffix)).map(file => timestamp(file.name)));
-  }
 
   function render(id, label, updated) {
     const element = document.getElementById(id);
@@ -32,8 +23,8 @@
   fetch(endpoint, {cache:'no-store'}).then(response => {
     if (!response.ok) throw Error('Reminder dates unavailable');
     return response.json();
-  }).then(files => {
-    dates = {cc:latest(files, '-replacement-complete.csv'), accepted:latest(files, '-accepted-history.csv')};
+  }).then(status => {
+    dates = {cc:Date.parse(status.cc_updated_at), accepted:Date.parse(status.accepted_updated_at)};
     localStorage.setItem(cacheKey, JSON.stringify(dates));
     show();
   }).catch(() => show());
