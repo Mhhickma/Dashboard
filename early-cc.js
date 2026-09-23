@@ -1,4 +1,5 @@
 const $=id=>document.getElementById(id);
+let csrf='';
 function download(name,text,type='text/plain'){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function csv(rows){return rows.map(r=>r.map(v=>'"'+String(typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v).replaceAll('"','""')+'"').join(',')).join('\r\n');}
 
@@ -6,7 +7,8 @@ function showBatches(data){$('batches').replaceChildren();const batchKey='early-
 async function load(){
  $('refresh').disabled=true;$('status').textContent='Reading your current CC list...';
  try{const response=await fetch('/api/early-cc');const data=await response.json();if(!response.ok)throw Error(data.error||'Could not load campaigns.');
- showBatches(data);$('status').textContent=`${data.campaign_ids.length.toLocaleString()} upcoming campaigns in ${Math.ceil(data.campaign_ids.length/5000)} batches. Start dates after ${data.today}. Using ${data.cc_files} CC files.${data.invalid_dates ? ` ${data.invalid_dates} rows skipped because their start date could not be read.` : ''}`;
+ csrf=data.csrf;showBatches(data);$('status').textContent=`${data.campaign_ids.length.toLocaleString()} campaigns remain to opt into in ${Math.ceil(data.campaign_ids.length/5000)} batches. ${data.accepted_excluded.toLocaleString()} already accepted campaigns were excluded; ${data.accepted_total.toLocaleString()} are saved in accepted history. Start dates after ${data.today}. Using ${data.cc_files} CC files.${data.invalid_dates ? ` ${data.invalid_dates} rows skipped because their start date could not be read.` : ''}`;
  }catch(error){$('status').textContent=error.message;}finally{$('refresh').disabled=false;}
 }
-$('refresh').onclick=load;load();
+async function importAccepted(){const file=$('accepted-file').files[0];if(!file){$('import-status').textContent='Choose an accepted campaigns CSV first.';return;}$('import-accepted').disabled=true;$('import-status').textContent='Adding accepted campaigns...';try{const response=await fetch('/api/early-cc/accepted',{method:'POST',headers:{'Content-Type':'text/csv','X-Research-CSRF':csrf},body:await file.text()});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not import accepted campaigns.');$('import-status').textContent=`Added ${data.added.toLocaleString()} new campaign IDs. ${data.accepted_total.toLocaleString()} total are now saved.`;$('accepted-file').value='';await load();}catch(error){$('import-status').textContent=error.message;}finally{$('import-accepted').disabled=false;}}
+$('refresh').onclick=load;$('import-accepted').onclick=importAccepted;load();

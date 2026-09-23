@@ -238,7 +238,9 @@ def handler(store):
                     name=ASSETS[url.path];return self.send((ROOT/name).read_bytes(), 'text/html' if name.endswith('.html') else 'text/css' if name.endswith('.css') else 'text/javascript')
                 if url.path=='/api/early-cc':
                     from early_cc import upcoming
-                    return self.send(upcoming(ROOT/'data/creator-connections'))
+                    result=upcoming(ROOT/'data/creator-connections',accepted_path=ROOT/'.research/accepted-cc.json')
+                    result['csrf']=self.server.csrf
+                    return self.send(result)
                 if url.path=='/api/prime-match':
                     saved=ROOT/'.research/prime-match-result.json'
                     return self.send(json.loads(saved.read_text(encoding='utf-8')) if saved.exists() else None)
@@ -264,7 +266,12 @@ def handler(store):
                 self.guard()
                 if not secrets.compare_digest(self.headers.get('X-Research-CSRF',''),self.server.csrf):raise PermissionError('Reload the page before saving')
                 size=int(self.headers.get('Content-Length',0))
-                if not 0<size<=(512*1024*1024 if self.path=='/api/prime-match' else 100000):raise ValueError('Invalid request size')
+                large_upload=self.path in ('/api/prime-match','/api/early-cc/accepted')
+                if not 0<size<=(512*1024*1024 if large_upload else 100000):raise ValueError('Invalid request size')
+                if self.path=='/api/early-cc/accepted':
+                    from early_cc import merge_accepted
+                    result=merge_accepted(ROOT/'.research/accepted-cc.json',self.rfile.read(size).decode('utf-8-sig'))
+                    return self.send(result)
                 if self.path=='/api/prime-match':
                     from prime_match import match
                     result=match(self.rfile.read(size).decode('utf-8-sig'),ROOT/'data/creator-connections')
