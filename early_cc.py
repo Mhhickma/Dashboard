@@ -72,13 +72,13 @@ def upcoming(folder, today=None, accepted_path=None):
                     invalid += 1
                     continue
                 if campaign and start > today:
-                    campaigns[campaign] = {'id': campaign, 'start': start.isoformat(), 'name': row.get('Campaign Name', ''), 'commission': row.get('Commission Rate', '')}
+                    campaigns[campaign] = {'id': campaign, 'start': start.isoformat(), 'name': row.get('Campaign Name', ''), 'commission': row.get('Commission Rate', ''), 'asins': re.findall(r'\b[A-Z0-9]{10}\b', row.get('ASIN List', '').upper())}
     upcoming_total = len(campaigns)
     excluded = len(set(campaigns) & accepted)
     rows = sorted((row for campaign, row in campaigns.items() if campaign not in accepted),
                   key=lambda row: (row['start'], row['id']))
     ids = [row['id'] for row in rows]
-    return {'campaign_ids': ids, 'rows': rows, 'today': today.isoformat(), 'invalid_dates': invalid,
+    return {'asins': sorted({asin for row in rows for asin in row['asins']}), 'campaign_ids': ids, 'rows': rows, 'today': today.isoformat(), 'invalid_dates': invalid,
             'cc_files': len(files), 'upcoming_total': upcoming_total,
             'accepted_total': len(accepted), 'accepted_excluded': excluded,
             'cc_updated_at': _cc_updated_at(files),

@@ -15,7 +15,7 @@ from urllib.parse import parse_qs, urlparse
 from research_model import enrich, STAGES
 
 ROOT=Path(__file__).resolve().parent
-ASSETS={'/early-cc.html':'early-cc.html','/early-cc.js':'early-cc.js','/creator-upload.js':'creator-upload.js','/prime-match.html':'prime-match.html','/prime-match.js':'prime-match.js','/':'research.html','/research.html':'research.html','/research.js':'research.js','/research.css':'research.css'}
+ASSETS={'/early-access.html':'early-access.html','/early-cc.html':'early-cc.html','/early-cc.js':'early-cc.js','/creator-upload.js':'creator-upload.js','/prime-match.html':'prime-match.html','/prime-match.js':'prime-match.js','/':'research.html','/research.html':'research.html','/research.js':'research.js','/research.css':'research.css'}
 FIELDS=['asin','title','brand','category','price','monthly_sold','bsr','bsr30','bsr90','influencer_videos','merchant_video','cc_active','commission','estimated_commission_per_sale','film_score','score_coverage','video_count_source','video_count_last_checked']
 
 class Store:
