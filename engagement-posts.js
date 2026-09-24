@@ -225,6 +225,58 @@
     "Epoxy river tables: yes or no?"
 ];
 
+  var recommendedPosts = {
+    Matt: [
+      "I keep changing my answer on this: what tool would you replace first if your shop disappeared tomorrow?",
+      "What tool did you finally buy and immediately wonder why you waited so long?",
+      "I haven't settled this one: track saw or table saw if you could only keep one?",
+      "What cheap shop purchase surprised you by becoming indispensable?",
+      "What tool looks unnecessary until you actually use one?",
+      "What woodworking lesson did you only learn after making the mistake yourself?",
+      "I'm curious: which tool in your shop has earned its price ten times over?",
+      "What product sounded like hype until you tried it and changed your mind?",
+      "What's the one shop upgrade you notice every single time you work?",
+      "What tool are you watching for the right price before you finally buy it?"
+    ],
+    Andy: [
+      "My tape measure has entered witness protection again. What disappears most often in your shop?",
+      "A clean workbench is beautiful for all six minutes it lasts. Clean shop or organized chaos?",
+      "How small does a scrap have to be before you admit you're never using it?",
+      "I only need one more clamp. That's how this works, right? How many do you own?",
+      "Which tool throws sawdust like it has a personal problem with your shop?",
+      "Measure twice, cut once, then stare at the wrong board. What's your most common shop mistake?",
+      "What project was supposed to take two hours and quietly stole your entire weekend?",
+      "Which tool makes you look busy while you're mostly trying to remember where the pencil went?",
+      "Name the tool you defend like you own stock in the company.",
+      "What's the strangest scrap you've kept because it was 'too good to throw away'?"
+    ],
+    "Quick pick": [
+      "Corded or cordless?",
+      "Build the shop furniture or buy it?",
+      "Blade left or blade right?",
+      "Track saw or table saw?",
+      "Pocket holes or dowels?",
+      "Pipe clamps or parallel clamps?",
+      "Carpenter pencil or mechanical pencil?",
+      "Buy premium once or replace a budget tool later?",
+      "Natural finish or stain?",
+      "Plans or figure it out as you go?"
+    ],
+    Community: [
+      "Show us the project on your bench right now. Finished is not required.",
+      "What's one tool you would recommend to every new woodworker?",
+      "What shop tip saved you the most time this year?",
+      "What project are you most proud of, and what would you change if you built it again?",
+      "What woodworking opinion will you defend every time?",
+      "What brand has treated you well enough to earn your loyalty?",
+      "What's the best tool under $50 that you actually use?",
+      "What homemade jig deserves a permanent spot in your shop?",
+      "What skill are you trying to get better at right now?",
+      "What old tool still earns its place in your shop?"
+    ]
+  };
+
+  var lanes = ["Matt", "Andy", "Quick pick", "Community"];
   var pageOffset = 0;
 
   function dayKey(date) {
@@ -253,15 +305,20 @@
   }
 
   function dailyPosts() {
-    var start = (dayKey(new Date()) * POSTS_TO_SHOW + pageOffset) % posts.length;
     var used = readUsedPosts();
     var ordered = [];
+    var round = dayKey(new Date()) + pageOffset / POSTS_TO_SHOW;
 
-    for (var index = 0; index < posts.length; index += 1) {
-      var text = posts[(start + index) % posts.length].slice(0, MAX_LENGTH);
-      if (!used.has(text)) ordered.push(text);
-      if (ordered.length === POSTS_TO_SHOW) break;
-    }
+    lanes.forEach(function (lane, laneIndex) {
+      var choices = recommendedPosts[lane];
+      for (var index = 0; index < choices.length; index += 1) {
+        var candidate = choices[(round * 3 + laneIndex * 2 + index) % choices.length].slice(0, MAX_LENGTH);
+        if (!used.has(candidate)) {
+          ordered.push({ text: candidate, voice: lane, style: lane === "Matt" ? "Curiosity" : lane === "Andy" ? "Humor" : "Easy answer" });
+          break;
+        }
+      }
+    });
 
     return ordered;
   }
@@ -296,14 +353,15 @@
       list.parentNode.insertBefore(more, list);
     }
     list.innerHTML = "";
-    dailyPosts().forEach(function (text) {
+    dailyPosts().forEach(function (post) {
+      var text = post.text;
       var item = document.createElement("article");
       item.className = "engagement-post-option";
       var copy = document.createElement("button");
       copy.type = "button";
       copy.textContent = "Copy";
       copy.addEventListener("click", function () { copyText(text, copy); });
-      item.innerHTML = '<label class="engagement-used"><input type="checkbox"><span>Used</span></label><p></p><span>' + text.length + ' characters</span>';
+      item.innerHTML = '<div class="engagement-post-meta"><span>' + post.voice + '</span><span>' + post.style + '</span></div><label class="engagement-used"><input type="checkbox"><span>Used</span></label><p></p><span>' + text.length + ' characters</span>';
       item.querySelector("p").textContent = text;
       item.querySelector("input").addEventListener("change", function () { markUsed(text); });
       item.appendChild(copy);
