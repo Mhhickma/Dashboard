@@ -38,6 +38,8 @@
 @media(max-width:600px){.sales-prep .batch-title{grid-column:1/-1}}
 
 .sales-prep .column-sort{background:none;color:inherit;padding:0;border:0;text-align:left;font:inherit;text-transform:inherit;cursor:pointer}
-.sales-prep th[aria-sort="ascending"] .column-sort::after{content:" ▲"}
-.sales-prep th[aria-sort="descending"] .column-sort::after{content:" ▼"}
+.sales-prep th[aria-sort="ascending"] .column-sort::after{content:" â–²"}
+.sales-prep th[aria-sort="descending"] .column-sort::after{content:" â–¼"}
 .sales-prep .column-sort:focus-visible{outline:2px solid #2169df;outline-offset:3px}
+
+.sales-prep .full-deals table{table-layout:auto;min-width:2200px}.sales-prep .full-deals th{width:auto;min-width:120px}.sales-prep .full-deals td{max-width:300px}#all-deals{margin-top:32px}#deal-categories{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}

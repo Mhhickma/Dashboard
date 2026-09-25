@@ -242,8 +242,11 @@ def handler(store):
                     result['csrf']=self.server.csrf
                     return self.send(result)
                 if url.path=='/api/prime-match':
-                    saved=ROOT/'.research/prime-match-result.json'
-                    return self.send(json.loads(saved.read_text(encoding='utf-8')) if saved.exists() else None)
+                    from sales_catalog import current
+                    return self.send(current(ROOT))
+                if url.path=='/api/sales-catalog':
+                    from sales_catalog import query
+                    return self.send(query(ROOT,q))
                 if url.path=='/api/settings':return self.send({'config':store.config(),'csrf':self.server.csrf,'stages':STAGES})
                 if url.path=='/api/scan':
                     from research_jobs import status
@@ -273,18 +276,9 @@ def handler(store):
                     result=merge_accepted(ROOT/'.research/accepted-cc.json',self.rfile.read(size).decode('utf-8-sig'))
                     return self.send(result)
                 if self.path=='/api/prime-match':
-                    from prime_match import match
-                    result=match(self.rfile.read(size).decode('utf-8-sig'),ROOT/'data/creator-connections')
-                    result['saved_at']=datetime.now(timezone.utc).isoformat()
-                    saved=ROOT/'.research/prime-match-result.json'
-                    saved.parent.mkdir(parents=True,exist_ok=True)
-                    temporary=saved.with_suffix('.'+secrets.token_hex(8)+'.tmp')
-                    try:
-                        temporary.write_text(json.dumps(result,allow_nan=False),encoding='utf-8')
-                        temporary.replace(saved)
-                    finally:
-                        temporary.unlink(missing_ok=True)
-                    return self.send(result)
+                    from sales_catalog import ingest,current
+                    ingest(ROOT,self.rfile.read(size).decode('utf-8-sig'))
+                    return self.send(current(ROOT))
                 data=json.loads(self.rfile.read(size))
                 if self.path=='/api/scan':
                     from research_jobs import start
