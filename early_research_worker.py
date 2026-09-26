@@ -23,7 +23,10 @@ def main():
                     asins.update(re.findall(r'\b[A-Z0-9]{10}\b',row.get('ASIN List','').upper()))
     db.executemany('INSERT OR IGNORE INTO early_research_asins VALUES(?)',((a,) for a in sorted(asins)));db.commit()
     cached={row[0] for row in db.execute('SELECT asin FROM cache')}
-    pending=sorted(asins-cached)
+    exclusions_path=Path('data/early-research-category-exclusions.json')
+    if not exclusions_path.exists():raise ValueError('Category exclusion list is missing; no paid early scans allowed')
+    excluded=set(json.loads(exclusions_path.read_text(encoding='utf-8'))['asins'])
+    pending=sorted(asins-cached-excluded)
     config=json.loads(Path('research-config.json').read_text())
     deadline=time.monotonic()+600;report={}
     try:
@@ -39,6 +42,6 @@ def main():
                 campaigns=[json.loads(row[0]) for row in db.execute('SELECT c.payload FROM campaigns c JOIN links l ON l.id=c.id AND l.source=c.source WHERE l.asin=?',(asin,))]
                 raw=json.loads(payload);base=evaluate(raw,campaigns,time.time(),fetched)
                 out.write(json.dumps({'base':base,'campaigns':campaigns,'raw':raw})+'\n')
-        (output/'status.json').write_text(json.dumps({'updated':time.time(),'upcoming_asins':len(asins),'remaining':len(asins-{r[0] for r in db.execute('SELECT asin FROM cache')}),'phase':report.get('phase','complete')}))
+        (output/'status.json').write_text(json.dumps({'updated':time.time(),'upcoming_asins':len(asins),'remaining':len(asins-excluded-{r[0] for r in db.execute('SELECT asin FROM cache')}),'category_skipped':len(asins & excluded),'phase':report.get('phase','complete')}))
         db.close()
 if __name__=='__main__':main()
