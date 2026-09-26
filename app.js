@@ -1100,13 +1100,13 @@ async function loadDeals() {
       : "";
     const usage = data.keepa_token_usage || {};
     if (keepaHourlyUsageEl && keepaUsageWindowEl) {
-      if (Number.isFinite(Number(usage.average_tokens_per_hour)) && Number(usage.coverage_hours) > 0) {
-        keepaHourlyUsageEl.textContent = `${Number(usage.average_tokens_per_hour).toLocaleString(undefined, {maximumFractionDigits: 1})} tokens/hour`;
+      if (Number.isFinite(Number(usage.rolling_24h_tokens)) && Number(usage.coverage_hours) > 0) {
+        keepaHourlyUsageEl.textContent = `${Number(usage.rolling_24h_tokens).toLocaleString()} tokens used`;
         keepaUsageWindowEl.textContent = usage.complete
-          ? `Rolling 24-hour average - ${Number(usage.rolling_24h_tokens).toLocaleString()} tokens total`
-          : `${Number(usage.coverage_hours).toFixed(1)} hours tracked - ${Number(usage.rolling_24h_tokens).toLocaleString()} tokens total`;
+          ? "Actual measured total in the last 24 hours"
+          : `Actual measured total over ${Number(usage.coverage_hours).toFixed(1)} hours`;
       } else {
-        keepaHourlyUsageEl.textContent = "-- tokens/hour";
+        keepaHourlyUsageEl.textContent = "-- tokens used";
         keepaUsageWindowEl.textContent = "Waiting for the next scan";
       }
     }
