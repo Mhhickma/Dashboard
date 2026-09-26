@@ -5,6 +5,8 @@ const selectedPostingCountEl = document.getElementById("selectedPostingCount");
 const emptyStateEl = document.getElementById("emptyState");
 const dealCountEl = document.getElementById("dealCount");
 const updatedAtEl = document.getElementById("updatedAt");
+const keepaHourlyUsageEl = document.getElementById("keepaHourlyUsage");
+const keepaUsageWindowEl = document.getElementById("keepaUsageWindow");
 const searchInput = document.getElementById("searchInput");
 const sortSelect = document.getElementById("sortSelect");
 const asinAddForm = document.getElementById("asinAddForm");
@@ -1097,11 +1099,19 @@ async function loadDeals() {
       ? ` - Creator CSV: ${formatDate(creatorConnections.latest_csv_updated_at)}`
       : "";
     const usage = data.keepa_token_usage || {};
-    const usageLabel = Number.isFinite(Number(usage.rolling_24h_tokens)) && Number(usage.coverage_hours) > 0
-      ? ` - Keepa ${usage.complete ? "24h" : `${Number(usage.coverage_hours).toFixed(1)}h tracked`}: ${Number(usage.rolling_24h_tokens).toLocaleString()} tokens (${Number(usage.average_tokens_per_hour).toLocaleString(undefined, {maximumFractionDigits: 1})}/hour avg${usage.all_responses_reported === false ? ", partial" : ""})`
-      : " - Keepa usage tracking starts with the next scan";
+    if (keepaHourlyUsageEl && keepaUsageWindowEl) {
+      if (Number.isFinite(Number(usage.average_tokens_per_hour)) && Number(usage.coverage_hours) > 0) {
+        keepaHourlyUsageEl.textContent = `${Number(usage.average_tokens_per_hour).toLocaleString(undefined, {maximumFractionDigits: 1})} tokens/hour`;
+        keepaUsageWindowEl.textContent = usage.complete
+          ? `Rolling 24-hour average - ${Number(usage.rolling_24h_tokens).toLocaleString()} tokens total`
+          : `${Number(usage.coverage_hours).toFixed(1)} hours tracked - ${Number(usage.rolling_24h_tokens).toLocaleString()} tokens total`;
+      } else {
+        keepaHourlyUsageEl.textContent = "-- tokens/hour";
+        keepaUsageWindowEl.textContent = "Waiting for the next scan";
+      }
+    }
     allDeals = data.deals || [];
-    updatedAtEl.textContent = `Last updated: ${formatDate(data.updated_at)} - Deals kept for ${data.deal_ttl_hours || 24} hours${creatorUpdatedAt}${usageLabel}`;
+    updatedAtEl.textContent = `Last updated: ${formatDate(data.updated_at)} - Deals kept for ${data.deal_ttl_hours || 24} hours${creatorUpdatedAt}`;
     applySearch();
   } catch (error) {
     dealCountEl.textContent = "Could not load deal data";

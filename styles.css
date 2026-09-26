@@ -34,6 +34,32 @@ body {
   font-size: clamp(2rem, 5vw, 4rem);
 }
 
+.dashboard-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px 28px;
+}
+
+.keepa-usage-heading {
+  display: grid;
+  gap: 3px;
+  padding: 10px 14px;
+  border: 1px solid rgba(147, 197, 253, 0.45);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.keepa-usage-heading strong {
+  color: #93c5fd;
+  font-size: 1.15rem;
+}
+
+.keepa-usage-heading span {
+  color: #dbe7ff;
+  font-size: 0.78rem;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   text-transform: uppercase;
