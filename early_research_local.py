@@ -2,6 +2,11 @@
 import json,zipfile,base64,urllib.request
 import research_github as github
 
+def scan_counts(store):
+    with store.db() as db:
+        asins=[row[0] for row in db.execute('SELECT asin FROM early_research_products ORDER BY asin')]
+    return {'scanned_asins':asins,'total_scanned':len(asins)}
+
 def sync(store):
     with store.db() as db:
         db.execute('CREATE TABLE IF NOT EXISTS early_research_products(asin TEXT PRIMARY KEY)')
@@ -9,7 +14,7 @@ def sync(store):
     items=[a for a in artifacts if not a['expired'] and a.get('workflow_run',{}).get('head_branch')=='main']
     settings=github.api('/contents/data/early-research-settings.json?ref=main')
     enabled=json.loads(base64.b64decode(settings['content'])).get('enabled',False)
-    if not items:return {'enabled':enabled,'phase':'Waiting for the first hourly run'}
+    if not items:return {'enabled':enabled,'phase':'Waiting for the first hourly run',**scan_counts(store)}
     item=max(items,key=lambda a:a['id']);key='early-artifact'
     with store.db() as db:previous=db.execute('SELECT value FROM research_local_state WHERE key=?',(key,)).fetchone()
     if not previous or json.loads(previous[0])['artifact']!=item['id']:
@@ -22,7 +27,7 @@ def sync(store):
                     db.execute('INSERT OR IGNORE INTO early_research_products VALUES(?)',(p['base']['asin'],))
                 db.execute('INSERT OR REPLACE INTO research_local_state VALUES(?,?)',(key,json.dumps(report)))
     else:report=json.loads(previous[0])
-    return {**report,'enabled':enabled}
+    return {**report,'enabled':enabled,**scan_counts(store)}
 
 def toggle(enabled):
     if not isinstance(enabled,bool):raise ValueError('enabled must be true or false')
