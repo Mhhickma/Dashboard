@@ -696,6 +696,25 @@ function formatDate(value) {
   return new Date(value).toLocaleString();
 }
 
+function currentHourTokenUsage(usage) {
+  const now = new Date();
+  const hourStart = new Date(now);
+  hourStart.setMinutes(0, 0, 0);
+  const hourEnd = new Date(hourStart.getTime() + 60 * 60 * 1000);
+  const entries = Array.isArray(usage?.entries) ? usage.entries : [];
+  const tokens = entries.reduce((total, entry) => {
+    const timestamp = new Date(entry?.timestamp).getTime();
+    const consumed = Number(entry?.tokens);
+    if (!Number.isFinite(timestamp) || !Number.isFinite(consumed)) return total;
+    return timestamp >= hourStart.getTime() && timestamp < hourEnd.getTime()
+      ? total + consumed
+      : total;
+  }, 0);
+  const timeOptions = {hour: "numeric", minute: "2-digit"};
+  const range = `${hourStart.toLocaleTimeString([], timeOptions)}-${hourEnd.toLocaleTimeString([], timeOptions)}`;
+  return {tokens, range};
+}
+
 function formatShortDate(value) {
   if (!value) return "N/A";
   return new Date(value).toLocaleString([], {
@@ -1100,13 +1119,12 @@ async function loadDeals() {
       : "";
     const usage = data.keepa_token_usage || {};
     if (keepaHourlyUsageEl && keepaUsageWindowEl) {
-      if (Number.isFinite(Number(usage.rolling_24h_tokens)) && Number(usage.coverage_hours) > 0) {
-        keepaHourlyUsageEl.textContent = `${Number(usage.rolling_24h_tokens).toLocaleString()} tokens used`;
-        keepaUsageWindowEl.textContent = usage.complete
-          ? "Actual measured total in the last 24 hours"
-          : `Actual measured total over ${Number(usage.coverage_hours).toFixed(1)} hours`;
+      if (Array.isArray(usage.entries)) {
+        const currentHour = currentHourTokenUsage(usage);
+        keepaHourlyUsageEl.textContent = `${currentHour.tokens.toLocaleString()} tokens this hour`;
+        keepaUsageWindowEl.textContent = `${currentHour.range} - actual measured usage`;
       } else {
-        keepaHourlyUsageEl.textContent = "-- tokens used";
+        keepaHourlyUsageEl.textContent = "-- tokens this hour";
         keepaUsageWindowEl.textContent = "Waiting for the next scan";
       }
     }
