@@ -1,4 +1,5 @@
 from cc_batches import active_csv_files
+import atexit
 import csv
 import io
 import json
@@ -75,6 +76,7 @@ ASIN_FILE = Path("asins.csv")
 OUTPUT_FILE = Path("data/deals.json")
 STATE_FILE = Path("data/scan_state.json")
 MEMORY_FILE = Path("data/deals_memory.json")
+TOKEN_USAGE_FILE = Path("data/keepa_token_usage.json")
 ASIN_RE = re.compile(r"\bB[0-9A-Z]{9}\b")
 KEEPA_EPOCH = datetime(2011, 1, 1, tzinfo=timezone.utc)
 NON_AMAZON_PRICE_TYPES = {track["type"] for track in PRICE_TRACKS if track["type"] != "amazon"}
@@ -91,6 +93,80 @@ def utc_now():
 
 def iso_now():
     return utc_now().isoformat()
+
+
+KEEPA_RUN_USAGE = {
+    "tokens": 0,
+    "product_tokens": 0,
+    "lightning_deal_tokens": 0,
+    "reported_responses": 0,
+    "unreported_responses": 0,
+}
+KEEPA_USAGE_SAVED = False
+
+
+def record_keepa_response(payload, request_kind):
+    consumed = payload.get("tokensConsumed") if isinstance(payload, dict) else None
+    try:
+        consumed = int(consumed)
+    except (TypeError, ValueError):
+        KEEPA_RUN_USAGE["unreported_responses"] += 1
+        return
+    KEEPA_RUN_USAGE["tokens"] += consumed
+    KEEPA_RUN_USAGE[f"{request_kind}_tokens"] += consumed
+    KEEPA_RUN_USAGE["reported_responses"] += 1
+
+
+def keepa_token_usage_summary():
+    now = utc_now()
+    cutoff = now - timedelta(hours=24)
+    tracking_started_at = now
+    try:
+        payload = json.loads(TOKEN_USAGE_FILE.read_text(encoding="utf-8"))
+        entries = payload.get("entries", []) if isinstance(payload, dict) else []
+        tracking_started_at = datetime.fromisoformat(str(payload.get("tracking_started_at", "")).replace("Z", "+00:00"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        entries = []
+    except (TypeError, ValueError):
+        tracking_started_at = now
+    kept = []
+    for entry in entries:
+        try:
+            timestamp = datetime.fromisoformat(str(entry.get("timestamp", "")).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        if timestamp >= cutoff:
+            kept.append(entry)
+    if KEEPA_RUN_USAGE["reported_responses"] or KEEPA_RUN_USAGE["unreported_responses"]:
+        kept.append({"timestamp": now.isoformat(), **KEEPA_RUN_USAGE})
+    total = sum(int(entry.get("tokens", 0)) for entry in kept)
+    coverage_hours = min(24, max(0, (now - tracking_started_at).total_seconds() / 3600))
+    all_responses_reported = bool(kept) and all(int(entry.get("unreported_responses", 0)) == 0 for entry in kept)
+    return {
+        "updated_at": now.isoformat(),
+        "tracking_started_at": tracking_started_at.isoformat(),
+        "window_hours": 24,
+        "coverage_hours": round(coverage_hours, 2),
+        "rolling_24h_tokens": total,
+        "average_tokens_per_hour": round(total / coverage_hours, 2) if coverage_hours else 0,
+        "all_responses_reported": all_responses_reported,
+        "complete": coverage_hours >= 23.9 and all_responses_reported,
+        "entries": kept,
+    }
+
+
+def save_keepa_token_usage():
+    global KEEPA_USAGE_SAVED
+    if KEEPA_USAGE_SAVED or not (KEEPA_RUN_USAGE["reported_responses"] or KEEPA_RUN_USAGE["unreported_responses"]):
+        return
+    KEEPA_USAGE_SAVED = True
+    summary = keepa_token_usage_summary()
+    TOKEN_USAGE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TOKEN_USAGE_FILE.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(f"Keepa reported {KEEPA_RUN_USAGE['tokens']} tokens consumed this run; rolling 24-hour total: {summary['rolling_24h_tokens']}")
+
+
+atexit.register(save_keepa_token_usage)
 
 
 def parse_iso_datetime(value):
@@ -649,7 +725,7 @@ def select_asins_for_run(all_asins):
     return selected, new_state, start_index, next_start_index
 
 
-def fetch_keepa_batch(url, params, batch_number):
+def fetch_keepa_batch(url, params, batch_number, request_kind="product"):
     for attempt in range(1, MAX_RETRIES + 1):
         response = requests.get(url, params=params, timeout=60)
         if response.status_code == 429:
@@ -660,7 +736,9 @@ def fetch_keepa_batch(url, params, batch_number):
         if response.status_code >= 400:
             print(f"Keepa error {response.status_code} on batch {batch_number}: {response.text[:500]}")
         response.raise_for_status()
-        return response.json()
+        payload = response.json()
+        record_keepa_response(payload, request_kind)
+        return payload
     raise RuntimeError(f"Keepa rate limit did not clear after {MAX_RETRIES} retries on batch {batch_number}")
 
 
@@ -847,7 +925,7 @@ def fetch_keepa_lightning_deals(asins):
         checked += 1
         params = {"key": KEEPA_API_KEY, "domain": DOMAIN_ID, "asin": asin, "state": "AVAILABLE"}
         try:
-            payload = fetch_keepa_batch(url, params, f"lightning-deal-{index}")
+            payload = fetch_keepa_batch(url, params, f"lightning-deal-{index}", "lightning_deal")
         except Exception as exc:
             print(f"Keepa Lightning Deal lookup failed for {asin}; continuing: {exc}")
             continue
@@ -2064,6 +2142,7 @@ def main():
         "visible_shipping_memory_deals_removed": purged_shipping_memory_count,
         "creator_campaign_deal_count": creator_campaign_deal_count,
         "creator_image_update_count": creator_image_update_count,
+        "keepa_token_usage": keepa_token_usage_summary(),
         "creator_connections": {
             "repo": CREATOR_CONNECTIONS_REPO,
             "path": CREATOR_CONNECTIONS_PATH,

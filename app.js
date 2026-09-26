@@ -1096,8 +1096,12 @@ async function loadDeals() {
     const creatorUpdatedAt = creatorConnections.latest_csv_updated_at
       ? ` - Creator CSV: ${formatDate(creatorConnections.latest_csv_updated_at)}`
       : "";
+    const usage = data.keepa_token_usage || {};
+    const usageLabel = Number.isFinite(Number(usage.rolling_24h_tokens)) && Number(usage.coverage_hours) > 0
+      ? ` - Keepa ${usage.complete ? "24h" : `${Number(usage.coverage_hours).toFixed(1)}h tracked`}: ${Number(usage.rolling_24h_tokens).toLocaleString()} tokens (${Number(usage.average_tokens_per_hour).toLocaleString(undefined, {maximumFractionDigits: 1})}/hour avg${usage.all_responses_reported === false ? ", partial" : ""})`
+      : " - Keepa usage tracking starts with the next scan";
     allDeals = data.deals || [];
-    updatedAtEl.textContent = `Last updated: ${formatDate(data.updated_at)} - Deals kept for ${data.deal_ttl_hours || 24} hours${creatorUpdatedAt}`;
+    updatedAtEl.textContent = `Last updated: ${formatDate(data.updated_at)} - Deals kept for ${data.deal_ttl_hours || 24} hours${creatorUpdatedAt}${usageLabel}`;
     applySearch();
   } catch (error) {
     dealCountEl.textContent = "Could not load deal data";

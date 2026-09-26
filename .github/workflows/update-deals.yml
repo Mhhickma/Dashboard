@@ -63,6 +63,19 @@ jobs:
           CREATOR_CONNECTIONS_MAX_FILE_AGE_DAYS: 45
         run: python fetch_keepa_history_probe.py
 
+      - name: Persist Keepa usage after a failed scan
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/keepa_token_usage.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Update Keepa token usage"
+          git pull --rebase origin main
+          git push
+
       - name: Apply stronger deal qualification
         run: python filter_deals.py
 
@@ -86,7 +99,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add data/deals.json data/deals_memory.json data/scan_state.json data/asin_performance.json
+          git add data/deals.json data/deals_memory.json data/scan_state.json data/asin_performance.json data/keepa_token_usage.json
 
           if git diff --cached --quiet; then
             echo "No scan data changes to commit."
