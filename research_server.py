@@ -259,9 +259,10 @@ def handler(store):
                 if url.path=='/api/products':return self.send(store.query(q))
                 if url.path.startswith('/api/products/'):return self.send(store.detail(url.path.rsplit('/',1)[-1]))
                 if url.path=='/api/export':
-                    out=io.StringIO();w=csv.writer(out);w.writerow(FIELDS)
+                    fields=['asin'] if q.get('format')=='asins' else FIELDS
+                    out=io.StringIO();w=csv.writer(out);w.writerow(['ASIN'] if q.get('format')=='asins' else fields)
                     for r in store.query(q,export=True)['rows']:
-                        values=[r.get(k) if r.get(k) is not None else 'Unknown' for k in FIELDS]
+                        values=[r.get(k) if r.get(k) is not None else 'Unknown' for k in fields]
                         w.writerow(["'"+str(v) if str(v).startswith(('=','+','-','@','\t','\r')) else v for v in values])
                     return self.send(out.getvalue().encode(),'text/csv')
                 self.send({'error':'Not found'},status=404)
