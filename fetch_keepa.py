@@ -119,7 +119,7 @@ def record_keepa_response(payload, request_kind):
 
 def keepa_token_usage_summary():
     now = utc_now()
-    cutoff = now - timedelta(hours=24)
+    cutoff = now - timedelta(hours=25)
     tracking_started_at = now
     try:
         payload = json.loads(TOKEN_USAGE_FILE.read_text(encoding="utf-8"))
@@ -139,7 +139,7 @@ def keepa_token_usage_summary():
             kept.append(entry)
     if KEEPA_RUN_USAGE["reported_responses"] or KEEPA_RUN_USAGE["unreported_responses"]:
         kept.append({"timestamp": now.isoformat(), **KEEPA_RUN_USAGE})
-    total = sum(int(entry.get("tokens", 0)) for entry in kept)
+    total = sum(int(entry.get("tokens", 0)) for entry in kept if datetime.fromisoformat(str(entry["timestamp"]).replace("Z", "+00:00")) >= now - timedelta(hours=24))
     coverage_hours = min(24, max(0, (now - tracking_started_at).total_seconds() / 3600))
     all_responses_reported = bool(kept) and all(int(entry.get("unreported_responses", 0)) == 0 for entry in kept)
     return {

@@ -29,10 +29,16 @@ def update(change):
 
 def reserve(cost):
     identity=uuid.uuid4().hex
+    early=os.environ.get('EARLY_RESEARCH_AUTO')=='1'
+    allowance=None
+    if early:
+        from early_token_budget import current
+        allowance=current()['early_token_budget']
     def change(data,now):
         if now<data.get('safe_after',0):return False
         if sum(e['cost'] for e in data['entries'])+cost>CAP:return False
-        data['entries'].append({'id':identity,'time':now,'cost':cost});return True
+        if early and sum(e['cost'] for e in data['entries'] if e.get('source')=='early')+cost>allowance:return False
+        data['entries'].append({'id':identity,'time':now,'cost':cost,'source':'early' if early else 'other'});return True
     if not update(change):raise BudgetPause('Hourly allowance exhausted or initial tracking warm-up; queue will resume later')
     return identity
 

@@ -118,7 +118,7 @@ $('ideal-filters').onclick=async()=>{
 };
 
 let earlyEnabled=true;
-async function syncEarly(){ $('early-research-status').textContent='Checking the hourly queue and importing saved results...';try{const data=await api('/api/early-research');earlyEnabled=data.enabled;$('early-toggle').textContent=earlyEnabled?'Pause automatic scans':'Enable automatic scans';$('early-research-status').textContent=`${earlyEnabled?'Enabled':'Paused'} - ${data.phase}. ${data.remaining==null?'':data.remaining.toLocaleString()+' upcoming ASINs remaining.'} Shared limit: 1,450 tokens per rolling hour.`;if(view==='early')load();}catch(e){$('early-research-status').textContent=e.message;}}
+async function syncEarly(){ $('early-research-status').textContent='Checking the hourly queue and importing saved results...';try{const data=await api('/api/early-research');earlyEnabled=data.enabled;$('early-toggle').textContent=earlyEnabled?'Pause automatic scans':'Enable automatic scans';$('early-research-status').textContent=`${earlyEnabled?'Enabled':'Paused'} - ${data.phase}. ${data.remaining==null?'':data.remaining.toLocaleString()+' upcoming ASINs remaining.'} ${data.average_tokens_per_hour==null?'Waiting for complete hourly usage data.':`Price average (${data.average_hours} completed hours): ${data.average_tokens_per_hour} tokens/hour. Early Access budget: ${data.early_token_budget} tokens/hour — half of (1,500 minus the average).`} Shared limit: 1,450 tokens per rolling hour.`;if(view==='early')load();}catch(e){$('early-research-status').textContent=e.message;}}
 $('early-sync').onclick=syncEarly;$('early-toggle').onclick=async()=>{try{await api('/api/early-research',{enabled:!earlyEnabled});await syncEarly();}catch(e){fail(e);}};
 
 $('early-export-asins').onclick=async()=>{

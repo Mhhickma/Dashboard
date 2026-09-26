@@ -1123,6 +1123,16 @@ async function loadDeals() {
         const currentHour = currentHourTokenUsage(usage);
         keepaHourlyUsageEl.textContent = `${currentHour.tokens.toLocaleString()} tokens this hour`;
         keepaUsageWindowEl.textContent = `${currentHour.range} - actual measured usage`;
+        const now=Date.now(), end=Math.floor(now/3600000)*3600000;
+        const start=Math.max(end-24*3600000,Math.ceil(Date.parse(usage.tracking_started_at)/3600000)*3600000);
+        const hours=(end-start)/3600000;
+        const entries=usage.entries.filter(e=>Date.parse(e.timestamp)>=start&&Date.parse(e.timestamp)<end);
+        const updated=Date.parse(usage.updated_at);
+        if(hours>0&&updated>=end&&now-updated<=7200000&&entries.every(e=>!e.unreported_responses)) {
+          const average=entries.reduce((sum,e)=>sum+Number(e.tokens||0),0)/hours;
+          keepaUsageWindowEl.textContent+=` | ${average.toFixed(1)} tokens/hour average (${hours} completed hours) | Early Access: ${Math.max(0,Math.floor((1500-average)/2))} tokens/hour`;
+        } else keepaUsageWindowEl.textContent+=' | Average pending complete hourly data';
+
       } else {
         keepaHourlyUsageEl.textContent = "-- tokens this hour";
         keepaUsageWindowEl.textContent = "Waiting for the next scan";

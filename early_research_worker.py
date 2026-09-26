@@ -28,7 +28,10 @@ def main():
     excluded=set(json.loads(exclusions_path.read_text(encoding='utf-8'))['asins'])
     pending=sorted(asins-cached-excluded)
     config=json.loads(Path('research-config.json').read_text())
-    deadline=time.monotonic()+600;report={}
+    from early_token_budget import current
+    allowance=current()
+    pending=pending[:allowance['early_token_budget']]
+    deadline=time.monotonic()+600;report={'phase':'paused_average_budget' if not pending else 'complete'}
     try:
         for offset in range(0,min(len(pending),1450),1000):
             cohort=pending[offset:offset+1000]
@@ -42,6 +45,6 @@ def main():
                 campaigns=[json.loads(row[0]) for row in db.execute('SELECT c.payload FROM campaigns c JOIN links l ON l.id=c.id AND l.source=c.source WHERE l.asin=?',(asin,))]
                 raw=json.loads(payload);base=evaluate(raw,campaigns,time.time(),fetched)
                 out.write(json.dumps({'base':base,'campaigns':campaigns,'raw':raw})+'\n')
-        (output/'status.json').write_text(json.dumps({'updated':time.time(),'upcoming_asins':len(asins),'remaining':len(asins-excluded-{r[0] for r in db.execute('SELECT asin FROM cache')}),'category_skipped':len(asins & excluded),'phase':report.get('phase','complete')}))
+        (output/'status.json').write_text(json.dumps({**allowance,'updated':time.time(),'upcoming_asins':len(asins),'remaining':len(asins-excluded-{r[0] for r in db.execute('SELECT asin FROM cache')}),'category_skipped':len(asins & excluded),'phase':report.get('phase','complete')}))
         db.close()
 if __name__=='__main__':main()
