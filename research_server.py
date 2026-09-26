@@ -283,7 +283,14 @@ def handler(store):
                 if self.path=='/api/prime-match':
                     from sales_catalog import ingest,current
                     ingest(ROOT,self.rfile.read(size).decode('utf-8-sig'))
-                    return self.send(current(ROOT))
+                    result=current(ROOT)
+                    try:
+                        from early_scan_categories import publish
+                        publish(ROOT)
+                    except Exception:
+                        logging.exception('Could not publish early scan category exclusions')
+                        raise ValueError('Deals saved, but early-scan category exclusions could not be updated. Retry the upload before relying on the new categories.')
+                    return self.send(result)
                 data=json.loads(self.rfile.read(size))
                 if self.path=='/api/early-research':
                     from early_research_local import toggle
