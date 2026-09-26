@@ -1,0 +1,47 @@
+name: Early Access Research
+on:
+  schedule:
+    - cron: '55 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: dashboard-keepa-shared
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHARED_RESEARCH_BUDGET: '1'
+      EARLY_RESEARCH_AUTO: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - name: Scan leftover allowance
+        env:
+          KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+        run: python early_research_worker.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: film-research-checkpoint
+          path: .research-scan/checkpoint.sqlite
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: early-research-results
+          path: .research-scan/early-results/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 90

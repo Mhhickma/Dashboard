@@ -38,10 +38,23 @@ class KeepaClient:
             if time.monotonic()+65>=self.deadline:return None,'paused_time'
             token_error=self.wait_for_tokens(cost)
             if token_error:return None,token_error
+            if os.environ.get('EARLY_RESEARCH_AUTO')=='1':
+                import base64
+                import research_github as github
+                enabled=json.loads(base64.b64decode(github.api('/contents/data/early-research-settings.json?ref=main')['content'])).get('enabled')
+                if not enabled:return None,'paused_by_user'
+            reservation=None
+            if os.environ.get('SHARED_RESEARCH_BUDGET')=='1':
+                from research_hourly import reserve,BudgetPause
+                try:reservation=reserve(cost)
+                except BudgetPause:return None,'paused_hourly_budget'
             self.reserved+=cost;wait=2**(attempt+1)
             try:
                 response=self.session.get('https://api.keepa.com/product',params={'key':self.key,'domain':1,'asin':','.join(asins),'history':1,'stats':90,'videos':1,'update':0 if self.refresh else -1,**({'offers':20} if self.refresh else {})},timeout=(10,50))
                 payload=response.json();used=number(payload.get('tokensConsumed'))
+                if reservation:
+                    from research_hourly import settle
+                    settle(reservation,used)
                 if used is None:self.unknown=True
                 else:self.consumed+=used
                 balance=payload.get('tokensLeft')

@@ -727,7 +727,24 @@ def select_asins_for_run(all_asins):
 
 def fetch_keepa_batch(url, params, batch_number, request_kind="product"):
     for attempt in range(1, MAX_RETRIES + 1):
+        reservation=None
+        if os.environ.get('SHARED_RESEARCH_BUDGET')=='1':
+            from research_hourly import reserve,settle,BudgetPause
+            count=len(str(params.get('asin','')).split(','))
+            # Conservatively reserve full detailed lookup cost before spending.
+            cost=count*(14 if params.get('offers') else 1)
+            try:reservation=reserve(cost)
+            except BudgetPause:
+                if count>1:
+                    products=[]
+                    for asin in str(params['asin']).split(','):
+                        products.extend(fetch_keepa_batch(url,{**params,'asin':asin},batch_number,request_kind).get('products',[]))
+                    return {'products':products}
+                raise
         response = requests.get(url, params=params, timeout=60)
+        if reservation:
+            try:settle(reservation,response.json().get('tokensConsumed'))
+            except (ValueError,TypeError):pass
         if response.status_code == 429:
             wait_seconds = RATE_LIMIT_WAIT_SECONDS * attempt
             print(f"Keepa rate limit on batch {batch_number}. Waiting {wait_seconds} seconds before retry {attempt}/{MAX_RETRIES}...")

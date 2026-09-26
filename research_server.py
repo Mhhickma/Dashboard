@@ -120,10 +120,12 @@ class Store:
             if v is not None:values.append(v)
         if q.get('show_hidden')!='true':add('p.asin NOT IN (SELECT asin FROM hidden_products)')
         view=q.get('view','feed')
+        with self.db() as db:db.execute('CREATE TABLE IF NOT EXISTS early_research_products(asin TEXT PRIMARY KEY)')
         if q.get('scan_job'):
             add('p.asin IN (SELECT asin FROM research_scan_results WHERE job=?)',int(q['scan_job']))
         workflow=view in ('shortlist','outreach','film','published')
-        if workflow:
+        if view=='early':add('p.asin IN (SELECT asin FROM early_research_products)')
+        elif workflow:
             add('p.asin IN (SELECT asin FROM shortlist)')
             if view=='published':add("p.asin IN (SELECT asin FROM shortlist WHERE json_extract(payload,'$.status')='Published')")
             if view=='film':add("p.asin IN (SELECT asin FROM shortlist WHERE json_extract(payload,'$.status') IN ('Sample Approved','Purchased','Received','Ready to Film','Filmed','Needs Editing','Ready to Upload','Uploaded to Amazon'))")
@@ -142,7 +144,7 @@ class Store:
         for key,(column,operator) in ranges.items():
             v=q.get(key,defaults.get(key))
             if v not in ('',None):add(f'p.{column}{operator}?',float(v))
-        if not workflow:
+        if not workflow and view!='early':
             if q.get('include_missing','true')=='true':add("json_extract(p.payload,'$.qualification') IN ('Qualified','Missing data')")
             else:add("json_extract(p.payload,'$.qualification')='Qualified'")
         if q.get('main_required')=='true':add("json_extract(p.payload,'$.main_video')=1")
@@ -247,6 +249,9 @@ def handler(store):
                 if url.path=='/api/sales-catalog':
                     from sales_catalog import query
                     return self.send(query(ROOT,q))
+                if url.path=='/api/early-research':
+                    from early_research_local import sync
+                    return self.send(sync(store))
                 if url.path=='/api/settings':return self.send({'config':store.config(),'csrf':self.server.csrf,'stages':STAGES})
                 if url.path=='/api/scan':
                     from research_jobs import status
@@ -280,6 +285,9 @@ def handler(store):
                     ingest(ROOT,self.rfile.read(size).decode('utf-8-sig'))
                     return self.send(current(ROOT))
                 data=json.loads(self.rfile.read(size))
+                if self.path=='/api/early-research':
+                    from early_research_local import toggle
+                    return self.send(toggle(data.get('enabled')))
                 if self.path=='/api/scan':
                     from research_jobs import start
                     return self.send(start(store,data))

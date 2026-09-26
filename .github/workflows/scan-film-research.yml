@@ -10,11 +10,15 @@ on:
         description: Bounded scan and funnel snapshot from Film Research
         required: true
 permissions:
-  contents: read
+  contents: write
   actions: read
 concurrency:
   group: dashboard-keepa-shared
   cancel-in-progress: false
+env:
+  GH_TOKEN: ${{ github.token }}
+  SHARED_RESEARCH_BUDGET: "1"
+
 jobs:
   scan:
     runs-on: ubuntu-latest
