@@ -21,7 +21,7 @@ function fail(e){$('message').textContent=e.message;}
 
 function defaults(){const f=$('filters');HTMLFormElement.prototype.reset.call(f);for(const [key,v] of Object.entries(config.filters)){const el=f.elements.namedItem(key);if(el)el.type==='checkbox'?el.checked=Boolean(v):el.value=Array.isArray(v)?v.join(', '):v??'';}page=1;}
 
-function params(){const q=new URLSearchParams(new FormData($('filters')));for(const el of $('filters').querySelectorAll('input[type=checkbox]'))q.set(el.name,String(el.checked));if(scanJob)q.set('scan_job',scanJob);q.set('include_missing',String($('include-missing').checked));q.set('show_hidden',String($('show-hidden').checked));q.set('view',view);q.set('page',page);q.set('sort',$('sort').value);q.set('direction',$('direction').value);return q;}
+function params(){const q=new URLSearchParams(new FormData($('filters')));for(const key of ['variants_max','influencer_max','commission_min','commission_max','growth_min'])q.set(key,'');for(const el of $('filters').querySelectorAll('input[type=checkbox]'))q.set(el.name,String(el.checked));if(scanJob)q.set('scan_job',scanJob);q.set('include_missing',String($('include-missing').checked));q.set('show_hidden',String($('show-hidden').checked));q.set('view',view);q.set('page',page);q.set('sort',$('sort').value);q.set('direction',$('direction').value);return q;}
 
 async function load(){const ticket=++requestNumber;$('early-export-asins').hidden=view!=='early';$('early-export-asins').disabled=true;$('message').textContent='Loading saved products...';try{const q=params();$('export').href='/api/export?'+q;const data=await api('/api/products?'+q);if(ticket!==requestNumber)return;appliedAsinExport=new URLSearchParams(q);appliedAsinExport.set('format','asins');$('early-export-asins').disabled=view!=='early';$('message').textContent='';$('count').textContent=data.total.toLocaleString()+($('include-missing').checked?' candidates (includes missing information)':' confirmed matches');$('page').textContent=`Page ${data.page} of ${Math.max(1,Math.ceil(data.total/data.size))}`;$('previous').disabled=page<=1;$('next').disabled=page*data.size>=data.total;$('empty').hidden=data.total>0;const current=$('categories').value;$('categories').innerHTML='<option value="">All categories</option>'+data.categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');$('categories').value=current;
 
@@ -102,7 +102,7 @@ $('ideal-filters').onclick=async()=>{
  try{
  const f=$('filters');HTMLFormElement.prototype.reset.call(f);
  for(const el of f.elements){if(el.type==='checkbox')el.checked=false;else if(['text','number','date','select-one','search'].includes(el.type))el.value='';}
- f.elements.commission_min.value=10;f.elements.exclude_categories.value='Books';
+ f.elements.exclude_categories.value='Books';
  for(const name of ['cc_only','exclude_apparel','merchant_required'])f.elements[name].checked=true;
  // The qualification rules enforce the sliding sales minimum and video cap,
  // while retaining unknown-data candidates as the user requested.
