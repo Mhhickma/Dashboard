@@ -167,9 +167,11 @@ class Store:
         sort_expression="CASE WHEN json_extract(p.payload,'$.fetched_at')>0 THEN CAST(json_extract(p.payload,'$.fetched_at') AS REAL) END" if sort=='fetched_at' else f'p.{sort}'
         direction='ASC' if q.get('direction')=='asc' else 'DESC'
         page=max(1,int(q.get('page',1)));size=min(100,max(1,int(q.get('size',50))))
-        sql=f'SELECT p.payload,s.payload AS shortlist FROM products p LEFT JOIN shortlist s ON s.asin=p.asin WHERE {clause} ORDER BY {sort_expression} IS NULL,{sort_expression} {direction},p.asin'
+        family="COALESCE(NULLIF(json_extract(p.raw,'$.parentAsin'),''),p.asin)"
+        grouped=f"WITH matching AS (SELECT p.*,ROW_NUMBER() OVER (PARTITION BY {family} ORDER BY p.film_score DESC,p.asin) AS family_rank FROM products p WHERE {clause}), families AS (SELECT * FROM matching WHERE family_rank=1) "
+        sql=grouped+f'SELECT p.payload,s.payload AS shortlist FROM families p LEFT JOIN shortlist s ON s.asin=p.asin ORDER BY {sort_expression} IS NULL,{sort_expression} {direction},p.asin'
         with self.db() as db:
-            total=db.execute(f'SELECT COUNT(*) FROM products p WHERE {clause}',values).fetchone()[0]
+            total=db.execute(grouped+'SELECT COUNT(*) FROM families',values).fetchone()[0]
             if not export:sql+=' LIMIT ? OFFSET ?';values += [size,(page-1)*size]
             rows=[]
             for item in db.execute(sql,values):
