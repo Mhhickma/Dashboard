@@ -1130,8 +1130,8 @@ async function loadDeals() {
         const updated=Date.parse(usage.updated_at);
         if(hours>0&&updated>=end&&now-updated<=7200000&&entries.every(e=>!e.unreported_responses)) {
           const average=entries.reduce((sum,e)=>sum+Number(e.tokens||0),0)/hours;
-          keepaUsageWindowEl.textContent+=` | ${average.toFixed(1)} tokens/hour average (${hours} completed hours) | Early Access: ${Math.max(0,Math.floor((1500-average)/2))} tokens/hour`;
-        } else keepaUsageWindowEl.textContent+=' | Average pending complete hourly data';
+          keepaUsageWindowEl.textContent+=` | ${average.toFixed(1)} tokens/hour average (${hours} completed hours) | Early Access: 400 tokens/hour (fixed)`;
+        } else keepaUsageWindowEl.textContent+=' | Average pending complete hourly data | Early Access: 400 tokens/hour (fixed)';
 
       } else {
         keepaHourlyUsageEl.textContent = "-- tokens this hour";
