@@ -21,5 +21,5 @@ def calculate(usage,now=None):
     except (KeyError,ValueError,TypeError):return result
 
 def current():
-    response=github.api('/contents/data/keepa_token_usage.json?ref=main')
-    return calculate(json.loads(base64.b64decode(response['content'])))
+    # Fixed allowance; no dependency on price usage freshness.
+    return {"budget_mode":"fixed","early_token_budget":400,"average_tokens_per_hour":None,"average_hours":0}
