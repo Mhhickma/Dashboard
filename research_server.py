@@ -32,6 +32,7 @@ class Store:
             CREATE INDEX IF NOT EXISTS product_campaigns_asin ON product_campaigns(asin);
             CREATE TABLE IF NOT EXISTS research_local_state(key TEXT PRIMARY KEY,value TEXT);
             CREATE TABLE IF NOT EXISTS hidden_products(asin TEXT PRIMARY KEY);
+            CREATE TABLE IF NOT EXISTS early_research_products(asin TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS shortlist(asin TEXT PRIMARY KEY,payload TEXT,added REAL,updated REAL);
             CREATE TABLE IF NOT EXISTS settings(id INTEGER PRIMARY KEY CHECK(id=1),payload TEXT);
             CREATE TABLE IF NOT EXISTS target_brands(brand TEXT PRIMARY KEY,enabled INTEGER DEFAULT 1);
@@ -120,7 +121,6 @@ class Store:
             if v is not None:values.append(v)
         if q.get('show_hidden')!='true':add('p.asin NOT IN (SELECT asin FROM hidden_products)')
         view=q.get('view','feed')
-        with self.db() as db:db.execute('CREATE TABLE IF NOT EXISTS early_research_products(asin TEXT PRIMARY KEY)')
         if q.get('scan_job'):
             add('p.asin IN (SELECT asin FROM research_scan_results WHERE job=?)',int(q['scan_job']))
         workflow=view in ('shortlist','outreach','film','published')
@@ -168,8 +168,8 @@ class Store:
         direction='ASC' if q.get('direction')=='asc' else 'DESC'
         page=max(1,int(q.get('page',1)));size=min(100,max(1,int(q.get('size',50))))
         family="COALESCE(NULLIF(json_extract(p.raw,'$.parentAsin'),''),p.asin)"
-        grouped=f"WITH matching AS (SELECT p.*,ROW_NUMBER() OVER (PARTITION BY {family} ORDER BY p.film_score DESC,p.asin) AS family_rank FROM products p WHERE {clause}), families AS (SELECT * FROM matching WHERE family_rank=1) "
-        sql=grouped+f'SELECT p.payload,s.payload AS shortlist FROM families p LEFT JOIN shortlist s ON s.asin=p.asin ORDER BY {sort_expression} IS NULL,{sort_expression} {direction},p.asin'
+        grouped=f"WITH matching AS (SELECT p.asin,ROW_NUMBER() OVER (PARTITION BY {family} ORDER BY p.film_score DESC,p.asin) AS family_rank FROM products p WHERE {clause}), families AS (SELECT * FROM matching WHERE family_rank=1) "
+        sql=grouped+f'SELECT p.payload,s.payload AS shortlist FROM families f JOIN products p ON p.asin=f.asin LEFT JOIN shortlist s ON s.asin=p.asin ORDER BY {sort_expression} IS NULL,{sort_expression} {direction},p.asin'
         with self.db() as db:
             total=db.execute(grouped+'SELECT COUNT(*) FROM families',values).fetchone()[0]
             if not export:sql+=' LIMIT ? OFFSET ?';values += [size,(page-1)*size]
