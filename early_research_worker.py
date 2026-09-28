@@ -35,7 +35,7 @@ def main():
     try:
         for offset in range(0,min(len(pending),1450),1000):
             cohort=pending[offset:offset+1000]
-            request={'job':'early-'+uuid.uuid4().hex,'asins':cohort,'limit':len(cohort),'batch_size':10,'token_budget':len(cohort),'filters':{'cc_only':False},'config':config}
+            request={'job':'early-'+uuid.uuid4().hex,'asins':cohort,'limit':len(cohort),'batch_size':100,'token_budget':len(cohort),'filters':{'cc_only':False},'config':config}
             report=run(db,request,KeepaClient(os.environ['KEEPA_API_KEY'],len(cohort),deadline),deadline,Path('.research-scan/early-run'))
             if report['phase']!='complete':break
     finally:
