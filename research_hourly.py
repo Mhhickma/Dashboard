@@ -1,12 +1,13 @@
 """Durable pre-request reservations shared by price and Film Research workflows."""
-import base64,json,os,time,uuid
+import base64,json,os,time,uuid,random
 import research_github as github
 PATH='/contents/data/research-hourly-budget.json'
 CAP=1450
 class BudgetPause(ValueError):pass
+class BudgetConflict(BudgetPause):pass
 
 def update(change):
-    for attempt in range(5):
+    for attempt in range(12):
         try:remote=github.api(PATH+'?ref=main')
         except ValueError as e:
             if '404' not in str(e):raise
@@ -15,6 +16,7 @@ def update(change):
         data=json.loads(base64.b64decode(remote['content'])) if remote else {'entries':[], 'safe_after':now+3600}
         data['entries']=[e for e in data['entries'] if e['time']>now-3600]
         result=change(data,now)
+        if result is False:return False
         body={'message':'Reserve shared Keepa hourly allowance','branch':'main','content':base64.b64encode(json.dumps(data).encode()).decode()}
         if remote:body['sha']=remote['sha']
         try:
@@ -25,7 +27,8 @@ def update(change):
             return result
         except Exception as error:
             if getattr(error,'code',None)!=409:raise
-    raise BudgetPause('Shared budget changed; retry later')
+            time.sleep(random.uniform(0.5,2.0))
+    raise BudgetConflict('Budget record busy after retries; no tokens requested')
 
 def reserve(cost):
     identity=uuid.uuid4().hex
