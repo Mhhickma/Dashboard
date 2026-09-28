@@ -1,7 +1,9 @@
 name: Early Access Research
 on:
-  schedule:
-    - cron: '55 * * * *'
+  workflow_run:
+    workflows: ['Update Keepa Deals']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: write
@@ -11,6 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   research:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -25,7 +28,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install requests
-      - name: Scan leftover allowance
+      - name: Scan fixed hourly allowance
         env:
           KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
         run: python early_research_worker.py
