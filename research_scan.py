@@ -45,8 +45,9 @@ class KeepaClient:
                 if not enabled:return None,'paused_by_user'
             reservation=None
             if os.environ.get('SHARED_RESEARCH_BUDGET')=='1':
-                from research_hourly import reserve,BudgetPause
+                from research_hourly import reserve,BudgetPause,BudgetConflict
                 try:reservation=reserve(cost)
+                except BudgetConflict:return None,'paused_budget_conflict'
                 except BudgetPause:return None,'paused_hourly_budget'
             self.reserved+=cost;wait=2**(attempt+1)
             try:
