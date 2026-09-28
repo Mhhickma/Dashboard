@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: dashboard-keepa-shared
@@ -19,7 +20,7 @@ env:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -112,3 +113,30 @@ jobs:
             git pull --rebase origin main
             git push
           fi
+
+      - name: Run Early Access after saving price scan
+        id: early_scan
+        env:
+          EARLY_RESEARCH_AUTO: '1'
+          KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+        run: python early_research_worker.py
+
+      - name: Save Early Access checkpoint
+        if: ${{ always() && steps.early_scan.outcome != 'skipped' && steps.early_scan.outcome != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: film-research-checkpoint
+          path: .research-scan/checkpoint.sqlite
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Save Early Access results
+        if: ${{ always() && steps.early_scan.outcome != 'skipped' && steps.early_scan.outcome != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: early-research-results
+          path: .research-scan/early-results/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 90
