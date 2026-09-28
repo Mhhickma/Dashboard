@@ -56,7 +56,7 @@ jobs:
           SCAN_LIMIT_BUFFER_PERCENT: 10
           # Larger Keepa batches keep the daily rotation within the 30-minute schedule.
           KEEPA_BATCH_SIZE: 100
-          KEEPA_REQUEST_DELAY_SECONDS: 30
+          KEEPA_REQUEST_DELAY_SECONDS: 2
           KEEPA_RATE_LIMIT_WAIT_SECONDS: 70
           KEEPA_MAX_RETRIES: 5
           KEEPA_LIGHTNING_DEAL_SCAN_LIMIT: 40
