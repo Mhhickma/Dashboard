@@ -729,16 +729,21 @@ def fetch_keepa_batch(url, params, batch_number, request_kind="product"):
     for attempt in range(1, MAX_RETRIES + 1):
         reservation=None
         if os.environ.get('SHARED_RESEARCH_BUDGET')=='1':
-            from research_hourly import reserve,settle,BudgetPause
+            from research_hourly import reserve,settle,BudgetPause,BudgetConflict
             count=len(str(params.get('asin','')).split(','))
             # Conservatively reserve full detailed lookup cost before spending.
             cost=count*(14 if params.get('offers') else 1)
             try:reservation=reserve(cost)
+            except BudgetConflict:raise
             except BudgetPause:
                 if count>1:
                     products=[]
-                    for asin in str(params['asin']).split(','):
-                        products.extend(fetch_keepa_batch(url,{**params,'asin':asin},batch_number,request_kind).get('products',[]))
+                    # Bisect until a batch fits the remaining reservation allowance.
+                    # Keep per-request accounting in recursive calls; do not charge twice.
+                    asins=str(params['asin']).split(',')
+                    midpoint=len(asins)//2
+                    for chunk in (asins[:midpoint],asins[midpoint:]):
+                        products.extend(fetch_keepa_batch(url,{**params,'asin':','.join(chunk)},batch_number,request_kind).get('products',[]))
                     return {'products':products}
                 raise
         response = requests.get(url, params=params, timeout=60)
