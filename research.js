@@ -118,7 +118,7 @@ $('ideal-filters').onclick=async()=>{
 };
 
 let earlyEnabled=true;
-async function syncEarly(){ $('early-research-status').textContent='Checking the hourly queue and importing saved results...';try{const data=await api('/api/early-research');earlyEnabled=data.enabled;$('early-toggle').textContent=earlyEnabled?'Pause automatic scans':'Enable automatic scans';$('early-research-status').textContent=`${earlyEnabled?'Enabled':'Paused'} - ${data.phase}. ${data.remaining==null?'':data.remaining.toLocaleString()+' upcoming ASINs remaining.'} Fixed Early Access budget: ${data.early_token_budget} tokens per rolling hour. Scheduled hourly at :55. Shared limit: 1,450 tokens per rolling hour.`;if(view==='early')load();}catch(e){$('early-research-status').textContent=e.message;}}
+async function syncEarly(){ $('early-research-status').textContent='Checking the hourly queue and importing saved results...';try{const data=await api('/api/early-research');earlyEnabled=data.enabled;$('early-toggle').textContent=earlyEnabled?'Pause automatic scans':'Enable automatic scans';$('early-research-status').textContent=`${earlyEnabled?'Enabled':'Paused'} - ${data.phase}. ${data.remaining==null?'':data.remaining.toLocaleString()+' upcoming ASINs remaining.'} Fixed Early Access budget: ${data.early_token_budget} tokens per rolling hour. Triggered after successful Price Dashboard scans; capped at 400 tokens per rolling hour. Shared limit: 1,450 tokens per rolling hour.`;if(view==='early')load();}catch(e){$('early-research-status').textContent=e.message;}}
 $('early-sync').onclick=syncEarly;$('early-toggle').onclick=async()=>{try{await api('/api/early-research',{enabled:!earlyEnabled});await syncEarly();}catch(e){fail(e);}};
 
 $('early-export-asins').onclick=async()=>{
