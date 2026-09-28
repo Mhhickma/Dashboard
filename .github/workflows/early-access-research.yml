@@ -1,19 +1,14 @@
 name: Early Access Research
 on:
-  workflow_run:
-    workflows: ['Update Keepa Deals']
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: write
   actions: read
 concurrency:
-  group: dashboard-film-research
+  group: dashboard-keepa-shared
   cancel-in-progress: false
 jobs:
   research:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
