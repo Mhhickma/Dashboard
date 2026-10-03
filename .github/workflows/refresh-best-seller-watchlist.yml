@@ -2,6 +2,8 @@ name: Refresh Best Seller Watchlist
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "17 9 * * *"
 
 permissions:
   contents: write
@@ -45,6 +47,7 @@ jobs:
 
           git add best_seller_categories.json fetch_best_seller_deals.py || true
           git add data/best_seller_watchlist.json || true
+          git add data/best_seller_category_state.json || true
 
           if git diff --cached --quiet; then
             echo "No best seller watchlist changes to commit."

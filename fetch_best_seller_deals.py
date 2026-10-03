@@ -12,6 +12,7 @@ import os
 import re
 import time
 import csv
+import hashlib
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -29,6 +30,7 @@ CONFIG_FILE = "best_seller_categories.json"
 WATCHLIST_FILE = "data/best_seller_watchlist.json"
 STATE_FILE = "data/best_seller_state.json"
 DEALS_FILE = "data/best_seller_deals.json"
+CATEGORY_STATE_FILE = "data/best_seller_category_state.json"
 CREATOR_CONNECTIONS_PATH = Path(os.getenv("CREATOR_CONNECTIONS_PATH", "data/creator-connections"))
 ASIN_RE = re.compile(r"\bB[0-9A-Z]{9}\b")
 
@@ -344,12 +346,32 @@ def build_watchlist(config):
     top_per_category = int(config.get("topPerCategory", 200))
     domain = "US" if int(config.get("domainId", 1)) == 1 else "US"
 
-    items_by_asin = {}
     categories = [c for c in config.get("categories", []) if c.get("enabled", True)]
     category_defaults = config.get("categoryDefaults", {})
+    catalog_signature = hashlib.sha256(
+        json.dumps(
+            [(c.get("name"), c.get("searchTerm")) for c in categories],
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    category_state = load_json(CATEGORY_STATE_FILE, {})
+    same_catalog = category_state.get("catalogSignature") == catalog_signature
+    start_index = int(category_state.get("nextCategoryIndex", 0)) if same_catalog else 0
+    batch_size = max(1, int(config.get("categoriesPerRefresh", len(categories))))
+    selected_indexes = [
+        (start_index + offset) % len(categories)
+        for offset in range(min(batch_size, len(categories)))
+    ]
+    selected_categories = [categories[index] for index in selected_indexes]
+    existing_watchlist = load_json(WATCHLIST_FILE, {}) if same_catalog else {}
+    items_by_asin = {
+        item["asin"]: item
+        for item in existing_watchlist.get("items", [])
+        if item.get("asin") and item.get("categories")
+    }
     config_changed = False
 
-    for category in categories:
+    for category in selected_categories:
         category_name = category.get("name", "Unnamed category")
         try:
             category_id = str(resolve_category_id(api, category, domain, category_defaults))
@@ -367,6 +389,19 @@ def build_watchlist(config):
             print(f"  Failed to fetch {category_name}: {exc}")
             top_asins = []
             continue
+
+        for asin in list(items_by_asin):
+            item = items_by_asin[asin]
+            item["categories"] = [
+                value for value in item.get("categories", [])
+                if value.get("slug") != category_slug
+            ]
+            if not item["categories"]:
+                del items_by_asin[asin]
+            else:
+                item["bestRank"] = min(
+                    value.get("rank", 999999) for value in item["categories"]
+                )
 
         for rank, asin in enumerate(top_asins, start=1):
             if asin in BLACKLISTED_ASINS:
@@ -389,11 +424,24 @@ def build_watchlist(config):
     if config_changed:
         save_json(CONFIG_FILE, config)
 
+    next_index = (selected_indexes[-1] + 1) % len(categories)
+    save_json(CATEGORY_STATE_FILE, {
+        "catalogSignature": catalog_signature,
+        "nextCategoryIndex": next_index,
+        "categoriesPerRefresh": batch_size,
+        "totalCategories": len(categories),
+        "lastRefreshedCategories": [c.get("name") for c in selected_categories],
+        "updatedAt": iso_now(),
+    })
+
     items = sorted(items_by_asin.values(), key=lambda x: (x.get("bestRank", 999999), x.get("asin", "")))
     watchlist = {
         "generatedAt": iso_now(),
         "source": "Keepa best_sellers_query",
         "topPerCategory": top_per_category,
+        "totalCategories": len(categories),
+        "categoriesRefreshedThisRun": len(selected_categories),
+        "nextCategoryIndex": next_index,
         "count": len(items),
         "items": items,
     }
