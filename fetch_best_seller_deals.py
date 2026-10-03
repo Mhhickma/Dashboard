@@ -16,6 +16,7 @@ import hashlib
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from difflib import SequenceMatcher
 
 import keepa
 from amazon_creatorsapi import AmazonCreatorsApi, Country
@@ -303,6 +304,7 @@ def resolve_category_id(api, category, domain, defaults):
     accepted_names = {normalize_category_name(name) for name in accepted_names}
     results = api.search_for_categories(search_term, domain=domain)
     candidates = []
+    available = []
     for result_id, result in (results or {}).items():
         if not isinstance(result, dict):
             continue
@@ -310,13 +312,16 @@ def resolve_category_id(api, category, domain, defaults):
             normalize_category_name(result.get("name")),
             normalize_category_name(result.get("contextFreeName")),
         }
-        if accepted_names.isdisjoint(names):
-            continue
         try:
             candidate_id = int(result.get("catId") or result_id)
         except (TypeError, ValueError):
             continue
-        candidates.append((candidate_id, result))
+        available.append((candidate_id, result))
+        if not accepted_names.isdisjoint(names):
+            candidates.append((candidate_id, result))
+
+    if not candidates:
+        candidates = available
 
     required_ancestor = category.get(
         "requiredAncestorId", defaults.get("requiredAncestorId")
@@ -332,11 +337,29 @@ def resolve_category_id(api, category, domain, defaults):
         candidates = matching
 
     if not candidates:
-        raise RuntimeError(f"No matching category found for {search_term!r}")
+        names = [
+            f"{value.get('name')} ({category_id})"
+            for category_id, value in available[:10]
+        ]
+        raise RuntimeError(
+            f"No Tools & Home Improvement category found for {search_term!r}; "
+            f"Keepa returned: {names}"
+        )
 
-    candidates.sort(
-        key=lambda entry: int(entry[1].get("productCount") or 0), reverse=True
-    )
+    def match_score(entry):
+        result = entry[1]
+        result_names = [
+            normalize_category_name(result.get("name")),
+            normalize_category_name(result.get("contextFreeName")),
+        ]
+        similarity = max(
+            SequenceMatcher(None, accepted, result_name).ratio()
+            for accepted in accepted_names
+            for result_name in result_names
+        )
+        return similarity, int(result.get("productCount") or 0)
+
+    candidates.sort(key=match_score, reverse=True)
     return candidates[0][0]
 
 
