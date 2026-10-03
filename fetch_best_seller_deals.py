@@ -2,7 +2,7 @@ from cc_batches import active_csv_files
 """
 Best Seller Deals Fetcher
 -------------------------
-Weekly: builds a watchlist from the top 200 Keepa best sellers in each configured category.
+Weekly: builds a watchlist from the configured number of Keepa best sellers in each category.
 Hourly: checks the next saved ASINs with Amazon Creators API for live price, and uses
 Keepa-style price-drop rules to decide what appears on the Best Seller Deals page.
 """
@@ -266,6 +266,78 @@ def refresh_needed(watchlist, refresh_hours):
     return utc_now() - generated_at >= timedelta(hours=refresh_hours)
 
 
+def normalize_category_name(value):
+    return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
+
+
+def category_tree_ids(tree):
+    ids = set()
+    for key, value in (tree or {}).items():
+        try:
+            ids.add(int(key))
+        except (TypeError, ValueError):
+            pass
+        if not isinstance(value, dict):
+            continue
+        for field in ("catId", "parent"):
+            try:
+                ids.add(int(value.get(field)))
+            except (TypeError, ValueError):
+                pass
+        for parent_id in value.get("parents", []) or []:
+            try:
+                ids.add(int(parent_id))
+            except (TypeError, ValueError):
+                pass
+    return ids
+
+
+def resolve_category_id(api, category, domain, defaults):
+    if category.get("categoryId") is not None:
+        return int(category["categoryId"])
+
+    search_term = category.get("searchTerm") or category["name"]
+    accepted_names = category.get("matchNames") or [category["name"]]
+    accepted_names = {normalize_category_name(name) for name in accepted_names}
+    results = api.search_for_categories(search_term, domain=domain)
+    candidates = []
+    for result_id, result in (results or {}).items():
+        if not isinstance(result, dict):
+            continue
+        names = {
+            normalize_category_name(result.get("name")),
+            normalize_category_name(result.get("contextFreeName")),
+        }
+        if accepted_names.isdisjoint(names):
+            continue
+        try:
+            candidate_id = int(result.get("catId") or result_id)
+        except (TypeError, ValueError):
+            continue
+        candidates.append((candidate_id, result))
+
+    required_ancestor = category.get(
+        "requiredAncestorId", defaults.get("requiredAncestorId")
+    )
+    if required_ancestor is not None:
+        matching = []
+        for candidate_id, result in candidates:
+            tree = api.category_lookup(
+                candidate_id, domain=domain, include_parents=True
+            )
+            if int(required_ancestor) in category_tree_ids(tree):
+                matching.append((candidate_id, result))
+        candidates = matching
+
+    if not candidates:
+        raise RuntimeError(f"No matching category found for {search_term!r}")
+
+    candidates.sort(
+        key=lambda entry: int(entry[1].get("productCount") or 0), reverse=True
+    )
+    return candidates[0][0]
+
+
 def build_watchlist(config):
     print("Building weekly best-seller ASIN watchlist from Keepa...")
     api = keepa.Keepa(KEEPA_API_KEY)
@@ -274,18 +346,27 @@ def build_watchlist(config):
 
     items_by_asin = {}
     categories = [c for c in config.get("categories", []) if c.get("enabled", True)]
+    category_defaults = config.get("categoryDefaults", {})
+    config_changed = False
 
     for category in categories:
-        category_id = str(category["categoryId"])
-        category_name = category.get("name", category_id)
-        category_slug = category.get("slug", f"category-{category_id}")
+        category_name = category.get("name", "Unnamed category")
         try:
+            category_id = str(resolve_category_id(api, category, domain, category_defaults))
+            if category.get("categoryId") != int(category_id):
+                category["categoryId"] = int(category_id)
+                config_changed = True
+            if not category.get("slug"):
+                category["slug"] = normalize_category_name(category_name).replace(" ", "-")
+                config_changed = True
+            category_slug = category["slug"]
             asins = api.best_sellers_query(category_id, domain=domain)
             top_asins = asins[:top_per_category]
-            print(f"  {category_name}: {len(top_asins)} ASINs")
+            print(f"  {category_name} ({category_id}): {len(top_asins)} ASINs")
         except Exception as exc:
-            print(f"  Failed to fetch {category_name} ({category_id}): {exc}")
+            print(f"  Failed to fetch {category_name}: {exc}")
             top_asins = []
+            continue
 
         for rank, asin in enumerate(top_asins, start=1):
             if asin in BLACKLISTED_ASINS:
@@ -304,6 +385,9 @@ def build_watchlist(config):
             })
             items_by_asin[asin]["bestRank"] = min(items_by_asin[asin]["bestRank"], rank)
         time.sleep(1)
+
+    if config_changed:
+        save_json(CONFIG_FILE, config)
 
     items = sorted(items_by_asin.values(), key=lambda x: (x.get("bestRank", 999999), x.get("asin", "")))
     watchlist = {
