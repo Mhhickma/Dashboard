@@ -729,7 +729,7 @@ def main():
 
     watchlist = load_json(WATCHLIST_FILE, {})
     has_saved_watchlist = bool(watchlist.get("items"))
-    should_refresh = refresh_watchlist and refresh_needed(watchlist, refresh_hours)
+    should_refresh = refresh_watchlist
 
     if not has_saved_watchlist or should_refresh:
         watchlist = build_watchlist(config)
