@@ -15,6 +15,11 @@ def latest(suffix):
         match = STAMP.match(path.name)
         if match:
             matches.append(datetime.strptime(match.group(1), "%Y%m%dT%H%M%S%fZ").replace(tzinfo=timezone.utc))
+    if OUTPUT.exists():
+        previous = json.loads(OUTPUT.read_text(encoding="utf-8"))
+        key = "cc_updated_at" if suffix == "-replacement-complete.csv" else "accepted_updated_at"
+        if previous.get(key):
+            matches.append(datetime.fromisoformat(previous[key].replace("Z", "+00:00")))
     return max(matches).isoformat().replace("+00:00", "Z") if matches else None
 
 
