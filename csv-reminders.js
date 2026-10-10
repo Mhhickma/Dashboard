@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const interval = 14 * 86400000;
+  const interval = 4 * 86400000;
   const endpoint = `data/csv-reminders.json?ts=${Date.now()}`;
   const cacheKey = 'dashboard-csv-reminder-dates-v1';
 
@@ -20,13 +20,26 @@
   try { dates = JSON.parse(localStorage.getItem(cacheKey) || '{}'); } catch {}
   const show = () => { render('dashboard-cc-countdown', 'CC list', dates.cc); render('dashboard-accepted-countdown', 'Accepted CC list', dates.accepted); };
   show();
-  fetch(endpoint, {cache:'no-store'}).then(response => {
-    if (!response.ok) throw Error('Reminder dates unavailable');
-    return response.json();
-  }).then(status => {
-    dates = {cc:Date.parse(status.cc_updated_at), accepted:Date.parse(status.accepted_updated_at)};
-    localStorage.setItem(cacheKey, JSON.stringify(dates));
-    show();
-  }).catch(() => show());
+  async function refresh() {
+    try {
+      const response = await fetch('https://api.github.com/repos/Mhhickma/Dashboard/git/trees/main?recursive=1', {cache:'no-store', signal:AbortSignal.timeout(20000)});
+      if (!response.ok) throw Error('Upload dates unavailable');
+      const tree = await response.json();
+      if (tree.truncated) throw Error('Incomplete upload listing');
+      const latest = suffix => {
+        const names = tree.tree.map(item => item.path).filter(path => path.startsWith('data/creator-connections/') && path.endsWith(suffix)).sort();
+        const stamp = names.at(-1)?.split('/').at(-1).match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(\d{3})Z-/);
+        return stamp ? Date.parse(`${stamp[1]}-${stamp[2]}-${stamp[3]}T${stamp[4]}:${stamp[5]}:${stamp[6]}.${stamp[7]}Z`) : null;
+      };
+      dates = {cc:latest('-replacement-complete.csv'), accepted:latest('-accepted-history.csv')};
+      try { localStorage.setItem(cacheKey, JSON.stringify(dates)); } catch {}
+      show();
+    } catch {
+      // Keep the last verified dates when GitHub is temporarily unavailable.
+      show();
+    }
+  }
+  refresh();
+  window.addEventListener('focus', refresh);
   setInterval(show, 60000);
 })();
