@@ -32,6 +32,8 @@
         return stamp ? Date.parse(`${stamp[1]}-${stamp[2]}-${stamp[3]}T${stamp[4]}:${stamp[5]}:${stamp[6]}.${stamp[7]}Z`) : null;
       };
       dates = {cc:latest('-replacement-complete.csv'), accepted:latest('-accepted-history.csv')};
+      const savedResponse = await fetch('https://raw.githubusercontent.com/Mhhickma/Dashboard/main/data/csv-reminders.json?ts='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(20000)});
+      if (savedResponse.ok) { const saved=await savedResponse.json(); for(const [key,field] of [['cc','cc_updated_at'],['accepted','accepted_updated_at']]) dates[key]=Math.max(dates[key]||0,Date.parse(saved[field])||0); }
       try { localStorage.setItem(cacheKey, JSON.stringify(dates)); } catch {}
       show();
     } catch {
