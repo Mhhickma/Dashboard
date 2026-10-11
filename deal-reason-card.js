@@ -70,15 +70,15 @@
   function facebookPostText(deal) {
     var title = String(deal.title || "");
     var rules = [
-      [/socket.*adapter|drill.*extension|bit.*extension/i, ["That screw just out of reach? These drill extensions and socket adapters might come in handy.", "For the screws your drill can't quite reach. Anyone else keep extensions in the tool bag?"]],
-      [/\bclamps?\b/i, ["Enough clamps until the next glue-up. Anyone else know that feeling? Clamps worth a look today.", "Clamps: the shop purchase that somehow never feels finished. Found these today."]],
-      [/\bvise\b/i, ["Ever wish you had a third hand at the bench? This vise can help hold the work while you get on with it.", "Chasing a small part around the bench gets old fast. A bench vise is worth a look."]],
-      [/tape measure|measuring tape/i, ["How many tape measures are hiding in your shop? A few extras might save the next search.", "The tape measure always disappears right when you need it. Here's a chance to stash a spare."]],
-      [/tool.*liner|drawer.*liner/i, ["Do your tools slide around every time you open a drawer? This liner might earn its keep.", "A little tool drawer cleanup counts as shop time, right? Found some drawer liner today."]],
-      [/backing pad/i, ["Need a fresh backing pad before the next sanding job? Found this one today.", "Sanding supplies aren't the exciting shop purchase, but a spare backing pad can come in handy."]],
-      [/router bit/i, ["What's the next project for your router? Found a bit worth checking for the tool drawer.", "One more router bit, one more project idea. Anyone else have that problem?"]],
+      [/socket.*adapter|drill.*extension|bit.*extension/i, ["For the screw your drill can't reach. Extensions and socket adapters below.", "Drill extensions and socket adapters. Handy when the screw is just out of reach."]],
+      [/\bclamps?\b/i, ["Clamps below. I'm sure you already have enough...until the next glue-up.", "A few more clamps for the shop. You have room, right?"]],
+      [/\bvise\b/i, ["Anyone need a bench vise? Beats chasing the part around while you work on it.", "A bench vise for the small jobs. Sometimes a third hand would be nice."]],
+      [/tape measure|measuring tape/i, ["More tape measures. Because the ones you own are probably hiding somewhere.", "Anyone need a spare tape measure? Or a spare for the spare?"]],
+      [/tool.*liner|drawer.*liner/i, ["Tool drawer liner. For those of us whose tools move around more than they should.", "I'm sure your tool drawers are perfectly organized...so you can skip this liner."]],
+      [/backing pad/i, ["Backing pad below if yours is ready to retire. Not exciting, but sometimes you need one.", "Anyone need a replacement backing pad? One of those things you forget until sanding day."]],
+      [/router bit/i, ["A router bit for the next project. Or the next project you haven't thought of yet.", "One more router bit for the drawer. Anyone actually use every bit they own?"]],
       [/safety glasses|computer glasses|blue light.*glasses/i, ["Anyone else keep spare glasses around so there's a pair when you need them? Found these today.", "Glasses only help when you can find them. A spare pair might be worth a look."]],
-      [/air filtration|air filter|dust collect/i, ["How long does your shop stay clean? This might help with the dust side of the battle.", "Making sawdust is easy. Keeping up with it is the project. Found this for the shop today."]],
+      [/air filtration|air filter|dust collect/i, ["Something for the shop dust problem. Making sawdust is the easy part.", "For those of you making more sawdust than progress today. Dust cleanup below."]],
       [/sander|sanding/i, ["The project is built. Now comes all that sanding. Found something worth a look before the next round.", "Anyone actually enjoy sanding? Found this for that part of the project we all have to get through."]],
       [/saw blade/i, ["When did you last check your saw blade? A fresh one might belong on the next shop shopping list.", "Blades are easy to forget until a cut reminds you. Found this one today."]],
       [/\bsaw\b/i, ["What's on your next project list? This saw might be worth a look for the shop.", "One new saw, three new project ideas. Anyone else work that way? Found this today."]],
@@ -96,8 +96,7 @@
       if (rules[i][0].test(title)) { choices = rules[i][1]; break; }
     }
     if (!choices) {
-      var subject = cleanTitle(title).split(/[,;|]/)[0].split(/\s+/).slice(0, 5).join(" ");
-      choices = ["Anyone shopping for " + subject + "? Found this worth a look today."];
+      choices = ["Something for the shop wish list. Take a look if you're planning the next project."];
     }
     var post = choices[stableNumber(deal.asin + title) % choices.length];
     if (post.length > FACEBOOK_POST_MAX_LENGTH) {
