@@ -65,24 +65,45 @@
     return "Lower price than normal right now.";
   }
 
+  // Match the daily engagement voices: practical curiosity and light shop humor.
+  // Fixed local wording keeps automated posting free of AI service calls.
   function facebookPostText(deal) {
-    var templates = [
-      ["", " on sale today.", ""],
-      ["", ". ", ""],
-      ["", ", lower price than usual right now. Linked below.", ""],
-      ["", ", lower price than normal right now.", ""],
-      ["", ". Worth checking today.", ""],
-      ["", ". Linked below.", ""],
-      ["", " on sale right now.", ""]
+    var title = String(deal.title || "");
+    var rules = [
+      [/socket.*adapter|drill.*extension|bit.*extension/i, ["That screw just out of reach? These drill extensions and socket adapters might come in handy.", "For the screws your drill can't quite reach. Anyone else keep extensions in the tool bag?"]],
+      [/\bclamps?\b/i, ["Enough clamps until the next glue-up. Anyone else know that feeling? Clamps worth a look today.", "Clamps: the shop purchase that somehow never feels finished. Found these today."]],
+      [/\bvise\b/i, ["Ever wish you had a third hand at the bench? This vise can help hold the work while you get on with it.", "Chasing a small part around the bench gets old fast. A bench vise is worth a look."]],
+      [/tape measure|measuring tape/i, ["How many tape measures are hiding in your shop? A few extras might save the next search.", "The tape measure always disappears right when you need it. Here's a chance to stash a spare."]],
+      [/tool.*liner|drawer.*liner/i, ["Do your tools slide around every time you open a drawer? This liner might earn its keep.", "A little tool drawer cleanup counts as shop time, right? Found some drawer liner today."]],
+      [/backing pad/i, ["Need a fresh backing pad before the next sanding job? Found this one today.", "Sanding supplies aren't the exciting shop purchase, but a spare backing pad can come in handy."]],
+      [/router bit/i, ["What's the next project for your router? Found a bit worth checking for the tool drawer.", "One more router bit, one more project idea. Anyone else have that problem?"]],
+      [/safety glasses|computer glasses|blue light.*glasses/i, ["Anyone else keep spare glasses around so there's a pair when you need them? Found these today.", "Glasses only help when you can find them. A spare pair might be worth a look."]],
+      [/air filtration|air filter|dust collect/i, ["How long does your shop stay clean? This might help with the dust side of the battle.", "Making sawdust is easy. Keeping up with it is the project. Found this for the shop today."]],
+      [/sander|sanding/i, ["The project is built. Now comes all that sanding. Found something worth a look before the next round.", "Anyone actually enjoy sanding? Found this for that part of the project we all have to get through."]],
+      [/saw blade/i, ["When did you last check your saw blade? A fresh one might belong on the next shop shopping list.", "Blades are easy to forget until a cut reminds you. Found this one today."]],
+      [/\bsaw\b/i, ["What's on your next project list? This saw might be worth a look for the shop.", "One new saw, three new project ideas. Anyone else work that way? Found this today."]],
+      [/\bdrill\b|impact driver/i, ["What's the drill that gets used most in your shop? Found this one worth checking today.", "From shop jigs to the weekend fix-it list, a drill stays busy. Found this today."]],
+      [/organizer|storage|tool box|toolbox/i, ["Shop cleanup: put things away, then remember where you put them. Found this to help with the first part.", "Anyone else spend more time finding tools than using them? Here's a storage idea worth a look."]],
+      [/light|lamp/i, ["Ever move a project just to see your pencil line? Found some lighting worth a look.", "Better light belongs on the shop wish list too. Found this today."]],
+      [/glue|adhesive/i, ["Got a glue-up on the weekend list? Might be a good time to check the glue shelf.", "Nothing like setting up a glue-up and finding an empty bottle. Found this today."]],
+      [/square|level|caliper|ruler/i, ["Measure twice, cut once... then check it again? Found this for the measuring drawer.", "What measurement gives you the most trouble? Found a measuring tool worth a look."]],
+      [/workbench|work bench/i, ["What's taking up your workbench right now? Found this for anyone planning a bench upgrade.", "A place to work beats balancing the project on whatever is handy. Found this bench today."]],
+      [/battery|charger/i, ["Ever start a project and find every battery dead? Found this for the charging corner.", "Charged batteries make the weekend project easier to start. Found this today."]],
+      [/screw|bolt|nut|fastener/i, ["The right fastener is always in the other drawer. Found these for the next shop project.", "Got a build coming up? Might be time to check the fastener stash."]]
     ];
-    var template = templates[stableNumber(deal.asin + cleanTitle(deal.title)) % templates.length];
-    var suffix = template[1] + (template[2] ? dealFact(deal) + template[2] : "");
-    var titleBudget = FACEBOOK_POST_MAX_LENGTH - template[0].length - suffix.length;
-    var post = template[0] + shortenText(deal.title, Math.max(24, titleBudget)) + suffix;
-    if (post.length <= FACEBOOK_POST_MAX_LENGTH) return post;
-    post = shortenText(deal.title, 70) + " on sale today.";
-    if (post.length <= FACEBOOK_POST_MAX_LENGTH) return post;
-    return post.slice(0, FACEBOOK_POST_MAX_LENGTH).replace(/[,:;\-\s]+$/, "");
+    var choices = null;
+    for (var i = 0; i < rules.length; i += 1) {
+      if (rules[i][0].test(title)) { choices = rules[i][1]; break; }
+    }
+    if (!choices) {
+      var subject = cleanTitle(title).split(/[,;|]/)[0].split(/\s+/).slice(0, 5).join(" ");
+      choices = ["Anyone shopping for " + subject + "? Found this worth a look today."];
+    }
+    var post = choices[stableNumber(deal.asin + title) % choices.length];
+    if (post.length > FACEBOOK_POST_MAX_LENGTH) {
+      post = "Found something for the shop wish list. Worth a look if it's on yours too.";
+    }
+    return post;
   }
 
   async function copyFacebookPost(text, button) {
@@ -199,3 +220,4 @@
     return card;
   };
 }());
+
