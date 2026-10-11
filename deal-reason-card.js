@@ -70,6 +70,11 @@
   function facebookPostText(deal) {
     var title = String(deal.title || "");
     var rules = [
+      [/paddle switch|knee paddle|power.*switch/i, ["Anyone need a paddle switch for a shop machine? Nice to have the stop button where your knee can reach it.", "A paddle switch for the shop. Check your machine's ratings before swapping one in."]],
+      [/freud.*dado/i, ["Freud dado set below. Anyone cutting dados, or are you doing them with a router?", "Anyone need a dado set? This Freud set is worth checking before the next cabinet project."]],
+      [/bosch.*12v.*(?:jig\s*saw|jigsaw)/i, ["Bosch cordless jigsaw below. Anyone using their 12V tools in the shop?", "Anyone prefer a barrel-grip jigsaw? This Bosch is a bare tool, so you'll need the battery."]],
+      [/dado set|dado blade/i, ["Anyone need a dado set before the next cabinet project? Linked below."]],
+      [/jig\s*saw|jigsaw/i, ["Anyone prefer a jigsaw for curved cuts? One to check out below."]],
       [/socket.*adapter|drill.*extension|bit.*extension/i, ["For the screw your drill can't reach. Extensions and socket adapters below.", "Drill extensions and socket adapters. Handy when the screw is just out of reach."]],
       [/\bclamps?\b/i, ["Clamps below. I'm sure you already have enough...until the next glue-up.", "A few more clamps for the shop. You have room, right?"]],
       [/\bvise\b/i, ["Anyone need a bench vise? Beats chasing the part around while you work on it.", "A bench vise for the small jobs. Sometimes a third hand would be nice."]],
