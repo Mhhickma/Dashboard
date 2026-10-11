@@ -67,7 +67,7 @@
 
   // Match the daily engagement voices: practical curiosity and light shop humor.
   // Fixed local wording keeps automated posting free of AI service calls.
-  function facebookPostText(deal) {
+  function shopCaption(deal) {
     var title = String(deal.title || "");
     var rules = [
       [/paddle switch|knee paddle|power.*switch/i, ["Anyone need a paddle switch for a shop machine? Nice to have the stop button where your knee can reach it.", "A paddle switch for the shop. Check your machine's ratings before swapping one in."]],
@@ -108,6 +108,44 @@
       post = "Found something for the shop wish list. Worth a look if it's on yours too.";
     }
     return post;
+  }
+
+  function itemIdentity(title) {
+    var types = [
+      [/paddle switch|knee paddle/i, "paddle switch"], [/dado set|dado blade/i, "dado set"],
+      [/jig\s*saw|jigsaw/i, "jigsaw"], [/socket.*adapter|drill.*extension|bit.*extension/i, "drill extensions and socket adapters"],
+      [/backing pad/i, "backing pad"], [/router bit/i, "router bit"],
+      [/deck screws/i, "deck screws"], [/wood screws/i, "wood screws"], [/screwdriver/i, "screwdriver set"],
+      [/t[- ]?track.*bolt/i, "T-track bolts"], [/\bscrews?\b/i, "screws"], [/\bbolts?\b/i, "bolts"], [/\bnuts?\b/i, "nuts"],
+      [/backing pad/i, "backing pad"], [/router bit/i, "router bit"], [/tape measure|measuring tape/i, "tape measures"],
+      [/parallel clamps/i, "parallel clamps"], [/bar clamps/i, "bar clamps"], [/corner clamps/i, "corner clamps"], [/clamps?/i, "clamps"],
+      [/vise/i, "bench vise"], [/drawer.*liner|tool.*liner/i, "tool drawer liner"],
+      [/blue light|computer glasses/i, "blue light glasses"], [/safety glasses/i, "safety glasses"],
+      [/dust collect/i, "dust collector"], [/air filtration/i, "air filtration system"], [/saw blade/i, "saw blade"],
+      [/miter saw/i, "miter saw"], [/table saw/i, "table saw"], [/scroll saw/i, "scroll saw"], [/band\s*saw/i, "bandsaw"],
+      [/sander/i, "sander"], [/sandpaper|sand paper/i, "sandpaper"], [/impact driver/i, "impact driver"], [/drill/i, "drill"],
+      [/workbench|work bench/i, "workbench"], [/flashlight/i, "flashlight"], [/charger/i, "charger"], [/battery/i, "battery"],
+      [/glue/i, "glue"], [/organizer/i, "organizer"], [/tool ?box/i, "toolbox"], [/shop stool/i, "shop stool"]
+    ];
+    for (var i = 0; i < types.length; i += 1) {
+      if (types[i][0].test(title)) return types[i][1];
+    }
+    // Unrecognized items still get their own short identity, never anonymous filler.
+    return shortenText(cleanTitle(title).split(/[,;|]/)[0], 55);
+  }
+
+  function facebookPostText(deal) {
+    var item = itemIdentity(String(deal.title || ""));
+    var post = shopCaption(deal);
+    if (/clamps$/.test(item)) post = post.replace(/\bclamps\b/gi, item);
+    if (post.length > FACEBOOK_POST_MAX_LENGTH) post = item + ". Worth a look for the next project.";
+    if (post.toLowerCase().indexOf(item.toLowerCase()) !== -1) return post;
+    var identity = item.charAt(0).toUpperCase() + item.slice(1);
+    if (post.indexOf("Something for the shop wish list.") === 0) {
+      return identity + ". Anyone need one for the next project?";
+    }
+    var combined = identity + ". " + post;
+    return combined.length <= FACEBOOK_POST_MAX_LENGTH ? combined : identity + ". Worth a look if it's on your shop list.";
   }
 
   async function copyFacebookPost(text, button) {
