@@ -100,9 +100,10 @@
         if (!card) throw new Error('Selected product card is unavailable.');
         var title = card.querySelector('h2,h3');
         var preview = card.querySelector('.facebook-post-preview');
+        var input = card.querySelector('.facebook-caption-input');
         var amazon = card.querySelector('a[href*="amazon.com/dp/"]');
         if (!title || !preview || !amazon) throw new Error('Product caption or link is missing.');
-        sync(await request('/queue', { asin: asin, title: title.textContent.trim(), text: preview.textContent.trim(), amazon: amazon.href, tier: 'selected' }));
+        sync(await request('/queue', { asin: asin, title: title.textContent.trim(), text: (input && input.value.trim()) || preview.textContent.trim(), amazon: amazon.href, tier: 'selected' }));
       }
     } catch (error) {
       if (error.code === 'already_posted') alreadyPosted.add(asin);
