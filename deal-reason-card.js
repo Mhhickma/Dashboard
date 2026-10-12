@@ -70,6 +70,9 @@
   function shopCaption(deal) {
     var title = String(deal.title || "");
     var rules = [
+      [/wood glue|pva adhesive/i, ["Wood glue for the next project. One of those things you don't want to run out of halfway through a glue-up.", "Anyone running low on wood glue? A bottle for the next glue-up is linked below."]],
+      [/welding table/i, ["A folding welding table for those of you doing metalwork too. Folds away when you need the space back.", "Anyone adding metalwork to the shop? This welding table folds up between projects."]],
+      [/table\/track clamp|track clamp/i, ["A one-hand track clamp for holding work to the table. Handy when your other hand is already busy.", "Anyone need a track clamp for the bench? This one works one-handed."]],
       [/hold[ -]?down clamps?/i, ["Mini hold-down clamps for your T-track jigs. Handy for keeping the workpiece in place.", "Anyone building a new sled or jig? These hold-down clamps fit T-track."]],
       [/paddle switch|knee paddle|power.*switch/i, ["Anyone need a paddle switch for a shop machine? Nice to have the stop button where your knee can reach it.", "A paddle switch for the shop. Check your machine's ratings before swapping one in."]],
       [/freud.*dado/i, ["Freud dado set below. Anyone cutting dados, or are you doing them with a router?", "Anyone need a dado set? This Freud set is worth checking before the next cabinet project."]],
@@ -113,6 +116,9 @@
 
   function itemIdentity(title) {
     var types = [
+      [/wood glue|pva adhesive/i, "wood glue"],
+      [/welding table/i, "welding table"],
+      [/table\/track clamp|track clamp/i, "track clamp"],
       [/hold[ -]?down clamps?/i, "hold-down clamps"],
       [/paddle switch|knee paddle/i, "paddle switch"], [/dado set|dado blade/i, "dado set"],
       [/jig\s*saw|jigsaw/i, "jigsaw"], [/socket.*adapter|drill.*extension|bit.*extension/i, "drill extensions and socket adapters"],
