@@ -5,6 +5,8 @@
   var busy = new Set();
   var appliedHidden = new Set();
   var pendingRefresh = false;
+  var lastError = '';
+  var alreadyPosted = new Set();
   var panel = document.createElement('section');
   panel.className = 'engagement-posts';
   panel.style.display = 'block';
@@ -23,7 +25,7 @@
     var options = body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {};
     var response = await fetch(base + path, options);
     var result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Queue request failed.');
+    if (!response.ok) { var error = new Error(result.error || 'Queue request failed.'); error.code = result.code; throw error; }
     return result;
   }
   function cardFor(asin) {
@@ -36,6 +38,14 @@
     return new Date(value * 1000).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' Eastern';
   }
   function paint() {
+    alreadyPosted.forEach(function (asin) {
+      var card = cardFor(asin);
+      if (!card) return;
+      var checkbox = card.querySelector('.select-posting-control input');
+      var label = card.querySelector('.select-posting-control span');
+      if (checkbox) { checkbox.checked = false; checkbox.disabled = true; }
+      if (label) label.textContent = 'Already posted';
+    });
     items.forEach(function (item) {
       var card = cardFor(item.asin);
       if (!card) return;
@@ -52,7 +62,7 @@
   }
   function sync(result) {
     items = result.items || [];
-    status.textContent = items.some(function (i) { return i.state === 'failed'; }) ? 'Queue paused: a posting attempt needs review.' : 'Queue ready. Keep this PC awake and signed into Windows.';
+    status.textContent = lastError || (items.some(function (i) { return i.state === 'failed'; }) ? 'Queue paused: a posting attempt needs review.' : 'Queue ready. Keep this PC awake and signed into Windows.');
     list.replaceChildren();
     items.filter(function (i) { return ['queued', 'running', 'failed'].includes(i.state); }).forEach(function (item) {
       var row = document.createElement('li');
@@ -83,6 +93,7 @@
     busy.add(asin);
     paint();
     try {
+      lastError = '';
       if (cancelling) {
         sync(await request('/cancel', { asin: asin }));
       } else {
@@ -94,7 +105,10 @@
         sync(await request('/queue', { asin: asin, title: title.textContent.trim(), text: preview.textContent.trim(), amazon: amazon.href, tier: 'selected' }));
       }
     } catch (error) {
-      status.textContent = 'Not scheduled: ' + error.message + ' If the queue is offline, run Start Posting Queue.cmd. Allow local-network access if Chrome asks.';
+      if (error.code === 'already_posted') alreadyPosted.add(asin);
+      lastError = 'Not scheduled: ' + error.message;
+      if (error instanceof TypeError) lastError += ' Check that the posting queue is running and Chrome allows local-network access.';
+      status.textContent = lastError;
       var checkbox = card && card.querySelector('.select-posting-control input');
       if (checkbox) checkbox.checked = !!cancelling;
     } finally { busy.delete(asin); paint(); }
