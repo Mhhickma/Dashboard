@@ -173,8 +173,6 @@
       priceLines = ["Best price in " + days + " days.", "Lowest price in " + days + " days.", days + "-day low."];
       var rotation = stableNumber(deal.asin) % 2;
       if (rotation) priceLines = [priceLines[1], priceLines[0], priceLines[2]];
-    } else if (number(deal.drop_30_percent) >= 5 && !/better price than normal/i.test(post)) {
-      priceLines = [number(deal.drop_30_percent).toFixed(1).replace(/\.0$/, "") + "% below its 30-day average."];
     }
     if (priceLines.length) {
       var base = post.replace(/ at a better price than normal right now\.$/, ".");
