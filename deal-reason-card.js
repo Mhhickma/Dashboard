@@ -133,7 +133,28 @@
     if (/welding table/i.test(title) && /folding/i.test(title)) post = "Folding welding table for metalwork. Packs away between projects.";
     if (/hold[ -]?down clamps?/i.test(title) && /t[- ]?track/i.test(title)) post = "Hold-down clamps for securing work to your T-track jigs.";
     if (/white glue/i.test(title) && /titebond/i.test(title)) post = "Titebond " + post.charAt(0).toLowerCase() + post.slice(1);
+    var grit = title.match(/(\d+)\s*grit/i);
+    var pack = title.match(/(\d+)[ -]?pack|(?<![\d.])(\d+)\s*(?:count|ct\b|pk\b)/i);
+    var count = pack ? (pack[1] || pack[2]) : "";
+    var inches = title.match(/(\d+(?:\.\d+)?)\s*(?:in\.|inch(?:es)?|")/i);
+    var drive = title.match(/torx\s*(?:#|t[- ]?)?(\d+)/i);
+    if (/sandpaper|sand paper/i.test(title) && /roll/i.test(title)) {
+      post = "Some " + (grit ? grit[1] + "-grit " : "") + "sandpaper on a roll.";
+    } else if (/sanding discs?/i.test(title)) {
+      post = (count ? count + " pack of " : "") + (inches ? inches[1] + " inch " : "") + "sanding discs" + (grit ? ", " + grit[1] + " grit" : "") + ".";
+    } else if (/bits?/i.test(title) && drive) {
+      post = (count ? count + " pack of " : "") + (inches ? inches[1] + " inch " : "") + (/bosch/i.test(title) ? "Bosch " : "") + "bits, T-" + drive[1] + ".";
+    } else if (/mechanical pencils/i.test(title)) {
+      post = (count ? count + " count pack of " : "") + "mechanical pencils";
+      post += number(deal.current_price) > 0 && number(deal.current_price) <= 5 ? ", cheap enough to lose and not worry about it." : ", good to keep a few around the shop.";
+    }
+    var betterPrice = number(deal.drop_30_percent) >= 5;
+    if (betterPrice && (/sandpaper|sand paper/i.test(title) && /roll/i.test(title))) {
+      post = post.replace(/\.$/, "") + " at a better price than normal right now.";
+    }
+    if (post) post = post.charAt(0).toUpperCase() + post.slice(1);
     return post;
+
   }
 
 
