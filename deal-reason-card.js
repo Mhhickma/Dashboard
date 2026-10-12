@@ -65,101 +65,74 @@
     return "Lower price than normal right now.";
   }
 
-  // Match the daily engagement voices: practical curiosity and light shop humor.
-  // Fixed local wording keeps automated posting free of AI service calls.
-  function shopCaption(deal) {
+  // Short item identity plus practical use. No title dumps or stock sales filler.
+  function facebookPostText(deal) {
     var title = String(deal.title || "");
     var rules = [
-      [/wood glue|pva adhesive/i, ["Wood glue for the next project. One of those things you don't want to run out of halfway through a glue-up.", "Anyone running low on wood glue? A bottle for the next glue-up is linked below."]],
-      [/welding table/i, ["A folding welding table for those of you doing metalwork too. Folds away when you need the space back.", "Anyone adding metalwork to the shop? This welding table folds up between projects."]],
-      [/table\/track clamp|track clamp/i, ["A one-hand track clamp for holding work to the table. Handy when your other hand is already busy.", "Anyone need a track clamp for the bench? This one works one-handed."]],
-      [/hold[ -]?down clamps?/i, ["Mini hold-down clamps for your T-track jigs. Handy for keeping the workpiece in place.", "Anyone building a new sled or jig? These hold-down clamps fit T-track."]],
-      [/paddle switch|knee paddle|power.*switch/i, ["Anyone need a paddle switch for a shop machine? Nice to have the stop button where your knee can reach it.", "A paddle switch for the shop. Check your machine's ratings before swapping one in."]],
-      [/freud.*dado/i, ["Freud dado set below. Anyone cutting dados, or are you doing them with a router?", "Anyone need a dado set? This Freud set is worth checking before the next cabinet project."]],
-      [/bosch.*12v.*(?:jig\s*saw|jigsaw)/i, ["Bosch cordless jigsaw below. Anyone using their 12V tools in the shop?", "Anyone prefer a barrel-grip jigsaw? This Bosch is a bare tool, so you'll need the battery."]],
-      [/dado set|dado blade/i, ["Anyone need a dado set before the next cabinet project? Linked below."]],
-      [/jig\s*saw|jigsaw/i, ["Anyone prefer a jigsaw for curved cuts? One to check out below."]],
-      [/socket.*adapter|drill.*extension|bit.*extension/i, ["For the screw your drill can't reach. Extensions and socket adapters below.", "Drill extensions and socket adapters. Handy when the screw is just out of reach."]],
-      [/\bclamps?\b/i, ["Clamps below. I'm sure you already have enough...until the next glue-up.", "A few more clamps for the shop. You have room, right?"]],
-      [/\bvise\b/i, ["Anyone need a bench vise? Beats chasing the part around while you work on it.", "A bench vise for the small jobs. Sometimes a third hand would be nice."]],
-      [/tape measure|measuring tape/i, ["More tape measures. Because the ones you own are probably hiding somewhere.", "Anyone need a spare tape measure? Or a spare for the spare?"]],
-      [/tool.*liner|drawer.*liner/i, ["Tool drawer liner. For those of us whose tools move around more than they should.", "I'm sure your tool drawers are perfectly organized...so you can skip this liner."]],
-      [/backing pad/i, ["Backing pad below if yours is ready to retire. Not exciting, but sometimes you need one.", "Anyone need a replacement backing pad? One of those things you forget until sanding day."]],
-      [/router bit/i, ["A router bit for the next project. Or the next project you haven't thought of yet.", "One more router bit for the drawer. Anyone actually use every bit they own?"]],
-      [/safety glasses|computer glasses|blue light.*glasses/i, ["Anyone else keep spare glasses around so there's a pair when you need them? Found these today.", "Glasses only help when you can find them. A spare pair might be worth a look."]],
-      [/air filtration|air filter|dust collect/i, ["Something for the shop dust problem. Making sawdust is the easy part.", "For those of you making more sawdust than progress today. Dust cleanup below."]],
-      [/sander|sanding/i, ["The project is built. Now comes all that sanding. Found something worth a look before the next round.", "Anyone actually enjoy sanding? Found this for that part of the project we all have to get through."]],
-      [/saw blade/i, ["When did you last check your saw blade? A fresh one might belong on the next shop shopping list.", "Blades are easy to forget until a cut reminds you. Found this one today."]],
-      [/\bsaw\b/i, ["What's on your next project list? This saw might be worth a look for the shop.", "One new saw, three new project ideas. Anyone else work that way? Found this today."]],
-      [/\bdrill\b|impact driver/i, ["What's the drill that gets used most in your shop? Found this one worth checking today.", "From shop jigs to the weekend fix-it list, a drill stays busy. Found this today."]],
-      [/organizer|storage|tool box|toolbox/i, ["Shop cleanup: put things away, then remember where you put them. Found this to help with the first part.", "Anyone else spend more time finding tools than using them? Here's a storage idea worth a look."]],
-      [/light|lamp/i, ["Ever move a project just to see your pencil line? Found some lighting worth a look.", "Better light belongs on the shop wish list too. Found this today."]],
-      [/glue|adhesive/i, ["Got a glue-up on the weekend list? Might be a good time to check the glue shelf.", "Nothing like setting up a glue-up and finding an empty bottle. Found this today."]],
-      [/square|level|caliper|ruler/i, ["Measure twice, cut once... then check it again? Found this for the measuring drawer.", "What measurement gives you the most trouble? Found a measuring tool worth a look."]],
-      [/workbench|work bench/i, ["What's taking up your workbench right now? Found this for anyone planning a bench upgrade.", "A place to work beats balancing the project on whatever is handy. Found this bench today."]],
-      [/battery|charger/i, ["Ever start a project and find every battery dead? Found this for the charging corner.", "Charged batteries make the weekend project easier to start. Found this today."]],
-      [/screw|bolt|nut|fastener/i, ["The right fastener is always in the other drawer. Found these for the next shop project.", "Got a build coming up? Might be time to check the fastener stash."]]
+      [/track saw.*miter guide|miter guide.*guide rail/i, "Track saw miter guide for setting repeatable cutting angles."],
+      [/wood glue|pva adhesive/i, "Wood glue for your next glue-up."],
+      [/welding table/i, "Welding table for metalwork in the shop."],
+      [/hold[ -]?down clamps?/i, "Hold-down clamps for securing work to your jigs."],
+      [/table\/track clamp|track clamp/i, "Track clamp for holding boards to your bench or jig."],
+      [/paddle switch|knee paddle/i, "Paddle switch for a shop machine. Check voltage and amp ratings before fitting it."],
+      [/dado set|dado blade/i, "Dado set for cutting grooves and dados."],
+      [/jig\s*saw|jigsaw/i, "Jigsaw for curved cuts and cutouts."],
+      [/socket.*adapter|drill.*extension|bit.*extension/i, "Drill extensions and socket adapters for hard-to-reach fasteners."],
+      [/backing pad/i, "Replacement backing pad for sanding. Check the fitting against your tool."],
+      [/router bit/i, "Router bit for your next jig or woodworking project."],
+      [/tape measure|measuring tape/i, "Tape measures to keep at the bench and in your tool bag."],
+      [/parallel clamps/i, "Parallel clamps for cabinet and panel glue-ups."],
+      [/bar clamps/i, "Bar clamps for holding parts together during assembly."],
+      [/corner clamps/i, "Corner clamps for holding parts at right angles."],
+      [/\bclamps?\b/i, "Clamps for holding your work in place."],
+      [/\bvise\b/i, "Bench vise for holding small parts while you work."],
+      [/tool.*liner|drawer.*liner/i, "Tool drawer liner to help keep tools from sliding around."],
+      [/blue light|computer glasses/i, "Blue light glasses for time at the computer."],
+      [/safety glasses/i, "Safety glasses for shop work."],
+      [/dust collect/i, "Dust collector for handling sawdust in the shop."],
+      [/air filtration/i, "Air filtration system for airborne shop dust."],
+      [/saw blade/i, "Replacement saw blade. Check the size and arbor against your saw."],
+      [/scroll saw/i, "Scroll saw for detailed cuts and small projects."],
+      [/miter saw/i, "Miter saw for crosscuts and angled cuts."],
+      [/table saw/i, "Table saw for ripping boards and making straight cuts."],
+      [/band\s*saw/i, "Bandsaw for straight and curved cuts."],
+      [/sander/i, "Sander for smoothing boards and preparing a project for finish."],
+      [/sandpaper|sand paper/i, "Sandpaper for the next round of project prep."],
+      [/impact driver/i, "Impact driver for driving screws and other fasteners."],
+      [/\bdrill\b/i, "Drill for holes, shop jigs and everyday repairs."],
+      [/magnetic parts tray/i, "Magnetic parts tray for keeping small hardware together."],
+      [/organizer|storage|tool ?box/i, "Shop storage for keeping tools and supplies organized."],
+      [/workbench|work bench/i, "Workbench for assembly and everyday shop work."],
+      [/flashlight/i, "Flashlight for seeing into tight or poorly lit spaces."],
+      [/light|lamp/i, "Lighting for your bench or work area."],
+      [/charger/i, "Charger for your tool batteries. Check platform compatibility."],
+      [/battery/i, "Tool battery. Check that it matches your cordless platform."],
+      [/square|level|caliper|ruler/i, "Measuring tool for checking your layout before cutting."],
+      [/deck screws/i, "Deck screws for the next outdoor build."],
+      [/wood screws/i, "Wood screws for shop projects and repairs."],
+      [/screwdriver/i, "Screwdriver set for the bench or tool bag."],
+      [/t[- ]?track.*bolt/i, "T-track bolts for mounting accessories to your jigs."],
+      [/\bscrews?\b/i, "Screws for the next build or repair."],
+      [/\bbolts?\b/i, "Bolts for your next project. Check the size you need."],
+      [/\bnuts?\b/i, "Nuts for your project hardware. Check the thread size."],
+      [/shop stool/i, "Shop stool for seated work at the bench."]
     ];
-    var choices = null;
+    var post = "";
     for (var i = 0; i < rules.length; i += 1) {
-      if (rules[i][0].test(title)) { choices = rules[i][1]; break; }
+      if (rules[i][0].test(title)) { post = rules[i][1]; break; }
     }
-    if (!choices) {
-      choices = ["Something for the shop wish list. Take a look if you're planning the next project."];
+    if (!post) {
+      // Keep unfamiliar products short; do not append generic engagement prompts.
+      post = shortenText(cleanTitle(title).split(/[,;|]|\s+(?:with|for)\s+/i)[0], 40) + ".";
     }
-    var post = choices[stableNumber(deal.asin + title) % choices.length];
-    if (post.length > FACEBOOK_POST_MAX_LENGTH) {
-      post = "Found something for the shop wish list. Worth a look if it's on yours too.";
-    }
+    if (/dado/i.test(title) && /^Freud\b/i.test(title)) post = "Freud " + post.charAt(0).toLowerCase() + post.slice(1);
+    if (/jig\s*saw|jigsaw/i.test(title) && /^Bosch\b/i.test(title)) post = "Bosch " + post.charAt(0).toLowerCase() + post.slice(1);
+    if (/wood glue/i.test(title) && /speed set/i.test(title)) post = "Fast-setting wood glue for your next glue-up.";
+    if (/welding table/i.test(title) && /folding/i.test(title)) post = "Folding welding table for metalwork. Packs away between projects.";
+    if (/hold[ -]?down clamps?/i.test(title) && /t[- ]?track/i.test(title)) post = "Hold-down clamps for securing work to your T-track jigs.";
     return post;
   }
 
-  function itemIdentity(title) {
-    var types = [
-      [/wood glue|pva adhesive/i, "wood glue"],
-      [/welding table/i, "welding table"],
-      [/table\/track clamp|track clamp/i, "track clamp"],
-      [/hold[ -]?down clamps?/i, "hold-down clamps"],
-      [/paddle switch|knee paddle/i, "paddle switch"], [/dado set|dado blade/i, "dado set"],
-      [/jig\s*saw|jigsaw/i, "jigsaw"], [/socket.*adapter|drill.*extension|bit.*extension/i, "drill extensions and socket adapters"],
-      [/backing pad/i, "backing pad"], [/router bit/i, "router bit"],
-      [/deck screws/i, "deck screws"], [/wood screws/i, "wood screws"], [/screwdriver/i, "screwdriver set"],
-      [/t[- ]?track.*bolt/i, "T-track bolts"], [/\bscrews?\b/i, "screws"], [/\bbolts?\b/i, "bolts"], [/\bnuts?\b/i, "nuts"],
-      [/backing pad/i, "backing pad"], [/router bit/i, "router bit"], [/tape measure|measuring tape/i, "tape measures"],
-      [/parallel clamps/i, "parallel clamps"], [/bar clamps/i, "bar clamps"], [/corner clamps/i, "corner clamps"], [/clamps?/i, "clamps"],
-      [/vise/i, "bench vise"], [/drawer.*liner|tool.*liner/i, "tool drawer liner"],
-      [/blue light|computer glasses/i, "blue light glasses"], [/safety glasses/i, "safety glasses"],
-      [/dust collect/i, "dust collector"], [/air filtration/i, "air filtration system"], [/saw blade/i, "saw blade"],
-      [/miter saw/i, "miter saw"], [/table saw/i, "table saw"], [/scroll saw/i, "scroll saw"], [/band\s*saw/i, "bandsaw"],
-      [/sander/i, "sander"], [/sandpaper|sand paper/i, "sandpaper"], [/impact driver/i, "impact driver"], [/drill/i, "drill"],
-      [/workbench|work bench/i, "workbench"], [/flashlight/i, "flashlight"], [/charger/i, "charger"], [/battery/i, "battery"],
-      [/glue/i, "glue"], [/organizer/i, "organizer"], [/tool ?box/i, "toolbox"], [/shop stool/i, "shop stool"]
-    ];
-    for (var i = 0; i < types.length; i += 1) {
-      if (types[i][0].test(title)) return types[i][1];
-    }
-    // Unrecognized items still get their own short identity, never anonymous filler.
-    return shortenText(cleanTitle(title).split(/[,;|]/)[0], 55);
-  }
-
-  function facebookPostText(deal) {
-    var title = String(deal.title || "");
-    var item = itemIdentity(title);
-    var post = shopCaption(deal);
-    if (/hold[ -]?down clamps?/i.test(title)) {
-      if (!/mini/i.test(title)) post = post.replace("Mini hold-down", "Hold-down");
-      if (!/t[- ]?track/i.test(title)) post = "Hold-down clamps for your shop jigs. Handy for keeping the workpiece in place.";
-    }
-    if (/clamps$/.test(item) && post.toLowerCase().indexOf(item.toLowerCase()) === -1) post = post.replace(/\bclamps\b/gi, item);
-    if (post.length > FACEBOOK_POST_MAX_LENGTH) post = item + ". Worth a look for the next project.";
-    if (post.toLowerCase().indexOf(item.toLowerCase()) !== -1) return post;
-    var identity = item.charAt(0).toUpperCase() + item.slice(1);
-    if (post.indexOf("Something for the shop wish list.") === 0) {
-      return identity + ". Anyone need one for the next project?";
-    }
-    var combined = identity + ". " + post;
-    return combined.length <= FACEBOOK_POST_MAX_LENGTH ? combined : identity + ". Worth a look if it's on your shop list.";
-  }
 
   async function copyFacebookPost(text, button) {
     try {
