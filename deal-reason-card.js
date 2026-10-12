@@ -70,7 +70,9 @@
     var title = String(deal.title || "");
     var rules = [
       [/track saw.*miter guide|miter guide.*guide rail/i, "Track saw miter guide for setting repeatable cutting angles."],
+      [/all purpose white glue|all-purpose white glue|white glue/i, "All-purpose white glue for small repairs and everyday projects. Handy to keep with the shop supplies."],
       [/wood glue|pva adhesive/i, "Wood glue for your next glue-up."],
+      [/\bglue\b/i, "Glue for everyday projects and small repairs. Handy to keep with the shop supplies."],
       [/welding table/i, "Welding table for metalwork in the shop."],
       [/hold[ -]?down clamps?/i, "Hold-down clamps for securing work to your jigs."],
       [/table\/track clamp|track clamp/i, "Track clamp for holding boards to your bench or jig."],
@@ -130,6 +132,7 @@
     if (/wood glue/i.test(title) && /speed set/i.test(title)) post = "Fast-setting wood glue for your next glue-up.";
     if (/welding table/i.test(title) && /folding/i.test(title)) post = "Folding welding table for metalwork. Packs away between projects.";
     if (/hold[ -]?down clamps?/i.test(title) && /t[- ]?track/i.test(title)) post = "Hold-down clamps for securing work to your T-track jigs.";
+    if (/white glue/i.test(title) && /titebond/i.test(title)) post = "Titebond " + post.charAt(0).toLowerCase() + post.slice(1);
     return post;
   }
 
