@@ -69,6 +69,8 @@
   function facebookPostText(deal) {
     var title = String(deal.title || "");
     var rules = [
+      [/blast gate/i, "Blast gates for controlling airflow in your dust collection lines."],
+      [/wall dust collector/i, "Wall-mounted dust collector for keeping the floor space clear."],
       [/track saw.*miter guide|miter guide.*guide rail/i, "Track saw miter guide for setting repeatable cutting angles."],
       [/all purpose white glue|all-purpose white glue|white glue/i, "All-purpose white glue for small repairs and everyday projects. Handy to keep with the shop supplies."],
       [/wood glue|pva adhesive/i, "Wood glue for your next glue-up."],
@@ -153,6 +155,18 @@
       post = post.replace(/\.$/, "") + " at a better price than normal right now.";
     }
     if (post) post = post.charAt(0).toUpperCase() + post.slice(1);
+    var knownBrands = ["Shop Fox", "Paper Mate", "Dura-Gold", "Bosch", "POWERTEC", "Bessey", "Titebond", "Freud", "WEN", "DeWalt", "Makita", "Milwaukee", "Lincoln", "Milescraft", "Pony", "CMT", "Forney", "ValueMax", "CASOMAN", "ALORAIR", "SKIL", "OLIGHT", "JET", "Rikon", "Ridgid", "Ryobi", "Metabo", "Irwin", "Kreg", "DMT", "Festool"];
+    var brand = typeof deal.brand === "string" && deal.brand.trim().length <= 30 ? deal.brand.trim() : "";
+    if (!brand) {
+      for (var j = 0; j < knownBrands.length; j += 1) {
+        if (title.toLowerCase().indexOf(knownBrands[j].toLowerCase() + " ") === 0) { brand = knownBrands[j]; break; }
+      }
+    }
+    if (brand && post.toLowerCase().indexOf(brand.toLowerCase()) === -1) {
+      post = post.replace(/^Some /, "");
+      post = brand + " " + post.charAt(0).toLowerCase() + post.slice(1);
+    }
+    if (post.length > FACEBOOK_POST_MAX_LENGTH) post = post.split(/[.!?]\s/)[0].replace(/[.!?]$/, "") + ".";
     return post;
 
   }
