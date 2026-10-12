@@ -167,6 +167,21 @@
       post = brand + " " + post.charAt(0).toLowerCase() + post.slice(1);
     }
     if (post.length > FACEBOOK_POST_MAX_LENGTH) post = post.split(/[.!?]\s/)[0].replace(/[.!?]$/, "") + ".";
+    var days = Math.floor(number(deal.best_price_days));
+    var priceLines = [];
+    if (days >= 2) {
+      priceLines = ["Best price in " + days + " days.", "Lowest price in " + days + " days.", days + "-day low."];
+      var rotation = stableNumber(deal.asin) % 2;
+      if (rotation) priceLines = [priceLines[1], priceLines[0], priceLines[2]];
+    } else if (number(deal.drop_30_percent) >= 5 && !/better price than normal/i.test(post)) {
+      priceLines = [number(deal.drop_30_percent).toFixed(1).replace(/\.0$/, "") + "% below its 30-day average."];
+    }
+    if (priceLines.length) {
+      var base = post.replace(/ at a better price than normal right now\.$/, ".");
+      for (var k = 0; k < priceLines.length; k += 1) {
+        if ((base + " " + priceLines[k]).length <= FACEBOOK_POST_MAX_LENGTH) { post = base + " " + priceLines[k]; break; }
+      }
+    }
     return post;
 
   }
