@@ -2,6 +2,8 @@
 (function () {
   var base = 'http://127.0.0.1:8766';
   var items = [];
+  var cacheKey = 'dashboard-posting-queue-cache';
+  var lastUpdated = 0;
   var busy = new Set();
   var appliedHidden = new Set();
   var pendingRefresh = false;
@@ -60,8 +62,15 @@
       else label.textContent = 'Select for posting';
     });
   }
-  function sync(result) {
+  function offlineMessage() {
+    return lastUpdated ? 'Queue connection offline. Showing the last saved queue from ' + timeLabel(lastUpdated / 1000) + '. Status may have changed.' : 'Posting queue offline. Run Start Posting Queue.cmd before selecting deals.';
+  }
+  function sync(result, cached) {
     items = result.items || [];
+    if (!cached) {
+      lastUpdated = Date.now();
+      try { localStorage.setItem(cacheKey, JSON.stringify({items:items, updated:lastUpdated})); } catch (_) {}
+    }
     status.textContent = lastError || (items.some(function (i) { return i.state === 'failed'; }) ? 'Queue paused: a posting attempt needs review.' : 'Queue ready. Keep this PC awake and signed into Windows.');
     list.replaceChildren();
     items.filter(function (i) { return ['queued', 'running', 'failed'].includes(i.state); }).forEach(function (item) {
@@ -69,6 +78,8 @@
       row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? timeLabel(item.due) : item.state === 'running' ? 'Posting now' : item.error || 'Needs review');
       list.append(row);
     });
+    if (!list.children.length) { var empty = document.createElement('li'); empty.textContent = 'No waiting posts.'; list.append(empty); }
+    if (cached) { status.textContent = offlineMessage(); return; }
     var selected = selectedForPostingAsins();
     var changed = false;
     items.forEach(function (item) {
@@ -118,12 +129,19 @@
     if (pendingRefresh) return;
     pendingRefresh = true;
     try { sync(await request('/queue')); }
-    catch (_) { status.textContent = 'Posting queue offline. Run Start Posting Queue.cmd before selecting deals.'; }
+    catch (_) { status.textContent = offlineMessage(); }
     finally { pendingRefresh = false; }
   }
   new MutationObserver(function () { paint(); }).observe(document.getElementById('cards'), { childList: true });
   var selectedCards = document.getElementById('selectedCards');
   if (selectedCards) new MutationObserver(function () { paint(); }).observe(selectedCards, { childList: true });
+  try {
+    var savedQueue = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+    if (savedQueue && Array.isArray(savedQueue.items)) {
+      lastUpdated = savedQueue.updated || 0;
+      sync({items:savedQueue.items}, true);
+    }
+  } catch (_) {}
   refresh();
   window.setInterval(refresh, 15000);
 }());
