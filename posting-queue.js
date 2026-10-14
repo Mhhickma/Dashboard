@@ -17,6 +17,15 @@
   var explanation = document.createElement('p');
   explanation.textContent = 'First deal posts now. Each additional deal follows 30–60 minutes later at a random interval. Uncheck to cancel.';
   var status = document.createElement('p');
+  status.setAttribute('role', 'status');
+  status.style.cssText = 'padding:14px 18px;border-radius:12px;border:2px solid;font-size:20px;font-weight:700;line-height:1.4;margin:14px 0;';
+  function showStatus(message) {
+    var ready = message.indexOf('Queue ready.') === 0;
+    status.textContent = message;
+    status.style.setProperty('background-color', ready ? '#dcfce7' : '#fff7ed', 'important');
+    status.style.setProperty('color', ready ? '#166534' : '#9a3412', 'important');
+    status.style.borderColor = ready ? '#22c55e' : '#fb923c';
+  }
   var list = document.createElement('ul');
   panel.append(heading, explanation, status, list);
   var container = document.querySelector('main');
@@ -71,7 +80,7 @@
       lastUpdated = Date.now();
       try { localStorage.setItem(cacheKey, JSON.stringify({items:items, updated:lastUpdated})); } catch (_) {}
     }
-    status.textContent = lastError || (items.some(function (i) { return i.state === 'failed'; }) ? 'Queue paused: a posting attempt needs review.' : 'Queue ready. Keep this PC awake and signed into Windows.');
+    showStatus(lastError || (items.some(function (i) { return i.state === 'failed'; }) ? 'Queue paused: a posting attempt needs review.' : 'Queue ready. Keep this PC awake and signed into Windows.'));
     list.replaceChildren();
     items.filter(function (i) { return ['queued', 'running', 'failed'].includes(i.state); }).forEach(function (item) {
       var row = document.createElement('li');
@@ -79,7 +88,7 @@
       list.append(row);
     });
     if (!list.children.length) { var empty = document.createElement('li'); empty.textContent = 'No waiting posts.'; list.append(empty); }
-    if (cached) { status.textContent = offlineMessage(); return; }
+    if (cached) { showStatus(offlineMessage()); return; }
     var selected = selectedForPostingAsins();
     var changed = false;
     items.forEach(function (item) {
@@ -120,7 +129,7 @@
       if (error.code === 'already_posted') alreadyPosted.add(asin);
       lastError = 'Not scheduled: ' + error.message;
       if (error instanceof TypeError) lastError += ' Check that the posting queue is running and Chrome allows local-network access.';
-      status.textContent = lastError;
+      showStatus(lastError);
       var checkbox = card && card.querySelector('.select-posting-control input');
       if (checkbox) checkbox.checked = !!cancelling;
     } finally { busy.delete(asin); paint(); }
@@ -129,7 +138,7 @@
     if (pendingRefresh) return;
     pendingRefresh = true;
     try { sync(await request('/queue')); }
-    catch (_) { status.textContent = offlineMessage(); }
+    catch (_) { showStatus(offlineMessage()); }
     finally { pendingRefresh = false; }
   }
   new MutationObserver(function () { paint(); }).observe(document.getElementById('cards'), { childList: true });
