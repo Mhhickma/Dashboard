@@ -63,7 +63,7 @@
     var title = String(deal.title || "");
     var rules = [
       [/blast gate/i, "Blast gates for controlling airflow in your dust collection lines."],
-      [/wall dust collector/i, "Wall-mounted dust collector for keeping the floor space clear."],
+      [/wall dust collector/i, "Wall-mounted dust collector. Something to consider if you’re trying to keep more floor space open."],
       [/track saw.*miter guide|miter guide.*guide rail/i, "Track saw miter guide for setting repeatable cutting angles."],
       [/all purpose white glue|all-purpose white glue|white glue/i, "All-purpose white glue for small repairs and everyday projects. Handy to keep with the shop supplies."],
       [/wood glue|pva adhesive/i, "Wood glue for your next glue-up."],
@@ -134,16 +134,18 @@
     var inches = title.match(/(\d+(?:\.\d+)?)\s*(?:in\.|inch(?:es)?|")/i);
     var drive = title.match(/torx\s*(?:#|t[- ]?)?(\d+)/i);
     if (/sandpaper|sand paper/i.test(title) && /roll/i.test(title)) {
-      post = "Some " + (grit ? grit[1] + "-grit " : "") + "sandpaper on a roll.";
+      post = (grit ? grit[1] + "-grit " : "") + "sandpaper on a roll. Cut off what you need and keep the rest handy.";
     } else if (/sanding discs?/i.test(title)) {
       post = (count ? count + " pack of " : "") + (inches ? inches[1] + " inch " : "") + "sanding discs" + (grit ? ", " + grit[1] + " grit" : "") + ".";
     } else if (/bits?/i.test(title) && drive) {
-      post = (count ? count + " pack of " : "") + (inches ? inches[1] + " inch " : "") + (/bosch/i.test(title) ? "Bosch " : "") + "bits, T-" + drive[1] + ".";
+      post = (count ? count + " pack of " : "") + (inches ? inches[1] + " inch " : "") + (/bosch/i.test(title) ? "Bosch " : "") + "bits, T-" + drive[1] + ". That extra reach comes in handy when the short ones won’t get there.";
     } else if (/mechanical pencils/i.test(title)) {
-      post = (count ? count + " count pack of " : "") + "mechanical pencils";
-      post += number(deal.current_price) > 0 && number(deal.current_price) <= 5 ? ", cheap enough to lose and not worry about it." : ", good to keep a few around the shop.";
+      post = (count ? count + "-pack of " : "") + "mechanical pencils";
+      post += number(deal.current_price) > 0 && number(deal.current_price) <= 5 ? ", cheap enough to lose a few around the shop and not worry about it." : ", good to keep a few around the shop.";
     }
-    var betterPrice = number(deal.drop_30_percent) >= 5;
+    if (/dowel pins?/i.test(title)) post = (count ? count + "-pack of " : "") + "dowel pins. One of those little supplies that’s useful to have before you need it.";
+    if (/jig\\s*saw|jigsaw/i.test(title) && /barrel[ -]grip/i.test(title)) post = "Barrel-grip jigsaw. Do you prefer this style or the top handle?";
+    var betterPrice = false;
     if (betterPrice && (/sandpaper|sand paper/i.test(title) && /roll/i.test(title))) {
       post = post.replace(/\.$/, "") + " at a better price than normal right now.";
     }
