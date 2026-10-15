@@ -15,7 +15,7 @@
   var heading = document.createElement('h2');
   heading.textContent = 'Selected posting queue';
   var explanation = document.createElement('p');
-  explanation.textContent = 'First deal posts now. Each additional deal follows 30–60 minutes later at a random interval. Uncheck to cancel.';
+  explanation.textContent = 'Selecting a deal prepares and saves its JoyLink. The first deal posts when ready; additional deals follow 30–60 minutes apart. Uncheck to cancel.';
   var status = document.createElement('p');
   status.setAttribute('role', 'status');
   status.style.cssText = 'padding:14px 18px;border-radius:12px;border:2px solid;font-size:20px;font-weight:700;line-height:1.4;margin:14px 0;';
@@ -65,7 +65,7 @@
       if (!checkbox || !label) return;
       if (!busy.has(item.asin)) checkbox.checked = ['queued', 'running', 'failed'].includes(item.state);
       checkbox.disabled = item.state === 'running' || busy.has(item.asin);
-      if (item.state === 'queued') label.textContent = 'Scheduled: ' + timeLabel(item.due);
+      if (item.state === 'queued') label.textContent = (item.link_ready ? 'Link saved — scheduled: ' : 'Preparing link — scheduled: ') + timeLabel(item.due);
       else if (item.state === 'running') label.textContent = 'Posting now';
       else if (item.state === 'failed') label.textContent = 'Needs attention — queue paused';
       else label.textContent = 'Select for posting';
@@ -84,7 +84,7 @@
     list.replaceChildren();
     items.filter(function (i) { return ['queued', 'running', 'failed'].includes(i.state); }).forEach(function (item) {
       var row = document.createElement('li');
-      row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? timeLabel(item.due) : item.state === 'running' ? 'Posting now' : item.error || 'Needs review');
+      row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : item.error || 'Needs review');
       list.append(row);
     });
     if (!list.children.length) { var empty = document.createElement('li'); empty.textContent = 'No waiting posts.'; list.append(empty); }
