@@ -144,13 +144,15 @@
       post += number(deal.current_price) > 0 && number(deal.current_price) <= 5 ? ", cheap enough to lose a few around the shop and not worry about it." : ", good to keep a few around the shop.";
     }
     if (/dowel pins?/i.test(title)) post = (count ? count + "-pack of " : "") + "dowel pins. One of those little supplies that’s useful to have before you need it.";
-    if (/jig\\s*saw|jigsaw/i.test(title) && /barrel[ -]grip/i.test(title)) post = "Barrel-grip jigsaw. Do you prefer this style or the top handle?";
+    if (/jig\\s*saw|jigsaw/i.test(title) && /barrel[ -]grip/i.test(title)) post = "Barrel-grip jigsaw. If you’ve used both handle styles, which one do you reach for?";
+    if (/glue brush|titebrush/i.test(title)) post = "Glue brush. A little easier to get into a tight spot than trying to squeeze the bottle in there.";
+    if (/clamps?/i.test(title) && inches && Number(inches[1]) <= 6) post = (count ? count + "-pack of " : "") + inches[1] + "-inch clamps. The smaller ones are handy when a big clamp just gets in the way.";
     var betterPrice = false;
     if (betterPrice && (/sandpaper|sand paper/i.test(title) && /roll/i.test(title))) {
       post = post.replace(/\.$/, "") + " at a better price than normal right now.";
     }
     if (post) post = post.charAt(0).toUpperCase() + post.slice(1);
-    var knownBrands = ["Shop Fox", "Paper Mate", "Dura-Gold", "Bosch", "POWERTEC", "Bessey", "Titebond", "Freud", "WEN", "DeWalt", "Makita", "Milwaukee", "Lincoln", "Milescraft", "Pony", "CMT", "Forney", "ValueMax", "CASOMAN", "ALORAIR", "SKIL", "OLIGHT", "JET", "Rikon", "Ridgid", "Ryobi", "Metabo", "Irwin", "Kreg", "DMT", "Festool"];
+    var knownBrands = ["Jorgensen", "BIC", "Shop Fox", "Paper Mate", "Dura-Gold", "Bosch", "POWERTEC", "Bessey", "Titebond", "Freud", "WEN", "DeWalt", "Makita", "Milwaukee", "Lincoln", "Milescraft", "Pony", "CMT", "Forney", "ValueMax", "CASOMAN", "ALORAIR", "SKIL", "OLIGHT", "JET", "Rikon", "Ridgid", "Ryobi", "Metabo", "Irwin", "Kreg", "DMT", "Festool"];
     var brand = typeof deal.brand === "string" && deal.brand.trim().length <= 30 ? deal.brand.trim() : "";
     if (!brand) {
       for (var j = 0; j < knownBrands.length; j += 1) {
