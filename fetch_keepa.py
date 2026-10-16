@@ -44,7 +44,8 @@ SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", 
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
 LIVE_OFFER_DEBUG_SAMPLE_LIMIT = int(os.getenv("LIVE_OFFER_DEBUG_SAMPLE_LIMIT", "8"))
 REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE = os.getenv("REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE", "false").strip().lower() not in {"0", "false", "no"}
-KEEPA_OFFERS_LIMIT = int(os.getenv("KEEPA_OFFERS_LIMIT", "10"))
+KEEPA_OFFERS_LIMIT = int(os.getenv("KEEPA_OFFERS_LIMIT", "0"))
+KEEPA_BUY_BOX_VERIFY_LIMIT = max(0, int(os.getenv("KEEPA_BUY_BOX_VERIFY_LIMIT", "100")))
 KEEPA_LIGHTNING_DEALS_ENABLED = os.getenv("KEEPA_LIGHTNING_DEALS_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
 KEEPA_LIGHTNING_DEAL_SCAN_LIMIT = max(0, int(os.getenv("KEEPA_LIGHTNING_DEAL_SCAN_LIMIT", "40")))
 KEEPA_LIGHTNING_DEAL_TIME_BUDGET_SECONDS = max(0, int(os.getenv("KEEPA_LIGHTNING_DEAL_TIME_BUDGET_SECONDS", "120")))
@@ -69,7 +70,9 @@ PRICE_TRACKS = [
     {"type": "buy_box", "label": "Buy Box price", "index": 18, "source_suffix": "buy_box"},
 ]
 QUALIFYING_PRICE_TRACK_TYPES = {"amazon", "new_fba_prime"}
-QUALIFYING_DEAL_PRICE_TYPES = QUALIFYING_PRICE_TRACK_TYPES | {"keepa_preferred_offer", "prime_exclusive_offer", "lightning_deal"}
+QUALIFYING_DEAL_PRICE_TYPES = QUALIFYING_PRICE_TRACK_TYPES | {
+    "keepa_preferred_offer", "prime_exclusive_offer", "lightning_deal", "buy_box"
+}
 
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
@@ -172,6 +175,13 @@ atexit.register(save_keepa_token_usage)
 def parse_iso_datetime(value):
     if not value:
         return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def parse_campaign_date(value):
@@ -185,10 +195,6 @@ def parse_campaign_date(value):
             pass
     try:
         return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
-    except Exception:
-        return None
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except Exception:
         return None
 
@@ -732,7 +738,7 @@ def fetch_keepa_batch(url, params, batch_number, request_kind="product"):
             from research_hourly import reserve,settle,BudgetPause,BudgetConflict
             count=len(str(params.get('asin','')).split(','))
             # Conservatively reserve full detailed lookup cost before spending.
-            cost=count*(14 if params.get('offers') else 1)
+            cost=count*(14 if params.get('offers') else 3 if params.get('buybox') else 1)
             try:reservation=reserve(cost)
             except BudgetConflict:raise
             except BudgetPause:
@@ -801,6 +807,38 @@ def fetch_keepa_products(asins):
             print(f"Waiting {REQUEST_DELAY_SECONDS} seconds before next batch...")
             time.sleep(REQUEST_DELAY_SECONDS)
     return all_products
+
+
+def fetch_keepa_buy_box_products(asins):
+    if not asins:
+        return []
+    url = "https://api.keepa.com/product"
+    products = []
+    for i in range(0, len(asins), BATCH_SIZE):
+        batch = asins[i:i + BATCH_SIZE]
+        batch_number = (i // BATCH_SIZE) + 1
+        params = {
+            "key": KEEPA_API_KEY,
+            "domain": DOMAIN_ID,
+            "asin": ",".join(batch),
+            "stats": 7,
+            "history": 1,
+            "buybox": 1,
+        }
+        payload = fetch_keepa_batch(url, params, batch_number, "product_buybox_verification")
+        products.extend(payload.get("products", []))
+        if i + BATCH_SIZE < len(asins):
+            time.sleep(REQUEST_DELAY_SECONDS)
+    return products
+
+
+def merge_product_updates(products, updates):
+    updates_by_asin = {
+        str(product.get("asin") or "").upper(): product
+        for product in updates
+        if product.get("asin")
+    }
+    return [updates_by_asin.get(str(product.get("asin") or "").upper(), product) for product in products]
 
 
 def extract_lightning_deal_items(payload):
@@ -1517,6 +1555,34 @@ def build_deal_candidate(product, track):
     )
 
 
+def buy_box_verification_asins(products):
+    new_track = next(track for track in PRICE_TRACKS if track["type"] == "new")
+    asins = []
+    for product in products:
+        if any(
+            build_deal_candidate(product, track)
+            for track in PRICE_TRACKS
+            if track["type"] in QUALIFYING_PRICE_TRACK_TYPES
+        ):
+            continue
+        if build_deal_candidate(product, new_track):
+            asin = str(product.get("asin") or "").upper()
+            if asin:
+                asins.append(asin)
+    return asins
+
+
+def build_verified_buy_box_candidate(product):
+    stats = product.get("stats") or {}
+    if not (stats.get("buyBoxIsAmazon") or stats.get("buyBoxIsFBA")):
+        return None
+    track = next(track for track in PRICE_TRACKS if track["type"] == "buy_box")
+    deal = build_deal_candidate(product, track)
+    if deal:
+        deal["qualification_reasons"] = ["verified Amazon/FBA Buy Box"] + deal["qualification_reasons"]
+    return deal
+
+
 def comparison_track_for_lightning_deal(product):
     stats = product.get("stats") or {}
     for price_index, label, price_type in (
@@ -1762,6 +1828,9 @@ def build_deal(product, live_offer=None, require_live_offer=False, lightning_dea
     prime_offer_candidate = build_prime_exclusive_offer_candidate(product)
     if prime_offer_candidate:
         candidates.append(prime_offer_candidate)
+    verified_buy_box_candidate = build_verified_buy_box_candidate(product)
+    if verified_buy_box_candidate:
+        candidates.append(verified_buy_box_candidate)
     for track in PRICE_TRACKS:
         if track["type"] not in QUALIFYING_PRICE_TRACK_TYPES:
             continue
@@ -2061,13 +2130,17 @@ def main():
     print(f"Fetched {len(products)} products from Keepa")
     if asins and not products:
         raise RuntimeError("Keepa returned zero products for a non-empty scan window; keeping the previous dashboard data instead of writing an empty file.")
+    buy_box_candidates = buy_box_verification_asins(products)
+    buy_box_asins = buy_box_candidates[:KEEPA_BUY_BOX_VERIFY_LIMIT]
+    buy_box_products = fetch_keepa_buy_box_products(buy_box_asins)
+    products = merge_product_updates(products, buy_box_products)
+    print(f"Verified Buy Box data for {len(buy_box_products)} of {len(buy_box_candidates)} discounted New-price candidates")
     price_track_scan_summary = build_track_presence_summary(products)
     keepa_raw_diagnostics = raw_keepa_diagnostics(products)
     live_offer_by_asin = {}
     live_prime_offer_count = sum(1 for offer in live_offer_by_asin.values() if offer and not offer.get("shipping_rejected"))
     lightning_deal_by_asin = fetch_keepa_lightning_deals(asins)
-    print("Amazon Creators API live Buy Box pricing is not used for deal qualification")
-    print("Deal qualification uses Keepa Lightning Deals, preferred offers, Amazon, New FBA/Prime, and Prime Exclusive offer pricing")
+    print("Deal qualification uses verified Amazon/FBA Buy Box prices plus Keepa Lightning Deals, preferred offers, Amazon, New FBA/Prime, and Prime Exclusive pricing")
     require_live_offer = False
 
     scan_deals = []
@@ -2192,10 +2265,12 @@ def main():
             "keepa_product_params": {"stats": 7, "history": 1, "offers": KEEPA_OFFERS_LIMIT},
             "keepa_lightning_deals_enabled": KEEPA_LIGHTNING_DEALS_ENABLED,
             "live_buy_box_source": "disabled_for_deal_qualification",
+            "buy_box_verification_source": "selective Keepa buybox=1 lookup for discounted New-price candidates",
+            "buy_box_verification_limit": KEEPA_BUY_BOX_VERIFY_LIMIT,
             "requires_live_offer": require_live_offer,
             "shipping_filter_mode": "prefer Keepa isAmazon/isFBA/isPrime offers, require Prime/FBA/free-shipping evidence for Lightning Deals, and skip visible shipping above $0",
             "requires_prime_or_amazon_price_source": True,
-            "qualifying_price_types": ["lightning_deal", "keepa_preferred_offer", "amazon", "new_fba_prime", "prime_exclusive_offer"],
+            "qualifying_price_types": ["lightning_deal", "keepa_preferred_offer", "amazon", "new_fba_prime", "prime_exclusive_offer", "buy_box"],
             "live_offer_debug_sample_limit": LIVE_OFFER_DEBUG_SAMPLE_LIMIT,
             "keepa_price_tracks": [
                 {"price_type": track["type"], "label": track["label"], "keepa_price_index": track["index"]}
