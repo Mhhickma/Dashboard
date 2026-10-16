@@ -116,7 +116,8 @@ def record_keepa_response(payload, request_kind):
         KEEPA_RUN_USAGE["unreported_responses"] += 1
         return
     KEEPA_RUN_USAGE["tokens"] += consumed
-    KEEPA_RUN_USAGE[f"{request_kind}_tokens"] += consumed
+    request_key = f"{request_kind}_tokens"
+    KEEPA_RUN_USAGE[request_key] = KEEPA_RUN_USAGE.get(request_key, 0) + consumed
     KEEPA_RUN_USAGE["reported_responses"] += 1
 
 
