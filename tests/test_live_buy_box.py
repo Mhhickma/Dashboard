@@ -10,6 +10,15 @@ def price_array(index, cents):
 
 
 class LiveBuyBoxTests(unittest.TestCase):
+    def test_usage_logger_accepts_buy_box_request_category(self):
+        before = dict(fetch_keepa.KEEPA_RUN_USAGE)
+        try:
+            fetch_keepa.record_keepa_response({"tokensConsumed": 3}, "product_buybox_verification")
+            self.assertEqual(fetch_keepa.KEEPA_RUN_USAGE["product_buybox_verification_tokens"], 3)
+        finally:
+            fetch_keepa.KEEPA_RUN_USAGE.clear()
+            fetch_keepa.KEEPA_RUN_USAGE.update(before)
+
     def product(self):
         return {
             "asin": "B08TPGCXWW",
