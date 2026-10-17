@@ -63,10 +63,11 @@
       var checkbox = card.querySelector('.select-posting-control input');
       var label = card.querySelector('.select-posting-control span');
       if (!checkbox || !label) return;
-      if (!busy.has(item.asin)) checkbox.checked = ['queued', 'running', 'failed'].includes(item.state);
-      checkbox.disabled = item.state === 'running' || busy.has(item.asin);
+      if (!busy.has(item.asin)) checkbox.checked = ['queued', 'running', 'failed', 'needs_review'].includes(item.state);
+      checkbox.disabled = ['running','needs_review'].includes(item.state) || busy.has(item.asin);
       if (item.state === 'queued') label.textContent = (item.link_ready ? 'Link saved — scheduled: ' : 'Preparing link — scheduled: ') + timeLabel(item.due);
       else if (item.state === 'running') label.textContent = 'Posting now';
+      else if (item.state === 'needs_review') label.textContent = 'Needs review — other posts continue';
       else if (item.state === 'failed') label.textContent = 'Needs attention — queue paused';
       else label.textContent = 'Select for posting';
     });
@@ -80,11 +81,11 @@
       lastUpdated = Date.now();
       try { localStorage.setItem(cacheKey, JSON.stringify({items:items, updated:lastUpdated})); } catch (_) {}
     }
-    showStatus(lastError || (items.some(function (i) { return i.state === 'failed'; }) ? 'Queue paused: a posting attempt needs review.' : 'Queue ready. Keep this PC awake and signed into Windows.'));
+    showStatus(lastError || (items.some(function (i) { return i.state === 'failed'; }) ? 'Queue paused: a posting attempt needs review.' : 'Queue ready. ' + (items.filter(function(i){return i.state === 'needs_review';}).length ? 'Some deals need review; other queued posts continue. ' : '') + 'Keep this PC awake and signed into Windows.'));
     list.replaceChildren();
-    items.filter(function (i) { return ['queued', 'running', 'failed'].includes(i.state); }).forEach(function (item) {
+    items.filter(function (i) { return ['queued', 'running', 'failed', 'needs_review'].includes(i.state); }).forEach(function (item) {
       var row = document.createElement('li');
-      row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : item.error || 'Needs review');
+      row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : item.state === 'needs_review' ? 'Needs review — other posts continue. ' + String(item.error || '').split('\n')[0].slice(0,180) : item.error || 'Needs review');
       list.append(row);
     });
     if (!list.children.length) { var empty = document.createElement('li'); empty.textContent = 'No waiting posts.'; list.append(empty); }
@@ -92,7 +93,7 @@
     var selected = selectedForPostingAsins();
     var changed = false;
     items.forEach(function (item) {
-      var active = ['queued', 'running', 'failed'].includes(item.state);
+      var active = ['queued', 'running', 'failed', 'needs_review'].includes(item.state);
       if (active && !selected.has(item.asin)) { selected.add(item.asin); changed = true; }
       if (!active && selected.has(item.asin)) { selected.delete(item.asin); changed = true; }
     });
@@ -108,7 +109,7 @@
   window.toggleSelectedForPosting = async function (asin) {
     if (busy.has(asin)) return;
     var item = items.find(function (i) { return i.asin === asin; });
-    var cancelling = item && ['queued', 'running', 'failed'].includes(item.state);
+    var cancelling = item && ['queued', 'running', 'failed', 'needs_review'].includes(item.state);
     var card = cardFor(asin);
     busy.add(asin);
     paint();
