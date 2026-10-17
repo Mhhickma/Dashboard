@@ -35,13 +35,14 @@
   }
   function draw(items){
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
-    active=items.find(function(i){return ['queued','running','failed'].includes(i.state);})||items.find(function(i){return i.state==='complete'&&i.day===today;})||null;
+    active=items.find(function(i){return ['queued','running','failed','needs_review'].includes(i.state);})||items.find(function(i){return i.state==='complete'&&i.day===today;})||null;
     post.disabled=busy||!!active;cancel.hidden=!active||active.state!=='queued';cancel.disabled=busy;
     caption.textContent=active?'Caption ('+active.deal.text.length+'/128): “'+active.deal.text+'”':'';
     if(!active){status.textContent='Ready. Each click schedules today’s post once. Keep this PC awake.';return;}
     if(active.state==='queued')status.textContent='Scheduled: '+new Date(active.due*1000).toLocaleString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' Eastern. Browser or scanner delays may make it later.';
     if(active.state==='running')status.textContent='Posting now. Adding all four comments…';
     if(active.state==='complete')status.textContent='Posted successfully with all four comments. Ready again tomorrow.';
+    if(active.state==='needs_review')status.textContent='This daily post needs review. Other queued posts can continue. '+String(active.error||'').split('\n')[0].slice(0,180);
     if(active.state==='failed')status.textContent='Needs review: '+(active.error||'The last attempt did not finish. Check Facebook before retrying.');
   }
   async function refresh(){
