@@ -86,6 +86,19 @@
     items.filter(function (i) { return ['queued', 'running', 'failed', 'needs_review'].includes(i.state); }).forEach(function (item) {
       var row = document.createElement('li');
       row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : item.state === 'needs_review' ? 'Needs review — other posts continue. ' + String(item.error || '').split('\n')[0].slice(0,180) : item.error || 'Needs review');
+      if (['queued','failed','needs_review'].includes(item.state)) {
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = 'Remove from queue';
+        remove.style.cssText = 'margin:8px 12px;padding:8px 12px;border:1px solid #dc2626;border-radius:8px;background:#fff;color:#b91c1c;font-weight:700;cursor:pointer;';
+        remove.disabled = !!cached;
+        remove.addEventListener('click', async function () {
+          remove.disabled = true;
+          try { lastError = ''; sync(await request('/cancel', {asin:item.asin})); }
+          catch (error) { showStatus('Could not remove: ' + error.message); remove.disabled = false; }
+        });
+        row.append(remove);
+      }
       list.append(row);
     });
     if (!list.children.length) { var empty = document.createElement('li'); empty.textContent = 'No waiting posts.'; list.append(empty); }
