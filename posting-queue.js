@@ -15,7 +15,7 @@
   var heading = document.createElement('h2');
   heading.textContent = 'Selected posting queue';
   var explanation = document.createElement('p');
-  explanation.textContent = 'Selecting a deal prepares and saves its JoyLink. The first deal posts when ready; additional deals follow 30–60 minutes apart. Uncheck to cancel.';
+  explanation.textContent = 'Selected deals post to the woodworking group and Woodworking Deals Page with the same caption and saved JoyLink. The first deal posts when ready; additional deals follow 30–60 minutes apart. Uncheck to cancel.';
   var status = document.createElement('p');
   status.setAttribute('role', 'status');
   status.style.cssText = 'padding:14px 18px;border-radius:12px;border:2px solid;font-size:20px;font-weight:700;line-height:1.4;margin:14px 0;';
