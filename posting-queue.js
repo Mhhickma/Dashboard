@@ -99,6 +99,21 @@
         });
         row.append(remove);
       }
+      if (['failed','needs_review'].includes(item.state)) {
+        var retry = document.createElement('button');
+        retry.type = 'button';
+        retry.textContent = 'Retry';
+        retry.style.cssText = 'margin:8px 4px;padding:8px 16px;border:1px solid #166534;border-radius:8px;background:#dcfce7;color:#166534;font-weight:700;cursor:pointer;';
+        retry.disabled = !!cached;
+        retry.title = 'Resume the unfinished step. Uncertain submissions require review before retrying.';
+        retry.addEventListener('click', async function () {
+          retry.disabled = true;
+          retry.textContent = 'Requesting retry…';
+          try { lastError = ''; sync(await request('/retry', {asin:item.asin})); }
+          catch (error) { showStatus('Retry not started: ' + error.message); retry.disabled = false; retry.textContent = 'Retry'; }
+        });
+        row.append(retry);
+      }
       list.append(row);
     });
     if (!list.children.length) { var empty = document.createElement('li'); empty.textContent = 'No waiting posts.'; list.append(empty); }
