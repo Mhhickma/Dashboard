@@ -5,7 +5,7 @@
   var base='http://127.0.0.1:8766';
   var panel=document.createElement('section');panel.className='engagement-posts';
   var title=document.createElement('h2');title.textContent='Home Depot & Lowe’s Daily Post';
-  var info=document.createElement('p');info.textContent='Post now schedules one colored-background post 30 minutes–4 hours from your click, with a randomly chosen caption and four link comments.';
+  var info=document.createElement('p');info.textContent='Post now schedules matching colored-background posts to the woodworking group and Woodworking Deals Page 30 minutes–4 hours from your click, with the same caption and all four link comments on each.';
   var status=document.createElement('p');status.setAttribute('role','status');status.textContent='Checking posting service…';
   var caption=document.createElement('p');
   var actions=document.createElement('div');actions.style.cssText='display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:14px 0';
@@ -40,7 +40,7 @@
     caption.textContent=active?'Caption ('+active.deal.text.length+'/128): “'+active.deal.text+'”':'';
     if(!active){status.textContent='Ready. Each click schedules today’s post once. Keep this PC awake.';return;}
     if(active.state==='queued')status.textContent='Scheduled: '+new Date(active.due*1000).toLocaleString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' Eastern. Browser or scanner delays may make it later.';
-    if(active.state==='running')status.textContent='Posting now. Adding all four comments…';
+    if(active.state==='running')status.textContent='Posting to the group and Page. Adding all four comments to each…';
     if(active.state==='complete')status.textContent='Posted successfully with all four comments. Ready again tomorrow.';
     if(active.state==='needs_review')status.textContent='This daily post needs review. Other queued posts can continue. '+String(active.error||'').split('\n')[0].slice(0,180);
     if(active.state==='failed')status.textContent='Needs review: '+(active.error||'The last attempt did not finish. Check Facebook before retrying.');
