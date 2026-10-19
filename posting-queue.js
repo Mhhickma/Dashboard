@@ -26,8 +26,23 @@
     status.style.setProperty('color', ready ? '#166534' : '#9a3412', 'important');
     status.style.borderColor = ready ? '#22c55e' : '#fb923c';
   }
+  var holdsPanel = document.createElement('div');
+  function appendProgress(target,item) {
+    if (!item.destinations) return;
+    var box=document.createElement('div');box.style.cssText='margin:6px 0 10px;color:#334155;font-size:14px;line-height:1.7';
+    ['group','page'].forEach(function(key) {
+      var d=item.destinations[key];if(!d)return;
+      var line=document.createElement('div');
+      line.textContent=(key==='group'?'Group':'Page')+': caption '+d.caption+'; link comments '+d.comments+'/'+d.total+(d.comment_uncertain?' — last comment needs verification':'');
+      if(d.post_url && /^https:\/\/www\.facebook\.com\//.test(d.post_url)) {
+        var link=document.createElement('a');link.href=d.post_url;link.textContent=' Open post';link.target='_blank';link.rel='noopener';line.append(link);
+      }
+      box.append(line);
+    });
+    target.append(box);
+  }
   var list = document.createElement('ul');
-  panel.append(heading, explanation, status, list);
+  panel.append(heading, explanation, holdsPanel, status, list);
   var container = document.querySelector('main');
   if (!container || typeof window.toggleSelectedForPosting !== 'function') return;
   container.prepend(panel);
@@ -77,6 +92,21 @@
   }
   function sync(result, cached) {
     items = result.items || [];
+    holdsPanel.replaceChildren();
+    (result.holds || []).forEach(function(hold) {
+      var notice=document.createElement('div');notice.style.cssText='padding:12px;margin:10px 0;background:#fff7ed;border:2px solid #fb923c;border-radius:10px';
+      notice.textContent=hold.name+' login required — this destination is on hold. Sign in using its posting browser, then resume. ';
+      var remote=document.createElement('a');remote.href='https://remotedesktop.google.com/access';remote.textContent='Open remote access';remote.target='_blank';remote.rel='noopener';notice.append(remote);
+      var resume=document.createElement('button');resume.type='button';resume.textContent='Resume after sign-in';resume.style.cssText='margin-left:12px;padding:8px 12px';resume.disabled=!!cached;
+      resume.addEventListener('click',async function(){
+        resume.disabled=true;
+        try{lastError='';var response=await request('/resume-login',{service:hold.service});sync(response);
+          if(response.resume && response.resume.review.length)showStatus('Login hold released. Some uncertain attempts still need review.');
+        }catch(error){showStatus('Could not resume: '+error.message);resume.disabled=false;}
+      });
+      notice.append(resume);holdsPanel.append(notice);
+    });
+
     if (!cached) {
       lastUpdated = Date.now();
       try { localStorage.setItem(cacheKey, JSON.stringify({items:items, updated:lastUpdated})); } catch (_) {}
@@ -114,6 +144,7 @@
         });
         row.append(retry);
       }
+      appendProgress(row,item);
       list.append(row);
     });
     if (!list.children.length) { var empty = document.createElement('li'); empty.textContent = 'No waiting posts.'; list.append(empty); }
