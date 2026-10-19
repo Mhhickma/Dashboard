@@ -8,11 +8,28 @@
   var info=document.createElement('p');info.textContent='Post now schedules matching colored-background posts to the woodworking group and Woodworking Deals Page 30 minutes–4 hours from your click, with the same caption and all four link comments on each.';
   var status=document.createElement('p');status.setAttribute('role','status');status.textContent='Checking posting service…';
   var caption=document.createElement('p');
+  var progress=document.createElement('div');
+  function appendProgress(target,item) {
+    if (!item.destinations) return;
+    var box=document.createElement('div');box.style.cssText='margin:6px 0 10px;color:#334155;font-size:14px;line-height:1.7';
+    ['group','page'].forEach(function(key) {
+      var d=item.destinations[key];if(!d)return;
+      var line=document.createElement('div');
+      line.textContent=(key==='group'?'Group':'Page')+': caption '+d.caption+'; link comments '+d.comments+'/'+d.total+(d.comment_uncertain?' — last comment needs verification':'');
+      if(d.post_url && /^https:\/\/www\.facebook\.com\//.test(d.post_url)) {
+        var link=document.createElement('a');link.href=d.post_url;link.textContent=' Open post';link.target='_blank';link.rel='noopener';line.append(link);
+      }
+      box.append(line);
+    });
+    target.append(box);
+  }
+
   var actions=document.createElement('div');actions.style.cssText='display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:14px 0';
   var post=document.createElement('button');post.type='button';post.textContent='Post now';post.disabled=true;
   post.style.cssText='padding:12px 24px;background:#1473e6;color:white;border:0;border-radius:10px;font-size:16px;font-weight:700';
   var cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel scheduled post';cancel.hidden=true;
-  actions.append(post,cancel);
+  var retry=document.createElement('button');retry.type='button';retry.textContent='Retry unfinished steps';retry.hidden=true;
+  actions.append(post,cancel,retry);
   var links=document.createElement('details');var summary=document.createElement('summary');summary.textContent='Four comments, in order';links.append(summary);
   var list=document.createElement('ol');
   [
@@ -21,7 +38,7 @@
     ['Lowes Tool Deals','https://shoplowes.me/4nQp6Rk'],
     ['Lowes Daily Deals','https://shoplowes.me/3Q6wL1x']
   ].forEach(function(item){var li=document.createElement('li');var a=document.createElement('a');a.href=item[1];a.textContent=item[0];a.target='_blank';a.rel='noopener';li.append(document.createTextNode('#ad  '),a);list.append(li);});
-  links.append(list);panel.append(title,info,status,caption,actions,links);
+  links.append(list);panel.append(title,info,status,caption,progress,actions,links);
   main.prepend(panel);
   var active=null,busy=false,requestKey='daily-retailer-pending-request';
   async function request(path,body){
@@ -36,7 +53,9 @@
   function draw(items){
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     active=items.find(function(i){return ['queued','running','failed','needs_review'].includes(i.state);})||items.find(function(i){return i.state==='complete'&&i.day===today;})||null;
+    retry.hidden=!active||!['failed','needs_review'].includes(active.state);retry.disabled=busy;
     post.disabled=busy||!!active;cancel.hidden=!active||active.state!=='queued';cancel.disabled=busy;
+    progress.replaceChildren();if(active)appendProgress(progress,active);
     caption.textContent=active?'Caption ('+active.deal.text.length+'/128): “'+active.deal.text+'”':'';
     if(!active){status.textContent='Ready. Each click schedules today’s post once. Keep this PC awake.';return;}
     if(active.state==='queued')status.textContent='Scheduled: '+new Date(active.due*1000).toLocaleString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' Eastern. Browser or scanner delays may make it later.';
@@ -63,6 +82,12 @@
     try{await request('/daily-retailer/cancel',{id:active.id});localStorage.removeItem(requestKey);}
     catch(error){status.textContent=error.message;}
     finally{busy=false;await refresh();}
+  });
+  retry.addEventListener('click',async function(){
+    if(!active||busy)return;busy=true;retry.disabled=true;
+    try{draw((await request('/daily-retailer/retry',{id:active.id})).items);}
+    catch(error){status.textContent='Retry not started: '+error.message;}
+    finally{busy=false;retry.disabled=false;}
   });
   refresh();setInterval(refresh,10000);
 }());
