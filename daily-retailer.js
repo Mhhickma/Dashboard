@@ -38,7 +38,8 @@
     ['Lowes Tool Deals','https://shoplowes.me/4nQp6Rk'],
     ['Lowes Daily Deals','https://shoplowes.me/3Q6wL1x']
   ].forEach(function(item){var li=document.createElement('li');var a=document.createElement('a');a.href=item[1];a.textContent=item[0];a.target='_blank';a.rel='noopener';li.append(document.createTextNode('#ad  '),a);list.append(li);});
-  links.append(list);panel.append(title,info,status,caption,progress,actions,links);
+  var previous=document.createElement('details');previous.hidden=true;
+  links.append(list);panel.append(title,info,status,caption,progress,actions,links,previous);
   main.prepend(panel);
   var active=null,busy=false,requestKey='daily-retailer-pending-request';
   async function request(path,body){
@@ -52,12 +53,19 @@
   }
   function draw(items){
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
-    active=items.find(function(i){return ['queued','running','failed','needs_review'].includes(i.state);})||items.find(function(i){return i.state==='complete'&&i.day===today;})||null;
+    active=items.find(function(i){return ['queued','running'].includes(i.state)||(i.day===today&&['failed','needs_review'].includes(i.state));})||items.find(function(i){return i.state==='complete'&&i.day===today;})||null;
     retry.hidden=!active||!['failed','needs_review'].includes(active.state);retry.disabled=busy;
+    previous.replaceChildren();
+    var older=items.filter(function(i){return i.day<today&&['failed','needs_review'].includes(i.state);});
+    previous.hidden=!older.length;
+    if(older.length){
+      var heading=document.createElement('summary');heading.textContent='Previous daily posts needing review ('+older.length+')';previous.append(heading);
+      older.forEach(function(item){var row=document.createElement('div');row.textContent=item.day+' — previous attempt retained; it does not block today’s post.';appendProgress(row,item);previous.append(row);});
+    }
     post.disabled=busy||!!active;cancel.hidden=!active||active.state!=='queued';cancel.disabled=busy;
     progress.replaceChildren();if(active)appendProgress(progress,active);
     caption.textContent=active?'Caption ('+active.deal.text.length+'/128): “'+active.deal.text+'”':'';
-    if(!active){status.textContent='Ready. Each click schedules today’s post once. Keep this PC awake.';return;}
+    if(!active){status.textContent='Ready for today. Resets at midnight Eastern. Click to schedule today’s post once. Keep this PC awake.';return;}
     if(active.state==='queued')status.textContent='Scheduled: '+new Date(active.due*1000).toLocaleString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' Eastern. Browser or scanner delays may make it later.';
     if(active.state==='running')status.textContent='Posting to the group and Page. Adding all four comments to each…';
     if(active.state==='complete')status.textContent='Posted successfully with all four comments. Ready again tomorrow.';
@@ -71,6 +79,7 @@
   }
   post.addEventListener('click',async function(){
     if(busy||active)return;busy=true;post.disabled=true;
+    requestKey='daily-retailer-pending-request:'+new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     var id=localStorage.getItem(requestKey)||crypto.randomUUID();localStorage.setItem(requestKey,id);
     status.textContent='Choosing a caption and random posting time…';
     try{var response=await request('/daily-retailer',{request_id:id});localStorage.removeItem(requestKey);draw([response.item]);}
