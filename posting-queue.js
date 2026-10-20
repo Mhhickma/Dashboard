@@ -15,7 +15,7 @@
   var heading = document.createElement('h2');
   heading.textContent = 'Selected posting queue';
   var explanation = document.createElement('p');
-  explanation.textContent = 'Selected deals post to the woodworking group and Woodworking Deals Page with the same caption and saved JoyLink. The first deal posts when ready; additional deals follow 30–60 minutes apart. Uncheck to cancel.';
+  explanation.textContent = 'Selecting a deal prepares and saves its JoyLink. The first deal posts when ready; additional deals follow 30–60 minutes apart. Uncheck to cancel.';
   var status = document.createElement('p');
   status.setAttribute('role', 'status');
   status.style.cssText = 'padding:14px 18px;border-radius:12px;border:2px solid;font-size:20px;font-weight:700;line-height:1.4;margin:14px 0;';
@@ -26,26 +26,56 @@
     status.style.setProperty('color', ready ? '#166534' : '#9a3412', 'important');
     status.style.borderColor = ready ? '#22c55e' : '#fb923c';
   }
-  var holdsPanel = document.createElement('div');
-  function appendProgress(target,item) {
-    if (!item.destinations) return;
-    var box=document.createElement('div');box.style.cssText='margin:6px 0 10px;color:#334155;font-size:14px;line-height:1.7';
-    ['group','page'].forEach(function(key) {
-      var d=item.destinations[key];if(!d)return;
-      var line=document.createElement('div');
-      line.textContent=(key==='group'?'Group':'Page')+': caption '+d.caption+'; link comments '+d.comments+'/'+d.total+(d.comment_uncertain?' — last comment needs verification':'');
-      if(d.post_url && /^https:\/\/www\.facebook\.com\//.test(d.post_url)) {
-        var link=document.createElement('a');link.href=d.post_url;link.textContent=' Open post';link.target='_blank';link.rel='noopener';line.append(link);
-      }
-      box.append(line);
-    });
-    target.append(box);
-  }
   var list = document.createElement('ul');
-  panel.append(heading, explanation, holdsPanel, status, list);
+  panel.append(heading, explanation, status, list);
   var container = document.querySelector('main');
   if (!container || typeof window.toggleSelectedForPosting !== 'function') return;
   container.prepend(panel);
+  var ccPanel = document.createElement('details');
+  var ccHeading = document.createElement('summary');
+  ccHeading.textContent = 'CC watchlist — selected products';
+  var ccStatus = document.createElement('p');
+  var ccList = document.createElement('div');
+  ccPanel.append(ccHeading, ccStatus, ccList);
+  panel.append(ccPanel);
+  var ccItems = [];
+  function campaignText(c) {
+    return c.status + ' · ' + (c.accepted === true ? 'Accepted in your CSV history' : c.accepted === false ? 'Not in accepted history' : 'Acceptance unknown') + ' · ' + (c.commission || 'Rate unknown') + ' · Ends ' + (c.end || 'unknown');
+  }
+  function ccContent(target, item) {
+    target.replaceChildren();
+    if (!item.campaigns.length) { target.textContent = 'CC: No campaign found in latest CSV.'; return; }
+    item.campaigns.forEach(function (c) {
+      var line = document.createElement('p');
+      line.append(document.createTextNode('CC: ' + campaignText(c) + ' '));
+      var link = document.createElement('a');
+      link.textContent = 'Open campaign'; link.href = c.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      line.append(link); target.append(line);
+    });
+  }
+  function paintCC() {
+    ccItems.forEach(function (item) {
+      var card = cardFor(item.asin); if (!card) return;
+      var box = card.querySelector('.posting-cc-status');
+      if (!box) { box = document.createElement('div'); box.className = 'posting-cc-status'; box.style.cssText = 'padding:12px;border:1px solid #94a3b8;border-radius:12px;margin:10px;'; card.append(box); }
+      ccContent(box, item);
+    });
+  }
+  async function refreshCC() {
+    try {
+      var data = await request('/cc-monitor');
+      ccItems = data.items || [];
+      ccStatus.textContent = data.message + (data.cc_updated ? ' CC upload: ' + data.cc_updated + '. Accepted upload: ' + (data.accepted_updated || 'unknown') + '.' : '');
+      document.querySelectorAll('.posting-cc-status').forEach(function (box) { box.remove(); });
+      ccList.replaceChildren();
+      ccItems.forEach(function (item) {
+        var row = document.createElement('div'); var title = document.createElement('strong');
+        title.textContent = item.title + ' (' + item.asin + ')';
+        var detail = document.createElement('div'); ccContent(detail, item); row.append(title, detail); ccList.append(row);
+      });
+      paintCC();
+    } catch (_) { ccStatus.textContent = 'CC check offline. Campaign status is not verified.'; ccItems = []; document.querySelectorAll('.posting-cc-status').forEach(function (box) { box.remove(); }); ccList.replaceChildren(); }
+  }
 
   async function request(path, body) {
     var options = body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {};
@@ -64,6 +94,7 @@
     return new Date(value * 1000).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' Eastern';
   }
   function paint() {
+    paintCC();
     alreadyPosted.forEach(function (asin) {
       var card = cardFor(asin);
       if (!card) return;
@@ -92,59 +123,15 @@
   }
   function sync(result, cached) {
     items = result.items || [];
-    holdsPanel.replaceChildren();
-    (result.holds || []).forEach(function(hold) {
-      var notice=document.createElement('div');notice.style.cssText='padding:12px;margin:10px 0;background:#fff7ed;border:2px solid #fb923c;border-radius:10px';
-      notice.textContent=hold.name+' login required — this destination is on hold. Sign in using its posting browser, then resume. ';
-      var remote=document.createElement('a');remote.href='https://remotedesktop.google.com/access';remote.textContent='Open remote access';remote.target='_blank';remote.rel='noopener';notice.append(remote);
-      var resume=document.createElement('button');resume.type='button';resume.textContent='Resume after sign-in';resume.style.cssText='margin-left:12px;padding:8px 12px';resume.disabled=!!cached;
-      resume.addEventListener('click',async function(){
-        resume.disabled=true;
-        try{lastError='';var response=await request('/resume-login',{service:hold.service});sync(response);
-          if(response.resume && response.resume.review.length)showStatus('Login hold released. Some uncertain attempts still need review.');
-        }catch(error){showStatus('Could not resume: '+error.message);resume.disabled=false;}
-      });
-      notice.append(resume);holdsPanel.append(notice);
-    });
-
     if (!cached) {
       lastUpdated = Date.now();
       try { localStorage.setItem(cacheKey, JSON.stringify({items:items, updated:lastUpdated})); } catch (_) {}
     }
     showStatus(lastError || (items.some(function (i) { return i.state === 'failed'; }) ? 'Queue paused: a posting attempt needs review.' : 'Queue ready. ' + (items.filter(function(i){return i.state === 'needs_review';}).length ? 'Some deals need review; other queued posts continue. ' : '') + 'Keep this PC awake and signed into Windows.'));
     list.replaceChildren();
-    items.filter(function (i) { return ['queued', 'running', 'failed', 'needs_review', 'skipped'].includes(i.state); }).forEach(function (item) {
+    items.filter(function (i) { return ['queued', 'running', 'failed', 'needs_review'].includes(i.state); }).forEach(function (item) {
       var row = document.createElement('li');
-      row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : ['needs_review','skipped'].includes(item.state) ? 'Not completed — saved for retry. ' + String(item.error || '').split('\n')[0].slice(0,180) : item.error || 'Needs review');
-      if (['queued','failed','needs_review','skipped'].includes(item.state)) {
-        var remove = document.createElement('button');
-        remove.type = 'button';
-        remove.textContent = 'Remove from queue';
-        remove.style.cssText = 'margin:8px 12px;padding:8px 12px;border:1px solid #dc2626;border-radius:8px;background:#fff;color:#b91c1c;font-weight:700;cursor:pointer;';
-        remove.disabled = !!cached;
-        remove.addEventListener('click', async function () {
-          remove.disabled = true;
-          try { lastError = ''; sync(await request('/cancel', {asin:item.asin})); }
-          catch (error) { showStatus('Could not remove: ' + error.message); remove.disabled = false; }
-        });
-        row.append(remove);
-      }
-      if (['failed','needs_review','skipped'].includes(item.state)) {
-        var retry = document.createElement('button');
-        retry.type = 'button';
-        retry.textContent = 'Retry';
-        retry.style.cssText = 'margin:8px 4px;padding:8px 16px;border:1px solid #166534;border-radius:8px;background:#dcfce7;color:#166534;font-weight:700;cursor:pointer;';
-        retry.disabled = !!cached;
-        retry.title = 'Resume the unfinished step. Uncertain submissions require review before retrying.';
-        retry.addEventListener('click', async function () {
-          retry.disabled = true;
-          retry.textContent = 'Requesting retry…';
-          try { lastError = ''; sync(await request('/retry', {asin:item.asin})); }
-          catch (error) { showStatus('Retry not started: ' + error.message); retry.disabled = false; retry.textContent = 'Retry'; }
-        });
-        row.append(retry);
-      }
-      appendProgress(row,item);
+      row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : item.state === 'needs_review' ? 'Needs review — other posts continue. ' + String(item.error || '').split('\n')[0].slice(0,180) : item.error || 'Needs review');
       list.append(row);
     });
     if (!list.children.length) { var empty = document.createElement('li'); empty.textContent = 'No waiting posts.'; list.append(empty); }
@@ -184,8 +171,9 @@
         var amazon = card.querySelector('a[href*="amazon.com/dp/"]');
         if (!title || !preview || !amazon) throw new Error('Product caption or link is missing.');
         var rating = card.dataset.rating ? Number(card.dataset.rating) : NaN;
-        if (Number.isFinite(rating) && rating < 3.8) throw new Error('Products with a known rating below 3.8 cannot be posted.');
-        sync(await request('/queue', { asin: asin, title: title.textContent.trim(), text: (input && input.value.trim()) || preview.textContent.trim(), amazon: amazon.href, tier: 'selected', rating: Number.isFinite(rating) ? rating : null }));
+        sync(await request('/queue', { asin: asin, title: title.textContent.trim(), text: (input && input.value.trim()) || preview.textContent.trim(), amazon: amazon.href, tier: 'selected', rating: rating }));
+        ccStatus.textContent = 'Checking CC for ' + asin + '…';
+        refreshCC();
       }
     } catch (error) {
       if (error.code === 'already_posted') alreadyPosted.add(asin);
@@ -214,6 +202,7 @@
     }
   } catch (_) {}
   refresh();
+  refreshCC();
+  window.setInterval(refreshCC, 20000);
   window.setInterval(refresh, 15000);
 }());
-
