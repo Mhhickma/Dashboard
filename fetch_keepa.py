@@ -73,6 +73,7 @@ QUALIFYING_PRICE_TRACK_TYPES = {"amazon", "new_fba_prime"}
 QUALIFYING_DEAL_PRICE_TYPES = QUALIFYING_PRICE_TRACK_TYPES | {
     "keepa_preferred_offer", "prime_exclusive_offer", "lightning_deal", "buy_box"
 }
+KEEPA_RATING_INDEX = 16
 
 ASIN_CSV_URL = os.getenv("ASIN_CSV_URL", "").strip()
 ASIN_FILE = Path("asins.csv")
@@ -220,6 +221,17 @@ def price_from_stats_array(stats, key, price_index):
     return keepa_to_dollars(values[price_index])
 
 
+def rating_from_product(product):
+    values = (product.get("stats") or {}).get("current") or []
+    if len(values) <= KEEPA_RATING_INDEX:
+        return None
+    raw = values[KEEPA_RATING_INDEX]
+    if not isinstance(raw, (int, float)) or raw <= 0:
+        return None
+    rating = raw / 10 if raw > 5 else raw
+    return round(rating, 1) if rating <= 5 else None
+
+
 def amazon_image_fallback(asin):
     if not asin:
         return None
@@ -262,12 +274,13 @@ def is_weak_image_url(url):
     return not url or "/images/P/" in str(url)
 
 
-def creator_image_resources():
+def creator_deal_metadata_resources():
     return [
         GetItemsResource.IMAGES_DOT_PRIMARY_DOT_HIGH_RES,
         GetItemsResource.IMAGES_DOT_PRIMARY_DOT_LARGE,
         GetItemsResource.IMAGES_DOT_PRIMARY_DOT_MEDIUM,
         GetItemsResource.IMAGES_DOT_PRIMARY_DOT_SMALL,
+        GetItemsResource.CUSTOMER_REVIEWS_DOT_STAR_RATING,
     ]
 
 
@@ -306,7 +319,15 @@ def creator_image_from_item(item):
     return None
 
 
-def fetch_creator_images(asins):
+def creator_rating_from_item(item):
+    try:
+        rating = float(item.customer_reviews.star_rating.value)
+    except (AttributeError, TypeError, ValueError):
+        return None
+    return round(rating, 1) if 0 < rating <= 5 else None
+
+
+def fetch_creator_deal_metadata(asins):
     if not asins:
         return {}
     if not (AmazonCreatorsApi and Country and GetItemsResource):
@@ -316,7 +337,7 @@ def fetch_creator_images(asins):
         print("Amazon Creators API image fallback skipped: missing creator credentials")
         return {}
 
-    images = {}
+    metadata = {}
     for index in range(0, len(asins), 10):
         batch = asins[index:index + 10]
         try:
@@ -327,14 +348,14 @@ def fetch_creator_images(asins):
                 tag=AMAZON_TAG,
                 country=Country.US,
             )
-            for item in amazon.get_items(batch, resources=creator_image_resources()):
+            for item in amazon.get_items(batch, resources=creator_deal_metadata_resources()):
                 image = creator_image_from_item(item)
-                if image:
-                    images[str(item.asin).upper()] = image
+                rating = creator_rating_from_item(item)
+                metadata[str(item.asin).upper()] = {"image": image, "rating": rating}
         except Exception as exc:
             print(f"Warning: creator image batch failed for {batch[0]}-{batch[-1]}: {exc}")
         time.sleep(0.2)
-    return images
+    return metadata
 
 
 def creator_live_offer_from_item(item):
@@ -528,29 +549,31 @@ def fetch_creator_live_offers(asins):
 
 
 def enrich_deal_images_with_creator_api(deals):
-    needs_image = [
+    asins = [
         str(deal.get("asin") or "").upper()
         for deal in deals
-        if deal.get("asin") and is_weak_image_url(deal.get("image"))
+        if deal.get("asin")
     ]
-    needs_image = list(dict.fromkeys(needs_image))
-    if not needs_image:
+    asins = list(dict.fromkeys(asins))
+    if not asins:
         return 0
 
-    creator_images = fetch_creator_images(needs_image)
+    creator_metadata = fetch_creator_deal_metadata(asins)
     updated = 0
     for deal in deals:
         asin = str(deal.get("asin") or "").upper()
-        image = creator_images.get(asin)
-        if not image:
-            continue
-        existing_candidates = deal.get("image_candidates") or []
-        deal["image"] = image
-        deal["image_candidates"] = list(dict.fromkeys([image, *existing_candidates]))
-        updated += 1
+        metadata = creator_metadata.get(asin) or {}
+        image = metadata.get("image")
+        if image and is_weak_image_url(deal.get("image")):
+            existing_candidates = deal.get("image_candidates") or []
+            deal["image"] = image
+            deal["image_candidates"] = list(dict.fromkeys([image, *existing_candidates]))
+            updated += 1
+        if metadata.get("rating") is not None:
+            deal["rating"] = metadata["rating"]
 
-    if updated:
-        print(f"Updated {updated} regular dashboard deal images from Amazon Creators API")
+    rated = sum(1 for deal in deals if deal.get("rating") is not None)
+    print(f"Amazon Creators API supplied ratings for {rated} dashboard deals and updated {updated} images")
     return updated
 
 
@@ -1498,6 +1521,7 @@ def base_deal(product, asin, title, current_price, avg_7_price, min_7_price, avg
     deal = {
         "asin": asin,
         "title": title,
+        "rating": rating_from_product(product),
         "current_price": current_price,
         "avg_7_price": avg_7_price,
         "min_7_price": min_7_price,
