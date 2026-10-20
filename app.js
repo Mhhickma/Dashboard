@@ -959,6 +959,9 @@ function updateCounts(renderedCount, selectedCount, totalMatchingCount) {
 function buildCard(deal, isSelected, isSelectedSection) {
   const card = document.createElement("article");
   card.className = isSelected ? "card selected-card" : "card";
+  const rating = deal.rating === null || deal.rating === undefined || deal.rating === "" ? NaN : Number(deal.rating);
+  const ratingEligible = Number.isFinite(rating) && rating >= 3.8;
+  card.dataset.rating = Number.isFinite(rating) ? rating.toFixed(1) : "";
   const postedAt = deal.posted_at || deal.first_seen_at || deal.checked_at;
   const expiresAt = deal.expires_at;
   const hoursLeft = hoursUntil(expiresAt);
@@ -994,8 +997,8 @@ function buildCard(deal, isSelected, isSelectedSection) {
   card.innerHTML = `
     <div class="select-posting-row">
       <label class="select-posting-control">
-        <input type="checkbox" ${isSelected ? "checked" : ""} onchange="toggleSelectedForPosting('${deal.asin}')">
-        <span>Select for posting</span>
+        <input type="checkbox" ${isSelected ? "checked" : ""} ${ratingEligible ? "" : "disabled"} onchange="toggleSelectedForPosting('${deal.asin}')">
+        <span>${ratingEligible ? "Select for posting" : Number.isFinite(rating) ? "Rating below 3.8" : "Rating unavailable"}</span>
       </label>
       ${isSelected ? `<span class="selected-pill">Selected</span>` : ""}
     </div>
@@ -1019,7 +1022,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
         <span>${expiresText}</span>
       </div>
       <h2>${deal.title}</h2>
-      <div class="asin">ASIN: ${deal.asin}</div>
+      <div class="asin">ASIN: ${deal.asin} · Rating: ${Number.isFinite(rating) ? rating.toFixed(1) : "unavailable"}</div>
       <div class="price-row">
         <div class="price-box">
           <span>Current</span>
