@@ -184,7 +184,8 @@
         var amazon = card.querySelector('a[href*="amazon.com/dp/"]');
         if (!title || !preview || !amazon) throw new Error('Product caption or link is missing.');
         var rating = card.dataset.rating ? Number(card.dataset.rating) : NaN;
-        sync(await request('/queue', { asin: asin, title: title.textContent.trim(), text: (input && input.value.trim()) || preview.textContent.trim(), amazon: amazon.href, tier: 'selected', rating: rating }));
+        if (Number.isFinite(rating) && rating < 3.8) throw new Error('Products with a known rating below 3.8 cannot be posted.');
+        sync(await request('/queue', { asin: asin, title: title.textContent.trim(), text: (input && input.value.trim()) || preview.textContent.trim(), amazon: amazon.href, tier: 'selected', rating: Number.isFinite(rating) ? rating : null }));
       }
     } catch (error) {
       if (error.code === 'already_posted') alreadyPosted.add(asin);
