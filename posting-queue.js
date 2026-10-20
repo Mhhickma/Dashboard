@@ -113,10 +113,10 @@
     }
     showStatus(lastError || (items.some(function (i) { return i.state === 'failed'; }) ? 'Queue paused: a posting attempt needs review.' : 'Queue ready. ' + (items.filter(function(i){return i.state === 'needs_review';}).length ? 'Some deals need review; other queued posts continue. ' : '') + 'Keep this PC awake and signed into Windows.'));
     list.replaceChildren();
-    items.filter(function (i) { return ['queued', 'running', 'failed', 'needs_review'].includes(i.state); }).forEach(function (item) {
+    items.filter(function (i) { return ['queued', 'running', 'failed', 'needs_review', 'skipped'].includes(i.state); }).forEach(function (item) {
       var row = document.createElement('li');
-      row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : item.state === 'needs_review' ? 'Needs review — other posts continue. ' + String(item.error || '').split('\n')[0].slice(0,180) : item.error || 'Needs review');
-      if (['queued','failed','needs_review'].includes(item.state)) {
+      row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : ['needs_review','skipped'].includes(item.state) ? 'Not completed — saved for retry. ' + String(item.error || '').split('\n')[0].slice(0,180) : item.error || 'Needs review');
+      if (['queued','failed','needs_review','skipped'].includes(item.state)) {
         var remove = document.createElement('button');
         remove.type = 'button';
         remove.textContent = 'Remove from queue';
@@ -129,7 +129,7 @@
         });
         row.append(remove);
       }
-      if (['failed','needs_review'].includes(item.state)) {
+      if (['failed','needs_review','skipped'].includes(item.state)) {
         var retry = document.createElement('button');
         retry.type = 'button';
         retry.textContent = 'Retry';
