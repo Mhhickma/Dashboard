@@ -54,6 +54,8 @@ ASIN_TOOLS_WEB_APP_URL = os.getenv(
     "https://script.google.com/macros/s/AKfycbxU4HTktR6zH5Wfbk58V24X-HAE9kZYlzdlm1gqMp1NL_ZGzF7p-0VAL5VeGNfnAyxESA/exec",
 ).strip()
 REMOVE_VISIBLE_SHIPPING_ASINS = os.getenv("REMOVE_VISIBLE_SHIPPING_ASINS", "true").strip().lower() not in {"0", "false", "no"}
+MIN_POSTING_RATING = float(os.getenv("MIN_POSTING_RATING", "3.8"))
+REMOVE_LOW_RATED_ASINS = os.getenv("REMOVE_LOW_RATED_ASINS", "true").strip().lower() not in {"0", "false", "no"}
 
 CREATOR_CONNECTIONS_REPO = os.getenv("CREATOR_CONNECTIONS_REPO", "Mhhickma/Dashboard")
 CREATOR_CONNECTIONS_PATH = os.getenv("CREATOR_CONNECTIONS_PATH", "data/creator-connections")
@@ -230,6 +232,16 @@ def rating_from_product(product):
         return None
     rating = raw / 10 if raw > 5 else raw
     return round(rating, 1) if rating <= 5 else None
+
+
+def low_rated_product_asins(products):
+    low_rated = set()
+    for product in products:
+        rating = rating_from_product(product)
+        asin = str(product.get("asin") or "").upper()
+        if rating is not None and rating < MIN_POSTING_RATING and ASIN_RE.fullmatch(asin):
+            low_rated.add(asin)
+    return low_rated
 
 
 def amazon_image_fallback(asin):
@@ -2083,12 +2095,12 @@ def call_asin_tools(action, params, timeout=60):
         raise
 
 
-def remove_asins_from_source_sheet(asins, reason):
+def remove_asins_from_source_sheet(asins, reason, enabled=True):
     asins = sorted({str(asin or "").upper() for asin in asins if ASIN_RE.fullmatch(str(asin or "").upper())})
-    if not REMOVE_VISIBLE_SHIPPING_ASINS or not asins:
+    if not enabled or not asins:
         return {"attempted": False, "requested": len(asins), "removed": 0, "not_found": []}
     if not ASIN_CSV_URL:
-        print("Visible-shipping ASIN removal skipped because the scan is using local asins.csv")
+        print("ASIN removal skipped because the scan is using local asins.csv")
         return {"attempted": False, "requested": len(asins), "removed": 0, "not_found": asins}
 
     removed = []
@@ -2155,6 +2167,9 @@ def main():
     print(f"Fetched {len(products)} products from Keepa")
     if asins and not products:
         raise RuntimeError("Keepa returned zero products for a non-empty scan window; keeping the previous dashboard data instead of writing an empty file.")
+    low_rated_asins = low_rated_product_asins(products)
+    if low_rated_asins:
+        print(f"Found {len(low_rated_asins)} ASINs below the {MIN_POSTING_RATING:.1f} rating cutoff")
     buy_box_candidates = buy_box_verification_asins(products)
     buy_box_asins = buy_box_candidates[:KEEPA_BUY_BOX_VERIFY_LIMIT]
     buy_box_products = fetch_keepa_buy_box_products(buy_box_asins)
@@ -2178,6 +2193,8 @@ def main():
     for product in products:
         try:
             asin = str(product.get("asin") or "").upper()
+            if asin in low_rated_asins:
+                continue
             if asin in VISIBLE_SHIPPING_ASINS:
                 continue
             shipping_removal = visible_shipping_removal_reason(product)
@@ -2214,6 +2231,7 @@ def main():
     shipping_removal_summary = remove_asins_from_source_sheet(
         visible_shipping_asins,
         "Keepa showed a visible separate shipping cost",
+        enabled=REMOVE_VISIBLE_SHIPPING_ASINS,
     )
     if visible_shipping_asins:
         before_memory_shipping_purge = len(memory)
@@ -2232,6 +2250,26 @@ def main():
     creator_campaign_deal_count = apply_creator_campaigns(memory, campaign_by_asin)
     all_deals = list(memory.values())
     creator_image_update_count = enrich_deal_images_with_creator_api(all_deals)
+    low_rated_asins.update(
+        str(deal.get("asin") or "").upper()
+        for deal in all_deals
+        if deal.get("rating") is not None and float(deal["rating"]) < MIN_POSTING_RATING
+    )
+    rating_removal_summary = remove_asins_from_source_sheet(
+        low_rated_asins,
+        f"the confirmed product rating was below {MIN_POSTING_RATING:.1f}",
+        enabled=REMOVE_LOW_RATED_ASINS,
+    )
+    if low_rated_asins:
+        before_rating_purge = len(memory)
+        memory = {
+            asin: deal for asin, deal in memory.items()
+            if str(asin).upper() not in low_rated_asins
+        }
+        low_rated_memory_deals_removed = before_rating_purge - len(memory)
+        all_deals = list(memory.values())
+    else:
+        low_rated_memory_deals_removed = 0
     all_deals.sort(key=lambda item: item.get("posted_at") or item.get("checked_at") or "", reverse=True)
     non_amazon_active_deals = sum(1 for deal in all_deals if deal.get("price_type") in NON_AMAZON_PRICE_TYPES)
     prime_exclusive_active_deals = sum(1 for deal in all_deals if deal.get("price_type") == "prime_exclusive_offer")
@@ -2260,6 +2298,9 @@ def main():
         "visible_shipping_asins_removed_from_source": shipping_removal_summary,
         "visible_shipping_asins_detected": list(VISIBLE_SHIPPING_ASINS.values()),
         "visible_shipping_memory_deals_removed": purged_shipping_memory_count,
+        "low_rated_asins_removed_from_source": rating_removal_summary,
+        "low_rated_asins_detected": sorted(low_rated_asins),
+        "low_rated_memory_deals_removed": low_rated_memory_deals_removed,
         "creator_campaign_deal_count": creator_campaign_deal_count,
         "creator_image_update_count": creator_image_update_count,
         "keepa_token_usage": keepa_token_usage_summary(),
@@ -2295,6 +2336,8 @@ def main():
             "requires_live_offer": require_live_offer,
             "shipping_filter_mode": "prefer Keepa isAmazon/isFBA/isPrime offers, require Prime/FBA/free-shipping evidence for Lightning Deals, and skip visible shipping above $0",
             "requires_prime_or_amazon_price_source": True,
+            "minimum_posting_rating": MIN_POSTING_RATING,
+            "remove_low_rated_asins": REMOVE_LOW_RATED_ASINS,
             "qualifying_price_types": ["lightning_deal", "keepa_preferred_offer", "amazon", "new_fba_prime", "prime_exclusive_offer", "buy_box"],
             "live_offer_debug_sample_limit": LIVE_OFFER_DEBUG_SAMPLE_LIMIT,
             "keepa_price_tracks": [
