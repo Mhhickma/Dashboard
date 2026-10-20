@@ -960,7 +960,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
   const card = document.createElement("article");
   card.className = isSelected ? "card selected-card" : "card";
   const rating = deal.rating === null || deal.rating === undefined || deal.rating === "" ? NaN : Number(deal.rating);
-  const ratingEligible = Number.isFinite(rating) && rating >= 3.8;
+  const ratingEligible = !Number.isFinite(rating) || rating >= 3.8;
   card.dataset.rating = Number.isFinite(rating) ? rating.toFixed(1) : "";
   const postedAt = deal.posted_at || deal.first_seen_at || deal.checked_at;
   const expiresAt = deal.expires_at;
@@ -998,7 +998,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
     <div class="select-posting-row">
       <label class="select-posting-control">
         <input type="checkbox" ${isSelected ? "checked" : ""} ${ratingEligible ? "" : "disabled"} onchange="toggleSelectedForPosting('${deal.asin}')">
-        <span>${ratingEligible ? "Select for posting" : Number.isFinite(rating) ? "Rating below 3.8" : "Rating unavailable"}</span>
+        <span>${ratingEligible ? "Select for posting" : "Rating below 3.8"}</span>
       </label>
       ${isSelected ? `<span class="selected-pill">Selected</span>` : ""}
     </div>
