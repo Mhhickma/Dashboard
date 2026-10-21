@@ -116,6 +116,19 @@
     items.filter(function (i) { return ['queued', 'running', 'failed', 'needs_review', 'skipped'].includes(i.state); }).forEach(function (item) {
       var row = document.createElement('li');
       row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : ['needs_review','skipped'].includes(item.state) ? 'Not completed — saved for retry. ' + String(item.error || '').split('\n')[0].slice(0,180) : item.error || 'Needs review');
+      if (item.state === 'queued') {
+        var postNow=document.createElement('button');
+        postNow.type='button';postNow.textContent='Post now';
+        postNow.style.cssText='margin:8px 4px;padding:8px 16px;border:1px solid #166534;border-radius:8px;background:#dcfce7;color:#166534;font-weight:700;cursor:pointer';
+        postNow.disabled=!!cached;
+        postNow.title='Move this deal to the front. Any post already running finishes first.';
+        postNow.addEventListener('click',async function(){
+          postNow.disabled=true;postNow.textContent='Requesting…';
+          try{lastError='';sync(await request('/post-now',{asin:item.asin}));}
+          catch(error){showStatus('Could not post now: '+error.message);postNow.disabled=false;postNow.textContent='Post now';}
+        });
+        row.append(postNow);
+      }
       if (['queued','failed','needs_review','skipped'].includes(item.state)) {
         var remove = document.createElement('button');
         remove.type = 'button';
