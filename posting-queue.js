@@ -46,6 +46,52 @@
   var container = document.querySelector('main');
   if (!container || typeof window.toggleSelectedForPosting !== 'function') return;
   container.prepend(panel);
+  var ccPanel = document.createElement('details');
+  var ccHeading = document.createElement('summary');
+  ccHeading.textContent = 'CC watchlist — selected products';
+  var ccStatus = document.createElement('p');
+  var ccList = document.createElement('div');
+  ccPanel.append(ccHeading, ccStatus, ccList);
+  panel.append(ccPanel);
+  var ccItems = [];
+  function campaignText(c) {
+    return c.status + ' · ' + (c.accepted === true ? 'Accepted in your CSV history' : c.accepted === false ? 'Not in accepted history' : 'Acceptance unknown') + ' · ' + (c.commission || 'Rate unknown') + ' · Ends ' + (c.end || 'unknown');
+  }
+  function ccContent(target, item) {
+    target.replaceChildren();
+    if (!item.campaigns.length) { target.textContent = 'CC: No campaign found in latest CSV.'; return; }
+    item.campaigns.forEach(function (c) {
+      var line = document.createElement('p');
+      line.append(document.createTextNode('CC: ' + campaignText(c) + ' '));
+      var link = document.createElement('a');
+      link.textContent = 'Open campaign'; link.href = c.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      line.append(link); target.append(line);
+    });
+  }
+  function paintCC() {
+    ccItems.forEach(function (item) {
+      var card = cardFor(item.asin); if (!card) return;
+      var box = card.querySelector('.posting-cc-status');
+      if (!box) { box = document.createElement('div'); box.className = 'posting-cc-status'; box.style.cssText = 'padding:12px;border:1px solid #94a3b8;border-radius:12px;margin:10px;'; card.append(box); }
+      ccContent(box, item);
+    });
+  }
+  async function refreshCC() {
+    try {
+      var data = await request('/cc-monitor');
+      ccItems = data.items || [];
+      ccStatus.textContent = data.message + (data.cc_updated ? ' CC upload: ' + data.cc_updated + '. Accepted upload: ' + (data.accepted_updated || 'unknown') + '.' : '');
+      document.querySelectorAll('.posting-cc-status').forEach(function (box) { box.remove(); });
+      ccList.replaceChildren();
+      ccItems.forEach(function (item) {
+        var row = document.createElement('div'); var title = document.createElement('strong');
+        title.textContent = item.title + ' (' + item.asin + ')';
+        var detail = document.createElement('div'); ccContent(detail, item); row.append(title, detail); ccList.append(row);
+      });
+      paintCC();
+    } catch (_) { ccStatus.textContent = 'CC check offline. Campaign status is not verified.'; ccItems = []; document.querySelectorAll('.posting-cc-status').forEach(function (box) { box.remove(); }); ccList.replaceChildren(); }
+  }
+
 
   async function request(path, body) {
     var options = body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {};
@@ -64,6 +110,7 @@
     return new Date(value * 1000).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' Eastern';
   }
   function paint() {
+    paintCC();
     alreadyPosted.forEach(function (asin) {
       var card = cardFor(asin);
       if (!card) return;
@@ -185,6 +232,8 @@
         if (!title || !preview || !amazon) throw new Error('Product caption or link is missing.');
         var rating = card.dataset.rating ? Number(card.dataset.rating) : NaN;
         sync(await request('/queue', { asin: asin, title: title.textContent.trim(), text: (input && input.value.trim()) || preview.textContent.trim(), amazon: amazon.href, tier: 'selected', rating: Number.isFinite(rating) ? rating : null }));
+        ccStatus.textContent = 'Checking CC for ' + asin + '…';
+        refreshCC();
       }
     } catch (error) {
       if (error.code === 'already_posted') alreadyPosted.add(asin);
@@ -213,6 +262,8 @@
     }
   } catch (_) {}
   refresh();
+  refreshCC();
+  window.setInterval(refreshCC, 20000);
   window.setInterval(refresh, 15000);
 }());
 
