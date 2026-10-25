@@ -30,7 +30,7 @@ AMAZON_TAG = os.getenv("AMAZON_TAG") or "simplewoodsho-20"
 CREATORS_CREDENTIAL_ID = os.getenv("CREATORS_CREDENTIAL_ID")
 CREATORS_CREDENTIAL_SECRET = os.getenv("CREATORS_CREDENTIAL_SECRET")
 DOMAIN_ID = int(os.getenv("KEEPA_DOMAIN_ID", "1"))
-MIN_DROP_PERCENT = float(os.getenv("MIN_DROP_PERCENT", "0"))
+MIN_DROP_PERCENT = max(8.0, float(os.getenv("MIN_DROP_PERCENT", "8")))
 
 # Defaults are set for an approximately 12-hour full spreadsheet rotation.
 # With a 15-minute workflow schedule, 48 scan windows/day checks about 300-331 ASINs per run.
@@ -1148,6 +1148,51 @@ def window_stats_from_points(points, days):
     return round(avg_price, 2) if avg_price else None, round(min_price, 2)
 
 
+def window_weighted_median_from_points(points, days):
+    if not points:
+        return None
+    now = utc_now()
+    start = now - timedelta(days=days)
+    relevant = [(dt, price) for dt, price in points if start < dt <= now]
+    prior = [(dt, price) for dt, price in points if dt <= start]
+    if prior:
+        last_time = start
+        last_price = prior[-1][1]
+    elif relevant:
+        last_time, last_price = relevant[0]
+        relevant = relevant[1:]
+    else:
+        return None
+
+    weighted = []
+    for dt, price in relevant:
+        duration = max(0, (dt - last_time).total_seconds())
+        if duration and last_price and last_price > 0:
+            weighted.append((last_price, duration))
+        last_time = dt
+        last_price = price
+    duration = max(0, (now - last_time).total_seconds())
+    if duration and last_price and last_price > 0:
+        weighted.append((last_price, duration))
+    if not weighted:
+        return round(last_price, 2) if last_price and last_price > 0 else None
+
+    midpoint = sum(duration for _, duration in weighted) / 2
+    elapsed = 0
+    for price, duration in sorted(weighted):
+        elapsed += duration
+        if elapsed >= midpoint:
+            return round(price, 2)
+    return round(weighted[-1][0], 2)
+
+
+def typical_30_price_for_track(product, track_index):
+    csv_tracks = product.get("csv") or []
+    if track_index >= len(csv_tracks) or not isinstance(csv_tracks[track_index], list):
+        return None
+    return window_weighted_median_from_points(decode_keepa_price_csv(csv_tracks[track_index]), 30)
+
+
 def best_price_days_from_points(points, current_price):
     if not points or not current_price:
         return 0, None, None
@@ -1511,18 +1556,21 @@ def raw_keepa_diagnostics(products):
     return diagnostics
 
 
-def qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days):
+def qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days, typical_30_price=None):
     drop_percent = round(((avg_7_price - current_price) / avg_7_price) * 100, 1)
     drop_30_percent = round(((avg_30_price - current_price) / avg_30_price) * 100, 1)
     qualification_reasons = []
-    if drop_30_percent >= 5:
-        qualification_reasons.append("5%+ below 30-day average")
-    if drop_percent >= 5 and drop_30_percent >= 5:
-        qualification_reasons.append("5%+ below both 7-day and 30-day averages")
+    typical_drop_percent = None
+    if typical_30_price:
+        typical_drop_percent = round(((typical_30_price - current_price) / typical_30_price) * 100, 1)
+    average_qualifies = drop_30_percent >= MIN_DROP_PERCENT
+    typical_qualifies = typical_drop_percent is None or typical_drop_percent >= MIN_DROP_PERCENT
+    if average_qualifies and typical_qualifies:
+        qualification_reasons.append(f"{MIN_DROP_PERCENT:g}%+ below 30-day average and typical price")
+    if drop_percent >= MIN_DROP_PERCENT and average_qualifies and typical_qualifies:
+        qualification_reasons.append(f"{MIN_DROP_PERCENT:g}%+ below 7-day, 30-day, and typical prices")
     if best_price_days >= 90:
         qualification_reasons.append("best price in 90+ days")
-    if drop_30_percent < MIN_DROP_PERCENT and not qualification_reasons:
-        return None
     if not qualification_reasons:
         return None
     return drop_percent, drop_30_percent, qualification_reasons
@@ -1578,7 +1626,8 @@ def build_deal_candidate(product, track):
         return None
 
     best_price_days, previous_price, previous_date = best_price_days_for_track(product, price_index, current_price)
-    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+    typical_30_price = typical_30_price_for_track(product, price_index)
+    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days, typical_30_price)
     if not qualified:
         return None
     drop_percent, drop_30_percent, qualification_reasons = qualified
@@ -1653,7 +1702,8 @@ def build_lightning_deal_candidate(product, lightning_deal):
     drop_percent = round(((avg_7_price - current_price) / avg_7_price) * 100, 1)
     drop_30_percent = round(((avg_30_price - current_price) / avg_30_price) * 100, 1)
     qualification_reasons = ["active Lightning Deal"]
-    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+    typical_30_price = typical_30_price_for_track(product, price_index)
+    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days, typical_30_price)
     if qualified:
         drop_percent, drop_30_percent, price_reasons = qualified
         qualification_reasons.extend(price_reasons)
@@ -1701,7 +1751,8 @@ def build_preferred_keepa_offer_candidate(product):
             continue
 
         best_price_days, previous_price, previous_date = best_price_days_for_track(product, price_index, current_price)
-        qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+        typical_30_price = typical_30_price_for_track(product, price_index)
+        qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days, typical_30_price)
         if not qualified:
             continue
         drop_percent, drop_30_percent, qualification_reasons = qualified
@@ -1746,7 +1797,8 @@ def build_prime_exclusive_offer_candidate(product):
         return None
 
     best_price_days, previous_price, previous_date = best_price_days_from_points(points, current_price)
-    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+    typical_30_price = window_weighted_median_from_points(points, 30)
+    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days, typical_30_price)
     if not qualified:
         return None
     drop_percent, drop_30_percent, qualification_reasons = qualified
@@ -1796,7 +1848,8 @@ def build_live_buy_box_candidate(product, live_offer):
             continue
 
         best_price_days, previous_price, previous_date = best_price_days_for_track(product, price_index, current_price)
-        qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days)
+        typical_30_price = typical_30_price_for_track(product, price_index)
+        qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days, typical_30_price)
         if not qualified:
             continue
         drop_percent, drop_30_percent, qualification_reasons = qualified
@@ -2278,7 +2331,7 @@ def main():
     output_payload = {
         "updated_at": iso_now(),
         "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
-        "comparison_window": "Deals qualify when active Keepa Lightning Deals are found with Prime/FBA/free-shipping evidence, or when Keepa preferred offers, Amazon, New FBA/Prime, or Prime Exclusive offer pricing is at least 5% below the 30-day average, at least 5% below both the 7-day and 30-day averages, or at a best price in 90+ days",
+        "comparison_window": "Deals qualify when active Keepa Lightning Deals are found with Prime/FBA/free-shipping evidence, or when Keepa preferred offers, Amazon, New FBA/Prime, or Prime Exclusive pricing is at least 8% below both the 30-day average and time-weighted 30-day median, or at a best price in 90+ days",
         "deal_ttl_hours": DEAL_TTL_HOURS,
         "deal_count": len(all_deals),
         "new_scan_deal_count": len(scan_deals),
