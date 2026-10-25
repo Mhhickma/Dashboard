@@ -29,6 +29,8 @@
   post.style.cssText='padding:12px 24px;background:#1473e6;color:white;border:0;border-radius:10px;font-size:16px;font-weight:700';
   var cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel scheduled post';cancel.hidden=true;
   var retry=document.createElement('button');retry.type='button';retry.textContent='Retry unfinished steps';retry.hidden=true;
+  var dismiss=document.createElement('button');dismiss.type='button';dismiss.textContent='Remove from list';dismiss.hidden=true;dismiss.title='Dismiss this unfinished attempt; keeps its history and does not delete Facebook posts.';
+  actions.append(dismiss);
   actions.append(post,cancel,retry);
   var links=document.createElement('details');var summary=document.createElement('summary');summary.textContent='Four comments, in order';links.append(summary);
   var list=document.createElement('ol');
@@ -54,13 +56,14 @@
   function draw(items){
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     active=items.find(function(i){return ['queued','running'].includes(i.state)||(i.day===today&&['failed','needs_review'].includes(i.state));})||items.find(function(i){return i.state==='complete'&&i.day===today;})||null;
+    dismiss.hidden=!active||!['failed','needs_review','skipped'].includes(active.state);dismiss.disabled=busy;
     retry.hidden=!active||!['failed','needs_review'].includes(active.state);retry.disabled=busy;
     previous.replaceChildren();
     var older=items.filter(function(i){return i.day<today&&['failed','needs_review'].includes(i.state);});
     previous.hidden=!older.length;
     if(older.length){
       var heading=document.createElement('summary');heading.textContent='Previous daily posts needing review ('+older.length+')';previous.append(heading);
-      older.forEach(function(item){var row=document.createElement('div');row.textContent=item.day+' — previous attempt retained; it does not block today’s post.';appendProgress(row,item);previous.append(row);});
+      older.forEach(function(item){var row=document.createElement('div');row.textContent=item.day+' — previous attempt retained; it does not block today’s post.';appendProgress(row,item);var remove=document.createElement('button');remove.type='button';remove.textContent='Remove from list';remove.disabled=busy;remove.title='Keeps posting history; does not delete Facebook posts.';remove.addEventListener('click',function(){removeAttempt(item.id,remove);});row.append(remove);previous.append(row);});
     }
     post.disabled=busy||!!active;cancel.hidden=!active||active.state!=='queued';cancel.disabled=busy;
     progress.replaceChildren();if(active)appendProgress(progress,active);
@@ -72,6 +75,13 @@
     if(active.state==='needs_review')status.textContent='This daily post needs review. Other queued posts can continue. '+String(active.error||'').split('\n')[0].slice(0,180);
     if(active.state==='failed')status.textContent='Needs review: '+(active.error||'The last attempt did not finish. Check Facebook before retrying.');
   }
+  async function removeAttempt(id,button){
+    if(busy)return;busy=true;button.disabled=true;
+    try{await request('/daily-retailer/cancel',{id:id});}
+    catch(error){status.textContent='Could not remove this attempt: '+error.message;}
+    finally{busy=false;await refresh();}
+  }
+  dismiss.addEventListener('click',function(){if(active)removeAttempt(active.id,dismiss);});
   async function refresh(){
     if(busy)return;
     try{draw((await request('/daily-retailer')).items);}
