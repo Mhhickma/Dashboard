@@ -58,6 +58,73 @@
 
   function dealFact(deal) { return ''; }
 
+
+  function productDetails(deal, title, current, brand) {
+    var quantity = title.match(/(?:\b(\d+)\s*[- ]?\s*(?:packs?|pcs?|pieces?|count|ct\b|pk\b))|(?:\bpack\s+of\s+(\d+))/i);
+    var count = quantity ? quantity[1] || quantity[2] : '';
+    var size = title.match(/(\d+(?:\.\d+)?(?:\s*\/\s*\d+)?)\s*(?:[- ]?\s*inch(?:es)?|\bin\.|")/i);
+    var feet = title.match(/\b(\d+(?:\.\d+)?)\s*(?:ft\b|feet|foot)\b/i);
+    var spec = size ? size[1] + '-inch ' : '';
+    var maker = brand;
+    if (!maker) {
+      var start = title.match(/^([A-Za-z][A-Za-z0-9-]{1,23})\s/);
+      if (start && !/^(?:portable|parallel|magnetic|professional|cordless|electric|woodworking|mechanical|heavy|light|adjustable|digital|reusable|sanding|dust)$/i.test(start[1])) maker=start[1];
+    }
+    var prefix = maker ? maker + ' ' : '';
+    var pack = count ? ', ' + count + '-pack' : '';
+    var identity='', observation='';
+    if (/spring clamps?/i.test(title)) {
+      identity=prefix+spec+'spring clamps'+pack;
+      observation='A few extras for holding small parts while you work.';
+    } else if (/LED/i.test(title) && /fixture|shop light|light tube|T5|T8/i.test(title)) {
+      identity=prefix+(feet ? feet[1]+'-foot ' : spec)+'LED shop lights'+pack;
+      var kelvin=title.match(/\b(\d{4})\s*K\b/i);
+      observation=kelvin ? kelvin[1]+'K light for the bench or shop.' : '';
+    } else if (/drill guide|portable drill press/i.test(title)) {
+      identity=prefix+'portable drill guide';
+      observation=/adjustable.*angle|angle.*adjustable/i.test(title) ? 'Adjustable angles for drilling away from the drill press.' : 'For guiding your handheld drill.';
+    } else if (/magnetic tool holder/i.test(title)) {
+      identity=prefix+'magnetic tool holders'+pack;
+      var clips=title.match(/(\d+)\s*(?:sliding\s*)?clips/i);
+      observation=clips ? clips[1]+' sliding clips for keeping tools together.' : 'A place for the tools that keep getting buried.';
+    } else if (/parallel.*rail.*guid|parallel.*guid.*rail/i.test(title)) {
+      identity=prefix+'parallel guides for track saw rails';
+      observation=/aluminum/i.test(title) ? 'Aluminum guides for setting up repeat cuts.' : '';
+    } else if (/carpenter pencils?|mechanical pencils?/i.test(title)) {
+      identity=prefix+(count ? count+'-pack of ' : '')+(/carpenter/i.test(title) ? 'carpenter pencils' : 'mechanical pencils');
+      var lead=title.match(/(\d+(?:\.\d+)?)\s*mm/i);
+      observation=lead ? lead[1]+'mm lead for marking and layout.' : /sharpener/i.test(title) ? 'Sharpener included in the kit.' : 'A few extras for the bench and tool bag.';
+    } else if (/tabletop.*dust collector/i.test(title)) {
+      identity=prefix+'tabletop dust collector';
+      observation=/timer/i.test(title) ? 'Timer included for controlling its run time.' : '';
+    } else if (/orbital sander/i.test(title) && !/sanding discs?|sandpaper|backing pad|interface pad|replacement pad/i.test(title)) {
+      identity=prefix+spec+(/cordless/i.test(title)?'cordless ':'')+'orbital sander';
+      var platform=title.match(/(?:compatible with|for)\s+(Makita|DeWalt|Milwaukee|Ryobi|Bosch)\s+batter/i);
+      observation=platform ? 'For '+platform[1]+' batteries'+(/bare tool|tool only/i.test(title)?'; bare tool.':'.') : /bare tool|tool only/i.test(title) ? 'Bare tool; battery not included.' : '';
+    }
+    if (!identity && (spec || count)) {
+      var types=[
+        [/blast gates?/i,'blast gates'],
+        [/bar clamps?/i,'bar clamps'],
+        [/parallel clamps?/i,'parallel clamps'],
+        [/tape measure|measuring tape/i,'tape measures'],
+        [/saw blades?/i,'saw blades'],
+        [/router bits?/i,'router bits'],
+        [/bench vise|\bvise\b/i,'bench vise'],
+        [/screwdriver/i,'screwdriver set']
+      ];
+      for(var k=0;k<types.length;k++){
+        if(types[k][0].test(title)){
+          if(/clamps?/i.test(title) && size && Number(size[1])<=6)break;
+          identity=prefix+types[k][1]+(spec ? ', '+spec.trim() : '')+pack;
+          break;
+        }
+      }
+    }
+    if (!identity) return current;
+    return identity+'.'+(observation ? ' '+observation : '');
+  }
+
   // Short item identity plus practical use. No title dumps or stock sales filler.
   function facebookPostText(deal) {
     var title = String(deal.title || "");
@@ -163,6 +230,7 @@
       post = post.replace(/^Some /, "");
       post = brand + " " + post.charAt(0).toLowerCase() + post.slice(1);
     }
+    post = productDetails(deal,title,post,brand);
     if (post.length > FACEBOOK_POST_MAX_LENGTH) post = post.split(/[.!?]\s/)[0].replace(/[.!?]$/, "") + ".";
     return post;
 
@@ -283,4 +351,3 @@
     return card;
   };
 }());
-
