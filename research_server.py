@@ -280,8 +280,8 @@ def handler(store):
                 large_upload=self.path in ('/api/prime-match','/api/early-cc/accepted')
                 if not 0<size<=(512*1024*1024 if large_upload else 100000):raise ValueError('Invalid request size')
                 if self.path=='/api/early-cc/accepted':
-                    from early_cc import merge_accepted
-                    result=merge_accepted(ROOT/'.research/accepted-cc.json',self.rfile.read(size).decode('utf-8-sig'))
+                    from early_cc import replace_accepted
+                    result=replace_accepted(ROOT/'.research/accepted-cc.json',self.rfile.read(size).decode('utf-8-sig'))
                     return self.send(result)
                 if self.path=='/api/prime-match':
                     from sales_catalog import ingest,current

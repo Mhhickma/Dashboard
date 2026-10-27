@@ -41,19 +41,19 @@ def _cc_updated_at(files):
         return datetime.fromtimestamp(max(path.stat().st_mtime for path in files), timezone.utc).isoformat()
     return None
 
-def merge_accepted(path, text):
+def replace_accepted(path, text):
     imported = accepted_ids_from_csv(text)
     if not imported:
         raise ValueError('No campaign IDs were found in the accepted CSV')
     existing = load_accepted(path)
-    combined = existing | imported
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix('.tmp')
     updated_at = datetime.now(timezone.utc).isoformat()
-    temporary.write_text(json.dumps({'campaign_ids': sorted(combined), 'updated_at': updated_at}, indent=2), encoding='utf-8')
+    temporary.write_text(json.dumps({'campaign_ids': sorted(imported), 'updated_at': updated_at}, indent=2), encoding='utf-8')
     temporary.replace(path)
-    return {'imported': len(imported), 'added': len(combined - existing),
-            'accepted_total': len(combined), 'accepted_updated_at': updated_at}
+    return {'imported': len(imported), 'added': len(imported - existing),
+            'removed': len(existing - imported), 'accepted_total': len(imported),
+            'accepted_updated_at': updated_at}
 
 def upcoming(folder, today=None, accepted_path=None):
     today = today or date.today()
