@@ -41,8 +41,14 @@ def _cc_updated_at(files):
         return datetime.fromtimestamp(max(path.stat().st_mtime for path in files), timezone.utc).isoformat()
     return None
 
-def replace_accepted(path, text):
-    imported = accepted_ids_from_csv(text)
+def replace_accepted(path, texts):
+    if isinstance(texts, str):
+        texts = [texts]
+    imported = set()
+    file_count = 0
+    for text in texts:
+        imported.update(accepted_ids_from_csv(text))
+        file_count += 1
     if not imported:
         raise ValueError('No campaign IDs were found in the accepted CSV')
     existing = load_accepted(path)
@@ -51,7 +57,7 @@ def replace_accepted(path, text):
     updated_at = datetime.now(timezone.utc).isoformat()
     temporary.write_text(json.dumps({'campaign_ids': sorted(imported), 'updated_at': updated_at}, indent=2), encoding='utf-8')
     temporary.replace(path)
-    return {'imported': len(imported), 'added': len(imported - existing),
+    return {'files': file_count, 'imported': len(imported), 'added': len(imported - existing),
             'removed': len(existing - imported), 'accepted_total': len(imported),
             'accepted_updated_at': updated_at}
 

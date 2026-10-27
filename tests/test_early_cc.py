@@ -21,17 +21,18 @@ class EarlyCcTests(unittest.TestCase):
                 'C1,2026-10-01,One,10%\nC2,2026-10-02,Two,15%\n', encoding='utf-8')
             history = root / '.research' / 'accepted-cc.json'
             first = replace_accepted(history, 'Campaign ID\nC1\n')
-            second = replace_accepted(history, 'campaign_id\nC3\n')
+            second = replace_accepted(history, ['campaign_id\nC2\n', 'Campaign Id\nC3\n'])
             self.assertEqual({k: first[k] for k in ('imported', 'added', 'accepted_total')},
                              {'imported': 1, 'added': 1, 'accepted_total': 1})
             self.assertEqual({k: second[k] for k in ('imported', 'added', 'accepted_total')},
-                             {'imported': 1, 'added': 1, 'accepted_total': 1})
+                             {'imported': 2, 'added': 2, 'accepted_total': 2})
             self.assertEqual(second['removed'], 1)
+            self.assertEqual(second['files'], 2)
             self.assertTrue(second['accepted_updated_at'].endswith('+00:00'))
             result = upcoming(cc, date(2026, 9, 23), history)
-            self.assertEqual(result['campaign_ids'], ['C1', 'C2'])
-            self.assertEqual(result['accepted_total'], 1)
-            self.assertEqual(result['accepted_excluded'], 0)
+            self.assertEqual(result['campaign_ids'], ['C1'])
+            self.assertEqual(result['accepted_total'], 2)
+            self.assertEqual(result['accepted_excluded'], 1)
             self.assertEqual(result['upcoming_total'], 2)
             self.assertEqual(result['accepted_updated_at'], second['accepted_updated_at'])
 

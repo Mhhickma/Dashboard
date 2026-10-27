@@ -281,7 +281,15 @@ def handler(store):
                 if not 0<size<=(512*1024*1024 if large_upload else 100000):raise ValueError('Invalid request size')
                 if self.path=='/api/early-cc/accepted':
                     from early_cc import replace_accepted
-                    result=replace_accepted(ROOT/'.research/accepted-cc.json',self.rfile.read(size).decode('utf-8-sig'))
+                    body=self.rfile.read(size).decode('utf-8-sig')
+                    if self.headers.get('Content-Type','').split(';',1)[0].strip().lower()=='application/json':
+                        payload=json.loads(body)
+                        files=payload.get('files') if isinstance(payload,dict) else None
+                        if not isinstance(files,list) or not files:raise ValueError('Choose at least one accepted campaigns CSV')
+                        texts=[item.get('text','') for item in files if isinstance(item,dict)]
+                        if len(texts)!=len(files):raise ValueError('Invalid accepted campaigns upload')
+                    else:texts=[body]
+                    result=replace_accepted(ROOT/'.research/accepted-cc.json',texts)
                     return self.send(result)
                 if self.path=='/api/prime-match':
                     from sales_catalog import ingest,current
