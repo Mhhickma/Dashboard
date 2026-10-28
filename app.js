@@ -24,7 +24,8 @@ const REMOVE_QUEUE_KEY = "keepa-dashboard-remove-queue-asins";
 const SELECTED_FOR_POSTING_KEY = "keepa-dashboard-selected-for-posting-asins";
 const PUBLISH_STATUS_KEY = "keepa-dashboard-publish-status";
 const SHOW_ALL_DEALS_KEY = "keepa-dashboard-show-all-deals";
-const HIDE_FOR_HOURS = 24;
+const HIDE_FOR_HOURS = 48;
+const DEAL_VISIBLE_HOURS = 24;
 const DEALS_PER_PAGE = 50;
 const BULK_REMOVE_CHUNK_SIZE = 50;
 const AFFILIATE_TAGS = {
@@ -634,7 +635,9 @@ function visibleDeals() {
   const removeQueue = removeQueueAsins();
   return allDeals.filter((deal) => {
     const postingTier = typeof window.dealPostingTier === "function" ? window.dealPostingTier(deal) : "";
-    return !hidden.has(deal.asin) && !removeQueue.has(deal.asin) && (postingTier === "Post Now" || postingTier === "Review");
+    const expiresAt = dateValue(effectiveExpiresAt(deal));
+    const isActive = !expiresAt || expiresAt > Date.now();
+    return isActive && !hidden.has(deal.asin) && !removeQueue.has(deal.asin) && (postingTier === "Post Now" || postingTier === "Review");
   });
 }
 
@@ -783,7 +786,7 @@ function dealScore(deal) {
   const dropPercent = numericValue(deal.drop_percent) || 0;
   const drop30Percent = numericValue(deal.drop_30_percent) || 0;
   const savings = dollarDrop(deal) || 0;
-  const freshnessHours = hoursUntil(deal.expires_at);
+  const freshnessHours = hoursUntil(effectiveExpiresAt(deal));
   const freshnessBonus = freshnessHours === null ? 0 : Math.max(0, Math.min(24, freshnessHours)) / 24;
 
   return (dropPercent * 2) + drop30Percent + Math.min(savings, 100) + freshnessBonus;
@@ -804,8 +807,14 @@ function checkedDateValue(deal) {
   return dateValue(deal.last_checked_at || deal.checked_at);
 }
 
+function effectiveExpiresAt(deal) {
+  const firstSeen = postedDateValue(deal);
+  if (firstSeen) return new Date(firstSeen + DEAL_VISIBLE_HOURS * 60 * 60 * 1000).toISOString();
+  return deal.expires_at || null;
+}
+
 function expiresDateValue(deal) {
-  return dateValue(deal.expires_at);
+  return dateValue(effectiveExpiresAt(deal));
 }
 
 function sortDeals(deals) {
@@ -941,9 +950,7 @@ function updateCounts(renderedCount, selectedCount, totalMatchingCount) {
     dealCountEl.innerHTML += ` <span class="count-note">${totalCount} total active</span>`;
   }
 
-  if (hiddenCount > 0) {
-    dealCountEl.innerHTML += ` <button class="reset-hidden" type="button" onclick="resetHiddenDeals()">Show hidden (${hiddenCount})</button>`;
-  }
+  if (hiddenCount > 0) dealCountEl.innerHTML += ` <span class="count-note">${hiddenCount} in 48-hour cooldown</span>`;
 
   if (selectedCount > 0) {
     dealCountEl.innerHTML += ` <button class="clear-selected" type="button" onclick="clearSelectedForPosting()">Clear selected</button>`;
@@ -963,7 +970,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
   const ratingEligible = !Number.isFinite(rating) || rating >= 3.8;
   card.dataset.rating = Number.isFinite(rating) ? rating.toFixed(1) : "";
   const postedAt = deal.posted_at || deal.first_seen_at || deal.checked_at;
-  const expiresAt = deal.expires_at;
+  const expiresAt = effectiveExpiresAt(deal);
   const hoursLeft = hoursUntil(expiresAt);
   const expiresText = hoursLeft === null ? "N/A" : `${hoursLeft.toFixed(1)} hrs left`;
   const dealJson = JSON.stringify(deal).replace(/</g, "\\u003c").replace(/'/g, "\\u0027");
@@ -990,7 +997,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
     <div class="posting-helper-box">
       <p>Publish direct to Publer pages.</p>
       ${publishRows}
-      <button class="posted-hide-card" type="button" onclick="hideDeal('${deal.asin}')">Posted - Hide Card</button>
+      <button class="posted-hide-card" type="button" onclick="hideDeal('${deal.asin}')">Posted - Remove 48h</button>
     </div>
   ` : "";
 
@@ -1013,8 +1020,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
       <div class="card-top-row">
         ${primaryDealBadge(deal)}
         <div class="card-actions">
-          <button class="hide-card" type="button" onclick="hideDeal('${deal.asin}')">Hide 24h</button>
-          <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}', this)">Remove ASIN</button>
+          <button class="remove-card" type="button" onclick="hideDeal('${deal.asin}')">Remove 48h</button>
         </div>
       </div>
       <div class="deal-time">

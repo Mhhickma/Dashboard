@@ -42,6 +42,7 @@ SCAN_LIMIT_RAW = os.getenv("SCAN_LIMIT", "auto").strip().lower()
 SCAN_RUNS_PER_DAY = max(1, int(os.getenv("SCAN_RUNS_PER_DAY", "48")))
 SCAN_LIMIT_BUFFER_PERCENT = max(0, float(os.getenv("SCAN_LIMIT_BUFFER_PERCENT", "10")))
 DEAL_TTL_HOURS = int(os.getenv("DEAL_TTL_HOURS", "24"))
+DEAL_COOLDOWN_HOURS = int(os.getenv("DEAL_COOLDOWN_HOURS", "48"))
 LIVE_OFFER_DEBUG_SAMPLE_LIMIT = int(os.getenv("LIVE_OFFER_DEBUG_SAMPLE_LIMIT", "8"))
 REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE = os.getenv("REQUIRE_PRIME_OR_AMAZON_PRICE_SOURCE", "false").strip().lower() not in {"0", "false", "no"}
 KEEPA_OFFERS_LIMIT = int(os.getenv("KEEPA_OFFERS_LIMIT", "0"))
@@ -82,6 +83,7 @@ ASIN_FILE = Path("asins.csv")
 OUTPUT_FILE = Path("data/deals.json")
 STATE_FILE = Path("data/scan_state.json")
 MEMORY_FILE = Path("data/deals_memory.json")
+COOLDOWN_FILE = Path("data/deal_cooldowns.json")
 TOKEN_USAGE_FILE = Path("data/keepa_token_usage.json")
 ASIN_RE = re.compile(r"\bB[0-9A-Z]{9}\b")
 KEEPA_EPOCH = datetime(2011, 1, 1, tzinfo=timezone.utc)
@@ -686,24 +688,56 @@ def save_deal_memory(memory):
     )
 
 
-def purge_expired_deals(memory):
-    cutoff = utc_now() - timedelta(hours=DEAL_TTL_HOURS)
+def load_deal_cooldowns():
+    payload = load_json_file(COOLDOWN_FILE, {})
+    if isinstance(payload, dict) and isinstance(payload.get("cooldowns"), dict):
+        return payload["cooldowns"]
+    return payload if isinstance(payload, dict) else {}
+
+
+def active_deal_cooldowns(cooldowns):
+    now = utc_now()
+    return {
+        str(asin).upper(): until
+        for asin, until in cooldowns.items()
+        if ASIN_RE.fullmatch(str(asin).upper())
+        and (parse_iso_datetime(until) or datetime.min.replace(tzinfo=timezone.utc)) > now
+    }
+
+
+def save_deal_cooldowns(cooldowns):
+    COOLDOWN_FILE.parent.mkdir(parents=True, exist_ok=True)
+    COOLDOWN_FILE.write_text(
+        json.dumps({
+            "updated_at": iso_now(),
+            "cooldown_hours": DEAL_COOLDOWN_HOURS,
+            "cooldowns": cooldowns,
+        }, indent=2),
+        encoding="utf-8",
+    )
+
+
+def purge_expired_deals(memory, cooldowns=None):
+    now = utc_now()
     kept = {}
     expired_count = 0
     for asin, deal in memory.items():
         posted_at = parse_iso_datetime(deal.get("posted_at") or deal.get("first_seen_at") or deal.get("checked_at"))
-        if posted_at and posted_at > cutoff:
+        expires_at = posted_at + timedelta(hours=DEAL_TTL_HOURS) if posted_at else None
+        if expires_at and expires_at > now:
             kept[asin] = deal
         else:
             expired_count += 1
+            if cooldowns is not None and expires_at:
+                cooldowns[str(asin).upper()] = (expires_at + timedelta(hours=DEAL_COOLDOWN_HOURS)).isoformat()
     if expired_count:
-        print(f"Purged {expired_count} expired deals older than {DEAL_TTL_HOURS} hours")
+        print(f"Purged {expired_count} deals after {DEAL_TTL_HOURS} hours and started their {DEAL_COOLDOWN_HOURS}-hour cooldowns")
     return kept, expired_count
 
 
 def merge_deals_with_memory(memory, new_deals):
-    now_iso = iso_now()
-    expires_at = (utc_now() + timedelta(hours=DEAL_TTL_HOURS)).isoformat()
+    now = utc_now()
+    now_iso = now.isoformat()
     added_count = 0
     updated_count = 0
     for deal in new_deals:
@@ -712,6 +746,8 @@ def merge_deals_with_memory(memory, new_deals):
             continue
         previous = memory.get(asin, {})
         posted_at = previous.get("posted_at") or previous.get("first_seen_at") or now_iso
+        first_seen = parse_iso_datetime(posted_at) or now
+        expires_at = (first_seen + timedelta(hours=DEAL_TTL_HOURS)).isoformat()
         merged = {
             **previous,
             **deal,
@@ -2211,8 +2247,9 @@ def main():
     print(f"Scan windows per day: {SCAN_RUNS_PER_DAY}")
     print(f"ASIN source: {'Google Sheet CSV' if ASIN_CSV_URL else 'local asins.csv'}")
 
+    cooldowns = active_deal_cooldowns(load_deal_cooldowns())
     memory = load_deal_memory()
-    memory, expired_count = purge_expired_deals(memory)
+    memory, expired_count = purge_expired_deals(memory, cooldowns)
     campaign_target_asins = set(asins) | set(memory.keys())
     campaign_by_asin, campaign_stats = find_creator_campaigns_for_asins(campaign_target_asins)
 
@@ -2242,10 +2279,14 @@ def main():
     non_amazon_scan_deals = 0
     prime_exclusive_scan_deals = 0
     lightning_deal_scan_deals = 0
+    cooldown_suppressed_in_scan = 0
 
     for product in products:
         try:
             asin = str(product.get("asin") or "").upper()
+            if asin in cooldowns:
+                cooldown_suppressed_in_scan += 1
+                continue
             if asin in low_rated_asins:
                 continue
             if asin in VISIBLE_SHIPPING_ASINS:
@@ -2333,6 +2374,9 @@ def main():
         "asin_source": "Google Sheet CSV" if ASIN_CSV_URL else "local asins.csv",
         "comparison_window": "Deals qualify when active Keepa Lightning Deals are found with Prime/FBA/free-shipping evidence, or when Keepa preferred offers, Amazon, New FBA/Prime, or Prime Exclusive pricing is at least 8% below both the 30-day average and time-weighted 30-day median, or at a best price in 90+ days",
         "deal_ttl_hours": DEAL_TTL_HOURS,
+        "deal_cooldown_hours": DEAL_COOLDOWN_HOURS,
+        "active_deal_cooldown_count": len(cooldowns),
+        "cooldown_suppressed_in_scan": cooldown_suppressed_in_scan,
         "deal_count": len(all_deals),
         "new_scan_deal_count": len(scan_deals),
         "new_deals_added": added_count,
@@ -2380,6 +2424,7 @@ def main():
             "scan_runs_per_day": SCAN_RUNS_PER_DAY,
             "scan_limit_buffer_percent": SCAN_LIMIT_BUFFER_PERCENT,
             "deal_ttl_hours": DEAL_TTL_HOURS,
+            "deal_cooldown_hours": DEAL_COOLDOWN_HOURS,
             "keepa_stats_days": 7,
             "keepa_product_params": {"stats": 7, "history": 1, "offers": KEEPA_OFFERS_LIMIT},
             "keepa_lightning_deals_enabled": KEEPA_LIGHTNING_DEALS_ENABLED,
@@ -2415,6 +2460,7 @@ def main():
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(json.dumps(output_payload, indent=2), encoding="utf-8")
     save_deal_memory(memory)
+    save_deal_cooldowns(cooldowns)
     save_scan_state(new_state)
 
     print(f"Found {len(scan_deals)} price drops in this scan")
@@ -2427,6 +2473,7 @@ def main():
     print(f"Marked {creator_campaign_deal_count} active deals with Creator campaign commission data")
     print(f"Saved {len(all_deals)} active 24-hour deals to {OUTPUT_FILE}")
     print(f"Saved deal memory to {MEMORY_FILE}")
+    print(f"Saved {len(cooldowns)} active deal cooldowns to {COOLDOWN_FILE}")
     print(f"Saved next scan start index {new_state['next_start_index']} to {STATE_FILE}")
     if skipped:
         print(f"Skipped {skipped} products because their Keepa data format was incomplete or unexpected")

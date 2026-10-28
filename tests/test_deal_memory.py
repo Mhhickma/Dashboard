@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import fetch_keepa
@@ -22,6 +22,37 @@ class DealMemoryTests(unittest.TestCase):
 
         self.assertEqual(set(kept), {"RECENT"})
         self.assertEqual(expired_count, 1)
+
+    @patch("fetch_keepa.utc_now")
+    def test_expiration_starts_fixed_forty_eight_hour_cooldown(self, utc_now):
+        first_seen = datetime(2026, 10, 20, 12, 0, tzinfo=timezone.utc)
+        utc_now.return_value = first_seen + timedelta(hours=25)
+        cooldowns = {}
+
+        kept, expired_count = fetch_keepa.purge_expired_deals(
+            {"B000000001": {"posted_at": first_seen.isoformat()}},
+            cooldowns,
+        )
+
+        self.assertEqual(kept, {})
+        self.assertEqual(expired_count, 1)
+        expected = first_seen + timedelta(hours=24 + 48)
+        self.assertEqual(fetch_keepa.parse_iso_datetime(cooldowns["B000000001"]), expected)
+
+    @patch("fetch_keepa.utc_now")
+    def test_rescan_does_not_extend_original_expiration(self, utc_now):
+        first_seen = datetime(2026, 10, 20, 12, 0, tzinfo=timezone.utc)
+        utc_now.return_value = first_seen + timedelta(hours=20)
+        memory = {"B000000001": {"posted_at": first_seen.isoformat(), "title": "Old"}}
+
+        merged, _, updated = fetch_keepa.merge_deals_with_memory(
+            memory,
+            [{"asin": "B000000001", "title": "Refreshed"}],
+        )
+
+        self.assertEqual(updated, 1)
+        expected = first_seen + timedelta(hours=24)
+        self.assertEqual(fetch_keepa.parse_iso_datetime(merged["B000000001"]["expires_at"]), expected)
 
 
 if __name__ == "__main__":
