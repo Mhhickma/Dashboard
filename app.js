@@ -1021,6 +1021,7 @@ function buildCard(deal, isSelected, isSelectedSection) {
         ${primaryDealBadge(deal)}
         <div class="card-actions">
           <button class="remove-card" type="button" onclick="hideDeal('${deal.asin}')">Remove 48h</button>
+          <button class="remove-card" type="button" onclick="queueRemoveDeal('${deal.asin}', this)">Remove ASIN</button>
         </div>
       </div>
       <div class="deal-time">
