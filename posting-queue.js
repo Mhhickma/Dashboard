@@ -10,7 +10,7 @@
   var lastError = '';
   var alreadyPosted = new Set();
   var panel = document.createElement('section');
-  panel.className = 'engagement-posts';
+  panel.className = 'engagement-posts';panel.id='posting-queue';
   panel.style.display = 'block';
   var heading = document.createElement('h2');
   heading.textContent = 'Selected posting queue';
@@ -41,7 +41,7 @@
     });
     target.append(box);
   }
-  var list = document.createElement('ul');
+  var list = document.createElement('ul');list.id='posting-queue-list';
   panel.append(heading, explanation, holdsPanel, status, list);
   var container = document.querySelector('main');
   if (!container || typeof window.toggleSelectedForPosting !== 'function') return;
@@ -84,7 +84,7 @@
       else if (item.state === 'running') label.textContent = 'Posting now';
       else if (item.state === 'needs_review') label.textContent = 'Needs review — other posts continue';
       else if (item.state === 'failed') label.textContent = 'Needs attention — queue paused';
-      else label.textContent = 'Select for posting';
+      else label.textContent = 'Add to queue';
     });
   }
   function offlineMessage() {
@@ -115,7 +115,10 @@
     list.replaceChildren();
     items.filter(function (i) { return ['queued', 'running', 'failed', 'needs_review', 'skipped'].includes(i.state); }).forEach(function (item) {
       var row = document.createElement('li');
-      row.textContent = (item.title || item.asin) + ' — ' + (item.state === 'queued' ? (item.link_ready ? 'Link saved — ' : 'Preparing link — ') + timeLabel(item.due) : item.state === 'running' ? 'Posting now' : ['needs_review','skipped'].includes(item.state) ? 'Not completed — saved for retry. ' + String(item.error || '').split('\n')[0].slice(0,180) : item.error || 'Needs review');
+      var badge=document.createElement('span');badge.className='ui-pill '+(item.state==='queued'?'blue':item.state==='running'?'blue':'warn');badge.textContent=item.state==='queued'?'Scheduled':item.state==='running'?'Posting now':'Needs attention';
+      var product=document.createElement('span');product.className='ui-queue-title';product.textContent=item.title||item.asin;
+      var summary=document.createElement('p');summary.textContent=item.state==='queued'?(item.link_ready?'Link ready · ':'Preparing link · ')+timeLabel(item.due):item.state==='running'?'Publishing and checking the link comment…':window.postingFriendlyError?window.postingFriendlyError(item.error,item.destinations):'An unfinished step needs review.';
+      row.append(badge,product,summary);
       if (item.state === 'queued') {
         var postNow=document.createElement('button');
         postNow.type='button';postNow.textContent='Post now';
@@ -145,7 +148,7 @@
       if (['failed','needs_review','skipped'].includes(item.state)) {
         var retry = document.createElement('button');
         retry.type = 'button';
-        retry.textContent = 'Retry';
+        retry.textContent = 'Retry unfinished steps';
         retry.style.cssText = 'margin:8px 4px;padding:8px 16px;border:1px solid #166534;border-radius:8px;background:#dcfce7;color:#166534;font-weight:700;cursor:pointer;';
         retry.disabled = !!cached;
         retry.title = 'Resume the unfinished step. Uncertain submissions require review before retrying.';
@@ -158,6 +161,7 @@
         row.append(retry);
       }
       appendProgress(row,item);
+      if(item.error){var technical=document.createElement('details');var label=document.createElement('summary');label.textContent='Technical details';var detail=document.createElement('pre');detail.textContent=item.error;technical.append(label,detail);row.append(technical);}
       list.append(row);
     });
     if (!list.children.length) { var empty = document.createElement('li'); empty.textContent = 'No waiting posts.'; list.append(empty); }
