@@ -1440,13 +1440,14 @@ def parse_coupon_value(raw_value, current_price):
     }
 
 
-def coupon_for_product(product, current_price):
+def coupon_for_product(product, current_price, one_time_only=False):
     coupons = product.get("coupon")
     if not isinstance(coupons, list):
         return None
 
     labels = ["one-time", "subscribe & save"]
-    for index, raw_value in enumerate(coupons[:2]):
+    coupon_values = coupons[:1] if one_time_only else coupons[:2]
+    for index, raw_value in enumerate(coupon_values):
         coupon = parse_coupon_value(raw_value, current_price)
         if coupon:
             coupon["kind"] = labels[index] if index < len(labels) else "coupon"
@@ -1454,6 +1455,14 @@ def coupon_for_product(product, current_price):
                 coupon["effective_price"] = round(max(0, current_price - coupon["amount"]), 2)
             return coupon
     return None
+
+
+def qualification_price_with_coupon(product, current_price):
+    coupon = coupon_for_product(product, current_price, one_time_only=True)
+    effective_price = coupon.get("effective_price") if coupon else None
+    if effective_price and 0 < effective_price < current_price:
+        return effective_price, coupon
+    return current_price, None
 
 
 def apply_coupon_details(deal, product):
@@ -1658,23 +1667,32 @@ def build_deal_candidate(product, track):
 
     if not current_price or not avg_7_price or not min_7_price or not avg_30_price:
         return None
-    if current_price >= avg_30_price:
+    qualification_price, qualifying_coupon = qualification_price_with_coupon(product, current_price)
+    if qualification_price >= avg_30_price:
         return None
 
     best_price_days, previous_price, previous_date = best_price_days_for_track(product, price_index, current_price)
     typical_30_price = typical_30_price_for_track(product, price_index)
-    qualified = qualification_for_prices(current_price, avg_7_price, avg_30_price, best_price_days, typical_30_price)
+    qualified = qualification_for_prices(qualification_price, avg_7_price, avg_30_price, best_price_days, typical_30_price)
     if not qualified:
         return None
     drop_percent, drop_30_percent, qualification_reasons = qualified
+    if qualifying_coupon:
+        qualification_reasons = [
+            f"{qualifying_coupon['label']} lowers the effective price to ${qualification_price:,.2f}"
+        ] + qualification_reasons
 
-    return base_deal(
+    deal = base_deal(
         product, asin, title, current_price, avg_7_price, min_7_price, avg_30_price,
         drop_percent, drop_30_percent, qualification_reasons,
         f"keepa_stats_30_day_threshold_{track['source_suffix']}",
         track["type"], track["label"], amazon_current_price, best_price_days,
         previous_price, previous_date, price_index,
     )
+    if qualifying_coupon:
+        deal["coupon_qualified"] = True
+        deal["qualification_price"] = qualification_price
+    return deal
 
 
 def buy_box_verification_asins(products):
