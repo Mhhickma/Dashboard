@@ -659,8 +659,8 @@ function livePriceNote(deal) {
 
 function couponNote(deal) {
   if (!deal || !deal.coupon_label) return "";
-  const afterCoupon = deal.after_coupon_price ? ` After coupon: ${money(deal.after_coupon_price)}.` : "";
-  return `<div class="coupon-note">${deal.coupon_label}.${afterCoupon}</div>`;
+  const afterCoupon = deal.after_coupon_price ? ` If available: ${money(deal.after_coupon_price)}.` : "";
+  return `<div class="coupon-note">Possible ${deal.coupon_label} reported by Keepa.${afterCoupon} Verify on Amazon; coupons may be account- or variant-specific.</div>`;
 }
 
 function keepaOfferNote(deal) {

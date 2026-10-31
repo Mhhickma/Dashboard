@@ -43,6 +43,9 @@ class DealQualificationTests(unittest.TestCase):
         self.assertEqual(deal["after_coupon_price"], 85.5)
         self.assertEqual(deal["qualification_price"], 85.5)
         self.assertTrue(deal["coupon_qualified"])
+        self.assertFalse(deal["coupon_verified"])
+        self.assertEqual(deal["coupon_source"], "keepa")
+        self.assertIn("possible 10% coupon", deal["qualification_reasons"][0])
 
     def test_subscribe_and_save_coupon_cannot_qualify_product(self):
         stats = {
