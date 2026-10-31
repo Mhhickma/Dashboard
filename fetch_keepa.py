@@ -1472,6 +1472,8 @@ def apply_coupon_details(deal, product):
     deal["coupon"] = coupon
     deal["coupon_label"] = coupon["label"]
     deal["after_coupon_price"] = coupon.get("effective_price")
+    deal["coupon_verified"] = False
+    deal["coupon_source"] = "keepa"
     return deal
 
 
@@ -1679,7 +1681,7 @@ def build_deal_candidate(product, track):
     drop_percent, drop_30_percent, qualification_reasons = qualified
     if qualifying_coupon:
         qualification_reasons = [
-            f"{qualifying_coupon['label']} lowers the effective price to ${qualification_price:,.2f}"
+            f"Keepa reports a possible {qualifying_coupon['label']}; if available, the effective price is ${qualification_price:,.2f}"
         ] + qualification_reasons
 
     deal = base_deal(
@@ -1692,6 +1694,8 @@ def build_deal_candidate(product, track):
     if qualifying_coupon:
         deal["coupon_qualified"] = True
         deal["qualification_price"] = qualification_price
+        deal["coupon_verified"] = False
+        deal["coupon_source"] = "keepa"
     return deal
 
 
