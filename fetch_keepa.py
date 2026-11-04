@@ -225,11 +225,27 @@ def price_from_stats_array(stats, key, price_index):
     return keepa_to_dollars(values[price_index])
 
 
-def rating_from_product(product):
+def review_metric_from_product(product, index):
     values = (product.get("stats") or {}).get("current") or []
-    if len(values) <= KEEPA_RATING_INDEX:
-        return None
-    raw = values[KEEPA_RATING_INDEX]
+    raw = values[index] if len(values) > index else None
+    if isinstance(raw, (int, float)) and raw >= 0:
+        return raw
+    tracks = product.get("csv") or []
+    track = tracks[index] if len(tracks) > index else None
+    if isinstance(track, list) and len(track) >= 2:
+        raw = track[-1]
+        if isinstance(raw, (int, float)) and raw >= 0:
+            return raw
+    return None
+
+
+def review_count_from_product(product):
+    raw = review_metric_from_product(product, 17)
+    return int(raw) if raw is not None else None
+
+
+def rating_from_product(product):
+    raw = review_metric_from_product(product, KEEPA_RATING_INDEX)
     if not isinstance(raw, (int, float)) or raw <= 0:
         return None
     rating = raw / 10 if raw > 5 else raw
@@ -856,6 +872,7 @@ def fetch_keepa_products(asins):
             "domain": DOMAIN_ID,
             "asin": ",".join(batch),
             "stats": 7,
+            "rating": 1,
             "history": 1,
         }
         if KEEPA_OFFERS_LIMIT > 0:
@@ -894,6 +911,7 @@ def fetch_keepa_buy_box_products(asins):
             "domain": DOMAIN_ID,
             "asin": ",".join(batch),
             "stats": 7,
+            "rating": 1,
             "history": 1,
             "buybox": 1,
         }
@@ -1629,6 +1647,7 @@ def base_deal(product, asin, title, current_price, avg_7_price, min_7_price, avg
         "asin": asin,
         "title": title,
         "rating": rating_from_product(product),
+        "review_count": review_count_from_product(product),
         "current_price": current_price,
         "avg_7_price": avg_7_price,
         "min_7_price": min_7_price,
