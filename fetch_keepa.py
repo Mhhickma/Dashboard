@@ -1671,6 +1671,10 @@ def base_deal(product, asin, title, current_price, avg_7_price, min_7_price, avg
         "best_price_previous_date": previous_date,
         "qualification_reasons": qualification_reasons,
     }
+    if keepa_price_index is not None:
+        stats = product.get("stats") or {}
+        for days in (90, 180, 365):
+            deal[f"avg_{days}_price"] = price_from_stats_array(stats, f"avg{days}", keepa_price_index)
     return apply_coupon_details(deal, product)
 
 
